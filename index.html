@@ -86,6 +86,16 @@
     .footerin{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
     .toast{position:fixed;right:20px;bottom:20px;z-index:50;background:#11192a;border:1px solid var(--line);padding:13px 16px;border-radius:13px;box-shadow:var(--shadow);display:none}
     .toast.show{display:block}
+    .wallet-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(2,5,12,.72);backdrop-filter:blur(14px)}
+    .wallet-modal.show{display:flex}
+    .wallet-box{width:min(460px,94vw);border:1px solid rgba(148,163,184,.2);border-radius:24px;background:#0b1222;box-shadow:0 30px 100px rgba(0,0,0,.55);padding:22px}
+    .wallet-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:15px}
+    .wallet-head h3{margin:0;font-size:22px}.close{border:0;background:rgba(255,255,255,.06);color:#fff;width:38px;height:38px;border-radius:12px;cursor:pointer;font-size:20px}
+    .wallet-option{width:100%;display:flex;align-items:center;gap:14px;text-align:left;padding:15px;margin-top:10px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.035);color:#fff;cursor:pointer}
+    .wallet-option:hover{border-color:rgba(85,183,255,.65);background:rgba(85,183,255,.08)}
+    .wallet-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.08);font-size:21px;flex:0 0 auto}
+    .wallet-option b{display:block}.wallet-option span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+    .wallet-note{color:var(--muted);font-size:12px;line-height:1.55;margin:15px 2px 3px}
     @media(max-width:850px){
       .links{display:none}.hero{grid-template-columns:1fr;padding-top:62px}.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.token-grid{grid-template-columns:1fr}
       .hero-card{max-width:650px;margin:auto}.phase{grid-template-columns:1fr;gap:5px}
@@ -207,57 +217,48 @@
 </footer>
 <div class="toast" id="toast"></div>
 
-<script>
+<div class="wallet-modal" id="walletModal" aria-hidden="true">
+  <div class="wallet-box" role="dialog" aria-modal="true" aria-labelledby="walletTitle">
+    <div class="wallet-head"><h3 id="walletTitle">Connect Wallet</h3><button class="close" id="walletClose" aria-label="Close">×</button></div>
+    <button class="wallet-option" id="okxOption"><div class="wallet-icon">🟢</div><div><b>OKX Wallet</b><span>Desktop extension or mobile OKX app</span></div></button>
+    <button class="wallet-option" id="injectedOption"><div class="wallet-icon">🔗</div><div><b>Browser Wallet</b><span>MetaMask, OKX and other EIP-1193 wallets</span></div></button>
+    <div class="wallet-note">On iPhone/Android Safari or Chrome, OKX Wallet can open its mobile app through OKX Connect. On desktop, an installed browser wallet can connect directly.</div>
+  </div>
+</div>
+
+<script type="module">
 (() => {
   const CONTRACT = "0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F";
   const SEPOLIA = "0xaa36a7";
   const SEPOLIA_DEC = 11155111;
-  const ERC20_ABI = {
-    balanceOf: "0x70a08231",
-    decimals: "0x313ce567",
-    symbol: "0x95d89b41",
-    name: "0x06fdde03"
-  };
+  const CHAIN = "eip155:11155111";
+  const ERC20_ABI = { balanceOf:"0x70a08231", decimals:"0x313ce567" };
   let provider = null;
   let account = null;
+  let okxUniversal = null;
+  let connectedMode = null;
 
   const $ = id => document.getElementById(id);
-  const toast = msg => {
-    const t = $("toast"); t.textContent = msg; t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 2600);
-  };
-  const short = a => a ? a.slice(0,6) + "…" + a.slice(-4) : "";
+  const toast = msg => { const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2800); };
+  const short = a => a ? a.slice(0,6)+"…"+a.slice(-4) : "";
   const padAddress = a => a.toLowerCase().replace(/^0x/,"").padStart(64,"0");
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   function rawToNumber(hex, decimals=18){
-    const raw = BigInt(hex);
-    const base = 10n ** BigInt(decimals);
-    const whole = raw / base;
-    const frac = raw % base;
-    if (frac === 0n) return whole.toString();
-    let f = frac.toString().padStart(decimals,"0").replace(/0+$/,"");
-    return whole.toString() + "." + f.slice(0,6);
+    const raw=BigInt(hex), base=10n**BigInt(decimals), whole=raw/base, frac=raw%base;
+    if(frac===0n) return whole.toString();
+    const f=frac.toString().padStart(decimals,"0").replace(/0+$/ ,"");
+    return whole.toString()+"."+f.slice(0,6);
   }
+  async function request(method, params=[]){ return provider.request({method, params}); }
 
-  async function request(method, params=[]){
-    return provider.request({method, params});
-  }
-
-  async function ensureSepolia(){
-    const chain = await request("eth_chainId");
-    if (chain.toLowerCase() === SEPOLIA) return true;
-    try{
-      await request("wallet_switchEthereumChain", [{chainId: SEPOLIA}]);
-      return true;
-    }catch(e){
-      if(e.code === 4902){
-        await request("wallet_addEthereumChain", [{
-          chainId: SEPOLIA,
-          chainName: "Sepolia",
-          nativeCurrency: {name:"Sepolia Ether",symbol:"ETH",decimals:18},
-          rpcUrls: ["https://ethereum-sepolia-rpc.publicnode.com"],
-          blockExplorerUrls: ["https://eth-sepolia.blockscout.com"]
-        }]);
+  async function ensureSepoliaInjected(){
+    const chain=await request("eth_chainId");
+    if(chain.toLowerCase()===SEPOLIA) return true;
+    try { await request("wallet_switchEthereumChain",[{chainId:SEPOLIA}]); return true; }
+    catch(e){
+      if(e.code===4902){
+        await request("wallet_addEthereumChain",[{chainId:SEPOLIA,chainName:"Sepolia",nativeCurrency:{name:"Sepolia Ether",symbol:"ETH",decimals:18},rpcUrls:["https://ethereum-sepolia-rpc.publicnode.com"],blockExplorerUrls:["https://eth-sepolia.blockscout.com"]}]);
         return true;
       }
       throw e;
@@ -265,66 +266,111 @@
   }
 
   async function loadBalance(){
-    if(!provider || !account) return;
-    const data = ERC20_ABI.balanceOf + padAddress(account);
-    const raw = await request("eth_call", [{to:CONTRACT,data}, "latest"]);
-    const decHex = await request("eth_call", [{to:CONTRACT,data:ERC20_ABI.decimals}, "latest"]);
-    const decimals = Number(BigInt(decHex));
-    $("balance").textContent = rawToNumber(raw, decimals) + " ALK";
-    $("wallet").textContent = account;
+    if(!account) return;
+    try {
+      const rpc="https://ethereum-sepolia-rpc.publicnode.com";
+      const data=ERC20_ABI.balanceOf+padAddress(account);
+      const [balRes,decRes]=await Promise.all([
+        fetch(rpc,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_call",params:[{to:CONTRACT,data},"latest"]})}).then(r=>r.json()),
+        fetch(rpc,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:2,method:"eth_call",params:[{to:CONTRACT,data:ERC20_ABI.decimals},"latest"]})}).then(r=>r.json())
+      ]);
+      const decimals=Number(BigInt(decRes.result));
+      $("balance").textContent=rawToNumber(balRes.result,decimals)+" ALK";
+      $("wallet").textContent=account;
+    } catch(e){ console.error(e); $("balance").textContent="— ALK"; }
   }
 
-  async function connect(){
-    provider = window.okxwallet || window.ethereum;
+  function showModal(){ $("walletModal").classList.add("show"); $("walletModal").setAttribute("aria-hidden","false"); }
+  function hideModal(){ $("walletModal").classList.remove("show"); $("walletModal").setAttribute("aria-hidden","true"); }
+
+  async function connectInjected(){
+    provider=window.okxwallet || window.ethereum || null;
     if(!provider){
-      $("status").textContent = "OKX Wallet is not available on this page. Open OKX Wallet in Chrome and reload the site.";
-      toast("OKX Wallet not detected");
-      return;
+      toast("No browser wallet detected");
+      $("status").textContent=isMobile ? "Use OKX Wallet on mobile or open this site inside your wallet app." : "Install a compatible browser wallet first.";
+      return false;
     }
     try{
       await request("eth_requestAccounts");
-      const accounts = await request("eth_accounts");
-      account = accounts[0];
-      await ensureSepolia();
-      $("status").textContent = "Connected • Sepolia • " + short(account);
+      const accounts=await request("eth_accounts");
+      account=accounts[0];
+      await ensureSepoliaInjected();
+      connectedMode="injected";
+      $("status").textContent="Connected • Sepolia • "+short(account);
       await loadBalance();
       toast("Wallet connected");
+      return true;
+    }catch(e){
+      console.error(e); $("status").textContent="Connection cancelled or network unavailable."; toast("Could not connect"); return false;
+    }
+  }
+
+  async function connectOKXMobile(){
+    try{
+      const mod=await import("https://cdn.jsdelivr.net/npm/@okxconnect/universal-provider@1.9.1/+esm");
+      const OKXUniversalProvider=mod.OKXUniversalProvider;
+      okxUniversal=await OKXUniversalProvider.init({DAppMetaData:{name:"ALEK",icon:"https://alek.best/alek-logo.png"}});
+      const session=await okxUniversal.connect({
+        namespaces:{eip155:{chains:[CHAIN],defaultChain:"11155111"}},
+        sessionConfig:{redirect:location.href}
+      });
+      const ns=session?.namespaces?.eip155;
+      const rawAccount=ns?.accounts?.find(x=>x.toLowerCase().startsWith(CHAIN.toLowerCase()+":")) || ns?.accounts?.[0];
+      account=rawAccount ? rawAccount.split(":").pop() : null;
+      if(!account) throw new Error("No account returned");
+      provider={request:(args)=>okxUniversal.request(args,CHAIN)};
+      connectedMode="okx-mobile";
+      $("status").textContent="Connected • OKX • Sepolia • "+short(account);
+      hideModal();
+      await loadBalance();
+      toast("OKX Wallet connected");
+      return true;
     }catch(e){
       console.error(e);
-      $("status").textContent = "Connection cancelled or wallet/network unavailable.";
-      toast("Could not connect");
+      $("status").textContent="OKX connection was cancelled or unavailable.";
+      toast("Could not open OKX Wallet");
+      return false;
+    }
+  }
+
+  async function connect(){
+    showModal();
+    if(!isMobile && (window.okxwallet || window.ethereum)){
+      hideModal();
+      await connectInjected();
     }
   }
 
   async function addToken(){
-    const walletProvider = window.okxwallet || window.ethereum;
-    if(!walletProvider){toast("Open OKX Wallet first");return;}
     try{
-      const ok = await walletProvider.request({
-        method:"wallet_watchAsset",
-        params:{
-          type:"ERC20",
-          options:{address:CONTRACT,symbol:"ALK",decimals:18,image:location.href.replace(/[^/]*$/,"alek-logo.png")}
-        }
-      });
-      toast(ok ? "ALK added to wallet" : "Wallet did not add ALK");
+      const p=window.okxwallet || window.ethereum;
+      if(p){
+        const ok=await p.request({method:"wallet_watchAsset",params:{type:"ERC20",options:{address:CONTRACT,symbol:"ALK",decimals:18,image:"https://alek.best/alek-logo.png"}}});
+        toast(ok?"ALK added to wallet":"Wallet did not add ALK"); return;
+      }
+      if(okxUniversal){
+        await okxUniversal.request({method:"wallet_watchAsset",params:{type:"ERC20",options:{address:CONTRACT,symbol:"ALK",decimals:18,image:"https://alek.best/alek-logo.png"}}},CHAIN);
+        toast("ALK request sent to OKX Wallet"); return;
+      }
+      toast("Connect a wallet first");
     }catch(e){console.error(e);toast("Could not add ALK automatically");}
   }
 
-  $("connectBtn").onclick = connect;
-  $("connectHero").onclick = connect;
-  $("addToken").onclick = addToken;
+  $("connectBtn").onclick=connect;
+  $("connectHero").onclick=connect;
+  $("addToken").onclick=addToken;
+  $("walletClose").onclick=hideModal;
+  $("walletModal").addEventListener("click",e=>{if(e.target===$("walletModal"))hideModal();});
+  $("okxOption").onclick=async()=>{ if(isMobile) await connectOKXMobile(); else { hideModal(); await connectInjected(); } };
+  $("injectedOption").onclick=async()=>{ hideModal(); await connectInjected(); };
 
-  // OKX Wallet exposes an EVM provider as window.okxwallet.
-  // Fallback to the standard EIP-1193 provider for other compatible wallets.
-  provider = window.okxwallet || window.ethereum || null;
-  if(provider){
-    provider.on?.("accountsChanged", async (accounts) => {
-      account = accounts[0] || null;
-      if(account){ await loadBalance(); $("status").textContent = "Connected • " + short(account); }
-      else { $("balance").textContent = "— ALK"; $("wallet").textContent = "Wallet disconnected."; $("status").textContent = "Wallet not connected."; }
+  const initialProvider=window.okxwallet || window.ethereum;
+  if(initialProvider){
+    initialProvider.on?.("accountsChanged",async accounts=>{
+      account=accounts[0]||null;
+      if(account){await loadBalance();$("status").textContent="Connected • "+short(account);} else {$("balance").textContent="— ALK";$("wallet").textContent="Wallet disconnected.";$("status").textContent="Wallet not connected.";}
     });
-    provider.on?.("chainChanged", () => location.reload());
+    initialProvider.on?.("chainChanged",()=>location.reload());
   }
 })();
 </script>
