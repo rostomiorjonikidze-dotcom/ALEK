@@ -1,0 +1,20 @@
+{
+  "name": "ALEK \u2014 AI + Web3",
+  "short_name": "ALEK",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020611",
+  "theme_color": "#030816",
+  "icons": [
+    {
+      "src": "alek-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "alek-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
