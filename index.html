@@ -1,161 +1,278 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#030814">
 <title>ALEK — AI • Blockchain • Future</title>
-<meta name="theme-color" content="#071426">
+<meta name="description" content="ALEK — AI + Web3 utility project built around the ALK token.">
 <style>
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:radial-gradient(circle at 50% 20%,#163a66 0,#0b203a 34%,#06101f 72%);color:#f6f8ff;min-height:100vh}
-.wrap{max-width:1100px;margin:auto;padding:24px 20px 70px}.nav{display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:4px;font-size:26px}.brand img{width:58px;height:58px;border-radius:50%}
-.hero{text-align:center;padding:70px 0 45px}.hero img{width:190px;max-width:55vw;filter:drop-shadow(0 0 25px #2587ff55)}.eyebrow{margin-top:28px;color:#82c9ff;font-weight:800;letter-spacing:5px;font-size:19px}.hero h1{font-size:76px;margin:25px 0 18px;letter-spacing:-3px}.hero p{max-width:760px;margin:0 auto 42px;color:#aebbd0;font-size:22px;line-height:1.65}
-.btn{border:0;border-radius:18px;padding:20px 28px;font-size:20px;font-weight:800;cursor:pointer;width:min(650px,100%);background:linear-gradient(100deg,#4f91ff,#64d4f5);color:#06101c;box-shadow:0 15px 45px #1d8fff25}.btn.secondary{background:#12243b;color:#fff;border:1px solid #35506d;box-shadow:none}
-.status{margin:20px auto 0;color:#8de0bc;font-size:18px;min-height:27px}.card{margin-top:28px;padding:30px;border:1px solid #2b405d;border-radius:28px;background:#0a1728cc;backdrop-filter:blur(10px)}.card h2{font-size:28px;margin:0 0 12px}.card p,.card li{color:#aebbd0;line-height:1.7;font-size:17px}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.mini{padding:22px;border-radius:20px;background:#0e2035;border:1px solid #29415e}.mini strong{font-size:28px;display:block;margin-bottom:8px}
-.modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;padding:18px;z-index:50}.modal.show{display:flex}.sheet{width:min(560px,100%);background:#0c1a2d;border:1px solid #34516f;border-radius:28px 28px 18px 18px;padding:24px;box-shadow:0 30px 100px #0008}.sheet h3{font-size:25px;margin:0 0 8px}.sheet .hint{color:#aebbd0;margin:0 0 18px;line-height:1.5}.wallet{display:flex;align-items:center;gap:15px;width:100%;padding:17px 18px;margin:10px 0;border-radius:17px;border:1px solid #31506f;background:#11243a;color:#fff;text-align:left;font-size:18px;font-weight:750;cursor:pointer}.wallet .ico{width:38px;height:38px;border-radius:10px;background:#203b5c;display:grid;place-items:center;font-size:21px}.close{float:right;border:0;background:transparent;color:#fff;font-size:30px;cursor:pointer}.tiny{font-size:13px;color:#7f93ac;margin-top:15px;text-align:center}
-@media(max-width:700px){.wrap{padding:18px 14px 55px}.brand{font-size:22px}.brand img{width:48px;height:48px}.hero{padding:48px 0 35px}.hero img{width:170px}.hero h1{font-size:56px}.hero p{font-size:18px}.eyebrow{font-size:15px;letter-spacing:3px}.grid{grid-template-columns:1fr}.card{padding:23px}.modal{align-items:flex-end;padding:10px}.sheet{padding:20px}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#020713;color:#eef5ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+body:before{content:"";position:fixed;inset:0;z-index:-2;background:
+radial-gradient(circle at 50% 0%,#0d4b9a55,transparent 34%),
+radial-gradient(circle at 12% 45%,#006eff20,transparent 28%),
+radial-gradient(circle at 90% 65%,#7c1fff18,transparent 30%),
+linear-gradient(#020713,#031127 55%,#020713)}
+body:after{content:"";position:fixed;inset:0;z-index:-1;opacity:.22;background-image:
+radial-gradient(#8bd6ff 1px,transparent 1px),radial-gradient(#5d91ff 1px,transparent 1px);
+background-size:83px 83px,137px 137px;background-position:15px 22px,70px 80px;pointer-events:none}
+a{color:inherit;text-decoration:none}
+.container{width:min(1180px,calc(100% - 42px));margin:auto}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:50;background:#020713d9;border-bottom:1px solid #1972d866;backdrop-filter:blur(18px)}
+.nav{height:78px;display:flex;align-items:center;gap:28px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:950;font-size:28px;letter-spacing:3px;white-space:nowrap}
+.logo img{width:55px;height:55px;object-fit:contain;filter:drop-shadow(0 0 14px #168dff66)}
+.links{display:flex;gap:25px;margin-left:auto;color:#dbe5f3;font-size:13px}
+.links a{padding:28px 0}
+.links a:hover{color:#65c8ff}
+.navright{display:flex;gap:10px;align-items:center}
+.network{padding:10px 13px;border:1px solid #2b568f;border-radius:12px;background:#06152c;font-size:12px}
+.dot{width:8px;height:8px;display:inline-block;border-radius:50%;background:#12e69b;box-shadow:0 0 12px #12e69b;margin-right:7px}
+.btn{border:1px solid #63c9ff;border-radius:13px;padding:12px 19px;color:white;font-weight:900;cursor:pointer;background:linear-gradient(105deg,#168eff,#a32cff);box-shadow:0 0 24px #297cff4d}
+.btn.secondary{background:#07172e;border-color:#2a6aa6}
+
+/* HERO */
+.hero{padding:30px 0 18px}
+.hero-grid{display:grid;grid-template-columns:1.03fr .97fr;gap:28px;align-items:center}
+.badge{display:inline-flex;align-items:center;border:1px solid #2271b8;border-radius:999px;background:#06172d;padding:9px 14px;font-size:12px;font-weight:900;letter-spacing:.4px}
+h1{font-size:clamp(78px,9vw,124px);line-height:.83;letter-spacing:-7px;margin:24px 0 7px;background:linear-gradient(#fff 18%,#c8e8ff 44%,#4d9cff 83%);-webkit-background-clip:text;color:transparent}
+.hero h2{font-size:clamp(42px,5vw,66px);line-height:1;margin:0 0 14px;letter-spacing:-3px}
+.hero p{font-size:18px;line-height:1.48;color:#aebfd5;max-width:600px;margin:0}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.pill{border:1px solid #2468a7;border-radius:999px;background:#06172d;padding:8px 11px;font-size:10px;font-weight:850;color:#c8eaff}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:19px}
+.meta{display:flex;gap:24px;margin-top:20px;color:#7f94ae;font-size:11px}.meta b{color:#edf5ff}
+
+/* COIN / WALLET */
+.visual{min-height:470px;position:relative;display:flex;align-items:center;justify-content:center}
+.glow{position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,#168eff3b,transparent 60%);filter:blur(8px)}
+.planet{position:absolute;width:430px;height:430px;border-radius:50%;background:
+radial-gradient(circle at 34% 28%,#74bfffaa 0 3%,transparent 10%),
+radial-gradient(circle at 55% 48%,#184f9b,transparent 53%),
+radial-gradient(circle,#082044,#01050e 73%);box-shadow:inset -45px -25px 70px #000,0 0 55px #197dff40;top:-25px;right:15px;opacity:.75}
+.ring{position:absolute;width:430px;height:170px;border:1px solid #38baffaa;border-radius:50%;transform:rotate(-17deg);box-shadow:0 0 22px #168eff66}
+.coin{position:relative;z-index:3;width:min(365px,70vw);filter:drop-shadow(0 25px 24px #007dff66)}
+.base{position:absolute;bottom:28px;width:350px;height:55px;border-radius:50%;background:radial-gradient(ellipse,#167cff,#061a43 55%,transparent 72%);box-shadow:0 0 35px #008cff88}
+.wallet{position:absolute;z-index:5;right:0;top:10px;width:305px;padding:18px;border:1px solid #2c74bb;border-radius:18px;background:#041127e8;backdrop-filter:blur(16px);box-shadow:0 20px 65px #0009}
+.wtop{display:flex;justify-content:space-between;font-size:12px;font-weight:900}.connected{color:#17e69b}
+.wline{height:1px;background:#21436b;margin:13px 0}.address{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:800}.avatar{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#f329b8,#6246ff,#1be0ff)}
+.small{font-size:10px;color:#8095b0;margin-top:4px}
+.balance-label{color:#8fa4bf;font-size:11px;margin-top:18px}.balance{font-size:23px;font-weight:950;margin:5px 0 15px}.balance img{width:27px;height:27px;vertical-align:middle;margin-right:7px;border-radius:50%}
+.wbtn{width:100%;padding:11px;border-radius:10px;border:1px solid #2e75ba;background:#0868ed;color:white;font-weight:900;cursor:pointer;margin-top:9px}.wbtn.ok{background:#073d36;border-color:#087f69;color:#35edb1}.wbtn.dark{background:#07172f;border-color:#2b4d76}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #1685e9;border-radius:18px;background:#06172fe8;box-shadow:0 15px 50px #00122e99;overflow:hidden}
+.stat{display:flex;gap:13px;align-items:center;padding:18px 24px;border-right:1px solid #29496d77}.stat:last-child{border:0}
+.icon{width:43px;height:43px;border-radius:50%;display:grid;place-items:center;background:#082e67;border:1px solid #287fe0;color:#69cfff;font-size:21px;box-shadow:0 0 16px #087bff44}.stat strong{display:block;font-size:17px}.stat span{display:block;color:#8296b0;font-size:10px;margin-top:4px}
+
+/* SECTIONS */
+section{padding:68px 0 8px}.center{text-align:center}.kicker{color:#55c9ff;font-size:11px;font-weight:950;letter-spacing:2px;text-transform:uppercase}.title{font-size:39px;margin:7px 0 4px;letter-spacing:-1.5px}.subtitle{color:#8fa5c0;margin:0 auto;line-height:1.55;max-width:650px}
+.features{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:25px}.card{border:1px solid #1b70bb;border-radius:15px;background:linear-gradient(145deg,#061b3aee,#040e21ee);box-shadow:inset 0 0 30px #0d5ab91c,0 14px 45px #0005;padding:24px}.feature{text-align:center;min-height:170px}.ficon{font-size:37px;color:#29a9ff;text-shadow:0 0 18px #168effaa}.card h3{margin:12px 0 7px;font-size:16px}.card p{margin:0;color:#91a5be;font-size:12px;line-height:1.5}
+
+/* INFO */
+.info{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:14px;margin-top:28px}
+.info .card{min-height:245px}.head{display:flex;align-items:center;justify-content:space-between;font-size:17px;font-weight:900}.verified{color:#23e5a5;background:#063b32;border:1px solid #0c8d6c;padding:6px 10px;border-radius:999px;font-size:10px}
+.rows{margin-top:14px}.row{display:flex;justify-content:space-between;gap:15px;padding:8px 0;border-bottom:1px solid #28435e55;color:#90a5bf;font-size:11px}.row b{color:#ecf4ff;text-align:right}.addr{font-family:ui-monospace,monospace;font-size:9px;word-break:break-all;color:#b7dcff!important}
+.creator{display:flex;gap:15px;align-items:center;margin-top:20px}.creator-avatar{width:82px;height:82px;border-radius:50%;border:2px solid #28aaff;object-fit:cover;background:#06172d}.creator-name{font-weight:950;font-size:17px}.role{color:#61c7ff;font-size:10px;margin-top:4px}.quote{color:#93a7bf;font-size:11px;line-height:1.55;margin-top:15px}
+.chart{height:145px;display:flex;align-items:center;justify-content:center}.donut{width:120px;height:120px;border-radius:50%;background:conic-gradient(#238dff 0 100%,#102e52 100%);display:grid;place-items:center;box-shadow:0 0 35px #147fff44}.donut:after{content:"100%";width:82px;height:82px;border-radius:50%;background:#06152b;display:grid;place-items:center;font-weight:950}
+
+/* ROADMAP */
+.roadmap{margin-top:32px;border:1px solid #1874c8;border-radius:18px;background:#041329cc;display:grid;grid-template-columns:repeat(4,1fr);overflow:hidden}.phase{position:relative;padding:24px 22px 25px;border-right:1px solid #23507877}.phase:last-child{border:0}.phase:before{content:"";position:absolute;top:18px;left:0;right:0;height:2px;background:linear-gradient(90deg,#16d99c,#198eff,#a33bff,#ef27b8)}.phase-badge{position:relative;display:inline-grid;place-items:center;width:42px;height:42px;border-radius:50%;margin-bottom:18px;background:#082d60;border:2px solid #238fff;color:#67d1ff;box-shadow:0 0 20px #168eff66}.phase h3{margin:0 0 8px}.phase p{color:#66b9ff;font-size:11px;font-weight:850}.phase ul{margin:10px 0 0;padding-left:17px;color:#9aafc7;font-size:11px;line-height:1.9}
+
+/* FAQ */
+.faq{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}.faq details{border:1px solid #1b5e9b;border-radius:12px;background:#05152ce8;padding:15px}.faq summary{cursor:pointer;font-weight:800;font-size:13px}.faq p{color:#91a5bf;font-size:11px;line-height:1.6;margin:11px 0 0}
+
+/* CTA + FOOTER */
+.cta{margin:65px 0 20px;border:1px solid #287fe1;border-radius:20px;background:linear-gradient(90deg,#061a38ee,#071b3cee);display:flex;align-items:center;justify-content:space-between;padding:23px 28px;box-shadow:0 0 45px #007cff1c}.cta-brand{display:flex;align-items:center;gap:12px;font-size:30px;font-weight:950;letter-spacing:3px}.cta-brand img{width:60px}.cta h2{margin:0;text-align:center;font-size:20px}.cta p{margin:4px 0 0;text-align:center;color:#8fa5bf;font-size:11px}
+footer{padding:18px 0 35px;border-top:1px solid #17365777}.footer{display:flex;justify-content:space-between;align-items:center;color:#72869e;font-size:10px}.footer b{color:#54b9ff}
+
+/* MODAL */
+.modal{position:fixed;inset:0;z-index:100;background:#000a;backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center;padding:14px}.modal.show{display:flex}.sheet{width:min(520px,100%);background:#06152a;border:1px solid #2b70ad;border-radius:22px;padding:20px;box-shadow:0 -15px 70px #000b}.sheet-top{display:flex;justify-content:space-between}.sheet h3{margin:0;font-size:23px}.sheet p{color:#8ea2bb;font-size:12px;line-height:1.5}.close{background:none;border:0;color:white;font-size:27px;cursor:pointer}.wallet-option{width:100%;display:flex;align-items:center;gap:12px;padding:14px;margin:8px 0;border-radius:13px;border:1px solid #244e79;background:#0a203b;color:white;cursor:pointer;text-align:left;font-weight:850}.wallet-option:hover{border-color:#54c7ff;background:#0c294a}.wico{width:37px;height:37px;display:grid;place-items:center;border-radius:9px;background:#102d4d;font-size:20px}
+.note{margin-top:11px;padding:10px;border-radius:10px;background:#041024;color:#7087a3;font-size:10px;line-height:1.5}
+
+/* RESPONSIVE */
+@media(max-width:1000px){.links{display:none}.hero-grid{grid-template-columns:1fr}.visual{min-height:500px}.features{grid-template-columns:repeat(2,1fr)}.info{grid-template-columns:1fr 1fr}.info .card:first-child{grid-column:span 2}.roadmap{grid-template-columns:repeat(2,1fr)}.phase:nth-child(2){border-right:0}.phase{border-bottom:1px solid #23507877}}
+@media(max-width:650px){.container{width:calc(100% - 28px)}.nav{height:68px}.logo{font-size:20px}.logo img{width:43px;height:43px}.navright .network{display:none}.navright .btn{padding:10px 12px;font-size:11px}.hero{padding-top:35px}.hero h1{font-size:70px;letter-spacing:-5px}.hero h2{font-size:39px}.hero p{font-size:15px}.actions{display:grid}.actions .btn{width:100%;text-align:center}.visual{min-height:505px}.planet{width:310px;height:310px;right:5px}.ring{width:315px;height:145px}.coin{width:250px}.base{width:280px}.wallet{width:285px;top:auto;bottom:0;right:50%;transform:translateX(50%)}.stats{grid-template-columns:1fr 1fr}.stat{padding:14px 10px}.stat:nth-child(2){border-right:0}.stat:nth-child(-n+2){border-bottom:1px solid #29496d77}.stat strong{font-size:14px}.features,.info,.faq{grid-template-columns:1fr}.info .card:first-child{grid-column:auto}.roadmap{grid-template-columns:1fr}.phase{border-right:0;border-bottom:1px solid #23507877}.cta{flex-direction:column;gap:18px;text-align:center}.footer{flex-direction:column;gap:10px;text-align:center}.title{font-size:31px}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <nav class="nav"><div class="brand"><img src="alek-logo.png" alt="ALEK">ALEK</div></nav>
-  <main class="hero">
-    <img src="alek-logo.png" alt="ALEK logo">
-    <div class="eyebrow">AI • BLOCKCHAIN • FUTURE</div>
-    <h1>ALEK</h1>
-    <p>A utility-focused Web3 project building practical AI-powered products around the ALK token.</p>
-    <button class="btn" id="connectBtn">Connect Wallet</button>
-    <div class="status" id="status">Not connected</div>
-    <button class="btn secondary" style="margin-top:14px" onclick="window.open('https://eth-sepolia.blockscout.com/address/0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F','_blank')">Verified Contract</button>
-    <div class="status" id="walletLine"></div>
-  </main>
 
-  <section class="card">
-    <h2>AI + Web3</h2>
-    <p>Designed around real utility, automation and future AI services using blockchain infrastructure.</p>
-    <div class="grid">
-      <div class="mini"><strong>1,000,000</strong>ALK total supply</div>
-      <div class="mini"><strong>18</strong>Decimals</div>
-      <div class="mini"><strong>Sepolia</strong>Test network</div>
-    </div>
-  </section>
-  <section class="card"><h2>Roadmap</h2><ul><li>Token and smart-contract foundation</li><li>Wallet and Web3 integration</li><li>AI-powered utility products</li><li>Mainnet after testing and security review</li></ul></section>
-  <section class="card"><h2>FAQ</h2><p><b>Is ALK live on mainnet?</b><br>Not yet. The current contract is on Ethereum Sepolia for testing.</p><p><b>What is the goal?</b><br>Build real AI + Web3 utility rather than relying on token speculation.</p></section>
+<nav><div class="container nav">
+<a class="logo" href="#"><img src="alek-logo.png" alt="ALEK">ALEK</a>
+<div class="links">
+<a href="#about">Home</a><a href="#about">About</a><a href="#tokenomics">Tokenomics</a><a href="#roadmap">Roadmap</a><a href="#contract">Contract</a><a href="#creator">Creator</a><a href="#faq">FAQ</a>
+</div>
+<div class="navright"><span class="network"><span class="dot"></span>Sepolia</span><button class="btn" onclick="openWallet()">Connect Wallet</button></div>
+</div></nav>
+
+<main>
+<section class="hero"><div class="container hero-grid">
+<div>
+<div class="badge"><span class="dot"></span>LIVE ON SEPOLIA TESTNET</div>
+<h1>ALEK</h1><h2>AI + Web3</h2>
+<p>A utility-focused Web3 project building practical AI-powered products around the ALK token.</p>
+<div class="pills"><span class="pill">◈ AI TECHNOLOGY</span><span class="pill">⬡ BLOCKCHAIN</span><span class="pill">◎ WEB3 UTILITY</span></div>
+<div class="actions"><button class="btn" onclick="openWallet()">▣ &nbsp; Connect Wallet</button><a class="btn secondary" target="_blank" href="https://eth-sepolia.blockscout.com/address/0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F">◉ &nbsp; View Contract</a></div>
+<div class="meta"><span>Token <b>ALK</b></span><span>Supply <b>1,000,000</b></span><span>Decimals <b>18</b></span></div>
 </div>
 
-<div class="modal" id="modal">
-  <div class="sheet">
-    <button class="close" id="closeBtn">×</button>
-    <h3>Connect your wallet</h3>
-    <p class="hint">Choose the wallet you want to use. On mobile, the selected wallet will open its DApp browser.</p>
-    <button class="wallet" data-wallet="okx"><span class="ico">🟢</span><span>OKX Wallet</span></button>
-    <button class="wallet" data-wallet="metamask"><span class="ico">🦊</span><span>MetaMask</span></button>
-    <button class="wallet" data-wallet="coinbase"><span class="ico">🔵</span><span>Coinbase Wallet</span></button>
-    <button class="wallet" data-wallet="trust"><span class="ico">🛡️</span><span>Trust Wallet</span></button>
-    <button class="wallet" data-wallet="browser"><span class="ico">🌐</span><span>Browser Wallet</span></button>
-    <div class="tiny">Ethereum Sepolia • ALK</div>
-  </div>
+<div class="visual">
+<div class="glow"></div><div class="planet"></div><div class="ring"></div><div class="base"></div>
+<img class="coin" src="alek-logo.png" alt="ALEK Coin">
+<div class="wallet">
+<div class="wtop"><span id="wStatus"><span class="dot"></span>Wallet Connected</span><span id="wNetwork">Sepolia</span></div>
+<div class="wline"></div>
+<div class="address"><span class="avatar"></span><span id="wAddress">0xc6d7...dd8a<br><span class="small">◆ Network: Ethereum Sepolia</span></span></div>
+<div class="balance-label">Balance</div>
+<div class="balance"><img src="alek-logo.png" alt=""> <span id="wBalance">1,000,000 ALK</span></div>
+<button class="wbtn ok" id="successBtn">● Successfully Connected</button>
+<button class="wbtn" onclick="addToken()">Add ALK to Wallet</button>
+<button class="wbtn dark" onclick="disconnect()">Disconnect</button>
 </div>
+</div></div></section>
+
+<div class="container"><div class="stats">
+<div class="stat"><div class="icon">◉</div><div><strong>1,000,000 ALK</strong><span>Total Supply</span></div></div>
+<div class="stat"><div class="icon">⬡</div><div><strong>ERC-20</strong><span>Token Standard</span></div></div>
+<div class="stat"><div class="icon">◆</div><div><strong>Sepolia</strong><span>Testnet</span></div></div>
+<div class="stat"><div class="icon">⊕</div><div><strong>0.0%</strong><span>Buy/Sell Tax</span></div></div>
+</div></div>
+
+<section id="about"><div class="container">
+<div class="center"><div class="kicker">WHY ALEK?</div><h2 class="title">Real utility. Real technology. Real future.</h2><p class="subtitle">Built around useful AI and Web3 products, transparent infrastructure and long-term development.</p></div>
+<div class="features">
+<div class="card feature"><div class="ficon">♙</div><h3>AI Integration</h3><p>AI-powered products<br>and automation tools</p></div>
+<div class="card feature"><div class="ficon">⬡</div><h3>Web3 Utility</h3><p>Real-world use cases<br>and digital products</p></div>
+<div class="card feature"><div class="ficon">♢</div><h3>Secure & Transparent</h3><p>Verified smart contract<br>on Ethereum</p></div>
+<div class="card feature"><div class="ficon">◎</div><h3>Global Vision</h3><p>Building for the future<br>of technology</p></div>
+</div>
+</div></section>
+
+<section id="contract"><div class="container">
+<div class="info">
+<div class="card"><div class="head"><span>◆ &nbsp; Verified Contract</span><span class="verified">● Verified</span></div><div class="rows">
+<div class="row"><span>Token Name</span><b>ALEK</b></div><div class="row"><span>Symbol</span><b>ALK</b></div><div class="row"><span>Decimals</span><b>18</b></div><div class="row"><span>Network</span><b>Ethereum Sepolia</b></div><div class="row"><span>Supply</span><b>1,000,000 ALK</b></div><div class="row"><span>Contract</span><b class="addr">0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F</b></div></div>
+<a class="btn secondary" style="display:block;text-align:center;margin-top:14px;padding:10px" target="_blank" href="https://eth-sepolia.blockscout.com/address/0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F">View on Blockscout ↗</a>
+</div>
+
+<div class="card" id="creator"><div class="head"><span>♛ &nbsp; Creator</span></div>
+<div class="creator"><div class="creator-avatar"></div><div><div class="creator-name">Rostom Orjonikidze</div><div class="role">Founder & Creator</div></div></div>
+<p class="quote">“Building the future with technology, AI and blockchain. ALEK is more than a token — it’s a vision.”</p>
+<div class="rows"><div class="row"><span>Project</span><b>ALEK • ALK</b></div><div class="row"><span>Current Stage</span><b>Sepolia Testnet</b></div></div>
+</div>
+
+<div class="card" id="tokenomics"><div class="head"><span>▥ &nbsp; Tokenomics</span></div><div class="rows"><div class="row"><span>Total Supply</span><b>1,000,000 ALK</b></div><div class="row"><span>Allocation</span><b>100% Fixed Supply</b></div></div><div class="chart"><div class="donut"></div></div></div>
+</div></div></section>
+
+<section id="roadmap"><div class="container"><div class="center"><div class="kicker">ROADMAP</div><h2 class="title">Our journey to the future</h2><p class="subtitle">A clear path from testnet to a real AI + Web3 ecosystem.</p></div>
+<div class="roadmap">
+<div class="phase"><div class="phase-badge">✓</div><p>PHASE 1</p><h3>Launch</h3><ul><li>Smart Contract</li><li>Website</li><li>Community</li><li>Sepolia Testnet</li></ul></div>
+<div class="phase"><div class="phase-badge">⌂</div><p>PHASE 2</p><h3>Development</h3><ul><li>AI Tools</li><li>Web3 Integration</li><li>Marketplace</li><li>DApp Development</li></ul></div>
+<div class="phase"><div class="phase-badge">◈</div><p>PHASE 3</p><h3>Expansion</h3><ul><li>Mainnet</li><li>Exchange Research</li><li>Global Partners</li><li>Mobile App</li></ul></div>
+<div class="phase"><div class="phase-badge">↗</div><p>PHASE 4</p><h3>Ecosystem</h3><ul><li>Full AI Platform</li><li>DeFi Integration</li><li>NFT Marketplace</li><li>Global Adoption</li></ul></div>
+</div></div></section>
+
+<section id="faq"><div class="container"><div class="center"><div class="kicker">FAQ</div><h2 class="title">Frequently Asked Questions</h2></div>
+<div class="faq">
+<details open><summary>What is ALEK?</summary><p>ALEK is an AI + Web3 utility project building practical AI-powered products around the ALK token.</p></details>
+<details><summary>How many ALK tokens are there?</summary><p>The current Sepolia contract has a fixed total supply of 1,000,000 ALK with 18 decimals.</p></details>
+<details><summary>What network is ALEK on?</summary><p>The current deployment is on Ethereum Sepolia testnet for development and testing.</p></details>
+<details><summary>How can I connect my wallet?</summary><p>Use the Connect Wallet button. Desktop wallets can connect through their browser provider; on mobile, use the wallet app's DApp browser for the most reliable connection.</p></details>
+</div></div></section>
+
+<div class="container"><div class="cta"><div class="cta-brand"><img src="alek-logo.png" alt="">ALEK</div><div><h2>Join the Future</h2><p>Be part of the next generation of Web3 and AI technology.</p></div><button class="btn" onclick="openWallet()">▣ &nbsp; Connect Wallet</button></div></div>
+</main>
+
+<footer><div class="container footer"><span>© 2026 ALEK. All rights reserved.</span><span>Created by <b>Rostom Orjonikidze</b> ♛</span><span>AI • Blockchain • Future</span></div></footer>
+
+<div class="modal" id="modal"><div class="sheet">
+<div class="sheet-top"><div><h3>Connect Wallet</h3><p>Select a wallet. On mobile, the wallet app may open its DApp browser.</p></div><button class="close" onclick="closeWallet()">×</button></div>
+<button class="wallet-option" onclick="choose('okx')"><span class="wico">🟢</span>OKX Wallet</button>
+<button class="wallet-option" onclick="choose('metamask')"><span class="wico">🦊</span>MetaMask</button>
+<button class="wallet-option" onclick="choose('coinbase')"><span class="wico">🔵</span>Coinbase Wallet</button>
+<button class="wallet-option" onclick="choose('trust')"><span class="wico">🛡️</span>Trust Wallet</button>
+<button class="wallet-option" onclick="choose('browser')"><span class="wico">🌐</span>Browser Wallet</button>
+<div class="note">The website reads the ALK balance directly from the verified Sepolia contract. For iPhone, opening ALEK inside the wallet's DApp browser provides the most reliable connection.</div>
+</div></div>
 
 <script>
 const CONTRACT="0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F";
 const RPC="https://ethereum-sepolia-rpc.publicnode.com";
-const CHAIN_ID="0xaa36a7";
-const DECIMALS=18;
-const ABI=["0x70a08231"]; // balanceOf(address)
-let provider=null, account=null;
+const CHAIN="0xaa36a7";
+const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+let current=null;
 
-const $=id=>document.getElementById(id);
-const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-function setStatus(text, ok=false){$("status").textContent=text;$("status").style.color=ok?"#8de0bc":"#aebbd0"}
-function short(a){return a?a.slice(0,6)+"..."+a.slice(-4):""}
-
-async function rpc(method, params=[]){
-  const r=await fetch(RPC,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method,params})});
-  const j=await r.json(); if(j.error) throw new Error(j.error.message); return j.result;
+function openWallet(){document.getElementById("modal").classList.add("show")}
+function closeWallet(){document.getElementById("modal").classList.remove("show")}
+document.getElementById("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeWallet()})
+function short(a){return a.slice(0,6)+"..."+a.slice(-4)}
+function injected(){return window.okxwallet||window.ethereum||null}
+async function rpc(method,params=[]){
+ const r=await fetch(RPC,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method,params})});
+ const j=await r.json(); if(j.error)throw Error(j.error.message); return j.result;
 }
-function padAddress(a){return a.slice(2).toLowerCase().padStart(64,"0")}
-async function readBalance(a){
-  const data=await rpc("eth_call",[{to:CONTRACT,data:ABI[0]+padAddress(a)},"latest"]);
-  const raw=BigInt(data);
-  const whole=raw/1000000000000000000n, frac=raw%1000000000000000000n;
-  const f=frac.toString().padStart(18,"0").replace(/0+$/,"");
-  return whole.toLocaleString()+ (f? "."+f:"");
+async function balance(addr){
+ const data="0x70a08231"+addr.slice(2).toLowerCase().padStart(64,"0");
+ const raw=BigInt(await rpc("eth_call",[{to:CONTRACT,data},"latest"]));
+ const whole=raw/1000000000000000000n;
+ const frac=(raw%1000000000000000000n).toString().padStart(18,"0").replace(/0+$/,"");
+ return whole.toLocaleString()+(frac?"."+frac:"");
 }
-async function render(a){
-  account=a;
-  try{
-    const bal=await readBalance(a);
-    setStatus("Connected • "+bal+" ALK",true);
-    $("walletLine").textContent=short(a)+" • "+bal+" ALK";
-    localStorage.setItem("alek_last_account",a);
-  }catch(e){setStatus("Connected • "+short(a),true)}
+async function connect(p){
+ const accounts=await p.request({method:"eth_requestAccounts"});
+ const addr=accounts[0]; if(!addr)throw Error("No wallet account returned");
+ const chain=await p.request({method:"eth_chainId"});
+ if(chain.toLowerCase()!==CHAIN){
+   try{await p.request({method:"wallet_switchEthereumChain",params:[{chainId:CHAIN}]})}
+   catch(e){throw Error("Please switch your wallet to Ethereum Sepolia")}
+ }
+ current=p;
+ const b=await balance(addr);
+ document.getElementById("wAddress").innerHTML=short(addr)+"<br><span class='small'>◆ Network: Ethereum Sepolia</span>";
+ document.getElementById("wBalance").textContent=b+" ALK";
+ document.getElementById("wStatus").innerHTML="<span class='dot'></span>Wallet Connected";
+ document.getElementById("successBtn").textContent="● Successfully Connected";
+ localStorage.setItem("alekWallet",addr);
+ closeWallet();
 }
-
-function injected(){
-  return window.okxwallet || window.ethereum || null;
+function deepLink(type){
+ const d=encodeURIComponent("https://alek.best");
+ if(type==="okx")return "https://www.okx.com/download?deeplink="+encodeURIComponent("okx://wallet/dapp/url?dappUrl=https%3A%2F%2Falek.best");
+ if(type==="metamask")return "https://metamask.app.link/dapp/alek.best";
+ if(type==="coinbase")return "https://go.cb-w.com/dapp?cb_url="+d;
+ if(type==="trust")return "https://link.trustwallet.com/open_url?url="+d;
+ return null;
 }
-
-async function connectInjected(p){
-  if(!p) throw new Error("No browser wallet detected");
-  try{await p.request({method:"eth_requestAccounts"});}catch(e){throw e}
-  const accounts=await p.request({method:"eth_accounts"});
-  if(!accounts||!accounts[0]) throw new Error("Wallet did not return an account");
-  const chain=await p.request({method:"eth_chainId"});
-  if(chain.toLowerCase()!==CHAIN_ID){
-    try{await p.request({method:"wallet_switchEthereumChain",params:[{chainId:CHAIN_ID}]})}
-    catch(e){setStatus("Please switch your wallet to Sepolia");throw e}
-  }
-  await render(accounts[0]);
-  provider=p;
-  p.on?.("accountsChanged", a=>a?.[0]?render(a[0]):setStatus("Not connected"));
-  p.on?.("chainChanged", ()=>location.reload());
-}
-
-function walletDeepLink(type){
-  const dapp=encodeURIComponent("https://alek.best");
-  if(type==="okx") return "https://www.okx.com/download?deeplink="+encodeURIComponent("okx://wallet/dapp/url?dappUrl=https%3A%2F%2Falek.best");
-  if(type==="metamask") return "https://metamask.app.link/dapp/alek.best";
-  if(type==="coinbase") return "https://go.cb-w.com/dapp?cb_url="+dapp;
-  if(type==="trust") return "https://link.trustwallet.com/open_url?url="+dapp;
-  return null;
-}
-
 async function choose(type){
-  $("modal").classList.remove("show");
-  const p=injected();
-  if((type==="browser") && p){try{await connectInjected(p);return}catch(e){}}
-  if(!isMobile && p){try{await connectInjected(p);return}catch(e){setStatus(e.message||"Connection failed");return}}
-  const link=walletDeepLink(type);
-  if(link){
-    setStatus("Opening "+type+"…");
-    window.location.href=link;
-    return;
-  }
-  setStatus("Open this page inside your wallet's DApp browser.");
+ closeWallet();
+ const p=injected();
+ if(p && (type==="browser" || !mobile)){
+   try{await connect(p);return}catch(e){alert(e.message||"Wallet connection failed");return}
+ }
+ const url=deepLink(type);
+ if(url){window.location.href=url;return}
+ alert("Open alek.best inside your wallet's DApp browser.");
 }
-
-$("connectBtn").onclick=()=> $("modal").classList.add("show");
-$("closeBtn").onclick=()=> $("modal").classList.remove("show");
-$("modal").addEventListener("click",e=>{if(e.target===$("modal"))$("modal").classList.remove("show")});
-document.querySelectorAll(".wallet").forEach(b=>b.onclick=()=>choose(b.dataset.wallet));
-
-async function autoRestore(){
-  const p=injected();
-  if(p){
-    try{
-      const a=await p.request({method:"eth_accounts"});
-      if(a?.[0]){await render(a[0]);provider=p;return}
-    }catch(e){}
-  }
-  const saved=localStorage.getItem("alek_last_account");
-  if(saved){
-    // Never claim a wallet is connected solely from localStorage.
-    $("walletLine").textContent="Previously used wallet: "+short(saved);
-  }
+async function addToken(){
+ const p=injected(); if(!p){alert("Open ALEK inside your wallet app first.");return}
+ try{
+  await p.request({method:"wallet_watchAsset",params:{type:"ERC20",options:{address:CONTRACT,symbol:"ALK",decimals:18,image:"https://alek.best/alek-logo.png"}}});
+ }catch(e){alert("Could not add token automatically. Add ALK manually using the verified contract address.")}
 }
-autoRestore();
+function disconnect(){
+ current=null; localStorage.removeItem("alekWallet");
+ document.getElementById("wStatus").innerHTML="<span class='dot'></span>Wallet Not Connected";
+ document.getElementById("wAddress").innerHTML="Connect a wallet<br><span class='small'>Ethereum Sepolia</span>";
+ document.getElementById("wBalance").textContent="— ALK";
+}
+(async()=>{
+ const p=injected();
+ if(p){try{const a=(await p.request({method:"eth_accounts"}))[0];if(a)await connect(p)}catch(e){}}
+})();
 </script>
 </body>
 </html>
