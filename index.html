@@ -20,7 +20,7 @@
 <h1>ALEK</h1>
 <p>A utility-focused Web3 project building practical AI-powered products around the ALK token.</p>
 <div class="actions"><button class="btn primary" id="connectBtn">Connect Wallet</button><a class="btn" href="https://eth-sepolia.blockscout.com/address/0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F" target="_blank" rel="noopener">Verified Contract</a></div>
-<div class="status" id="status">Ethereum Sepolia • ALK</div>
+<div class="status" id="status">Ethereum Sepolia • Connect your wallet to view ALK balance</div>
 </section>
 <section class="wrap grid">
 <div class="card"><h3>AI + Web3</h3><p>Designed around real utility, automation and future AI services.</p></div>
@@ -38,51 +38,119 @@ const CONTRACT='0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F';
 const RPC='https://ethereum-sepolia-rpc.publicnode.com';
 const CHAIN='0xaa36a7';
 const DAPP_URL='https://alek.best/';
-const statusEl=document.getElementById('status'), modal=document.getElementById('walletModal');
+const statusEl=document.getElementById('status');
+const modal=document.getElementById('walletModal');
+const connectBtn=document.getElementById('connectBtn');
 const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+let activeProvider=null;
+let discoveredProviders=[];
+
 function setStatus(t,ok=false){statusEl.textContent=t;statusEl.className='status'+(ok?' success':'')}
 function openModal(){modal.classList.add('show');modal.setAttribute('aria-hidden','false')}
 function closeModal(){modal.classList.remove('show');modal.setAttribute('aria-hidden','true')}
 function shorten(a){return a.slice(0,6)+'…'+a.slice(-4)}
-function hexBalanceToALK(hex){try{return Number(BigInt(hex))/1e18}catch{return 0}}
-async function rpc(method,params=[]){const r=await fetch(RPC,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});const j=await r.json();if(j.error)throw new Error(j.error.message);return j.result}
-async function showWallet(address){
-  const data='0x70a08231'+address.slice(2).padStart(64,'0');
-  const raw=await rpc('eth_call',[{to:CONTRACT,data},'latest']);
-  const bal=hexBalanceToALK(raw);
-  setStatus(shorten(address)+' • '+bal.toLocaleString(undefined,{maximumFractionDigits:6})+' ALK',true);
-}
-function getProvider(){return window.okxwallet || window.ethereum || null}
-async function browserConnect(){
-  closeModal();
-  const p=getProvider();
-  if(!p){setStatus('No browser wallet detected. On iPhone, choose Open in OKX Wallet.');return}
+function formatALK(raw){
   try{
-    const accounts=await p.request({method:'eth_requestAccounts'});
-    const chain=await p.request({method:'eth_chainId'});
-    if(chain!==CHAIN){
-      try{await p.request({method:'wallet_switchEthereumChain',params:[{chainId:CHAIN}]})}
-      catch(e){setStatus('Please switch your wallet to Ethereum Sepolia.');return}
+    const n=BigInt(raw);
+    const whole=n/1000000000000000000n;
+    const frac=(n%1000000000000000000n).toString().padStart(18,'0').slice(0,6).replace(/0+$/,'');
+    return whole.toLocaleString()+(frac?'.'+frac:'');
+  }catch{return '0'}
+}
+async function rpc(method,params=[]){
+  const r=await fetch(RPC,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:Date.now(),method,params})});
+  const j=await r.json();
+  if(j.error) throw new Error(j.error.message||'RPC error');
+  return j.result;
+}
+async function readALK(address){
+  const data='0x70a08231'+address.slice(2).padStart(64,'0');
+  return rpc('eth_call',[{to:CONTRACT,data},'latest']);
+}
+async function showWallet(address){
+  if(!address) return;
+  const raw=await readALK(address);
+  const bal=formatALK(raw);
+  setStatus(shorten(address)+' • '+bal+' ALK',true);
+  connectBtn.textContent='Connected • '+bal+' ALK';
+}
+function addProvider(p){
+  if(p && !discoveredProviders.includes(p)) discoveredProviders.push(p);
+}
+function findProvider(){
+  if(window.okxwallet) return window.okxwallet;
+  if(window.ethereum) return window.ethereum;
+  return discoveredProviders[0]||null;
+}
+window.addEventListener('eip6963:announceProvider',e=>addProvider(e.detail?.provider));
+window.dispatchEvent(new Event('eip6963:requestProvider'));
+
+async function connectInjected(){
+  const p=findProvider();
+  if(!p){
+    setStatus('OKX wallet provider not available.');
+    return false;
+  }
+  activeProvider=p;
+  try{
+    let accounts=await p.request({method:'eth_accounts'});
+    if(!accounts || !accounts.length){
+      accounts=await p.request({method:'eth_requestAccounts'});
+    }
+    if(!accounts || !accounts.length){setStatus('Wallet connection was not approved.');return false}
+    let chain=await p.request({method:'eth_chainId'});
+    if(String(chain).toLowerCase()!==CHAIN){
+      try{
+        await p.request({method:'wallet_switchEthereumChain',params:[{chainId:CHAIN}]});
+      }catch(e){
+        setStatus('Please select Ethereum Sepolia in OKX Wallet.');
+        return false;
+      }
     }
     await showWallet(accounts[0]);
-  }catch(e){setStatus(e?.message||'Wallet connection cancelled.')}
+    return true;
+  }catch(e){
+    console.error(e);
+    setStatus(e?.message||'Wallet connection failed.');
+    return false;
+  }
 }
 function openOKX(){
-  // Direct user-click deep link: opens the current DApp inside OKX Wallet's built-in DApp browser.
-  const link='okx://wallet/dapp/url?dappUrl='+encodeURIComponent(DAPP_URL);
-  window.location.href=link;
   setStatus('Opening OKX Wallet…');
-  setTimeout(()=>{
-    if(document.visibilityState==='visible') setStatus('If OKX did not open, open the OKX app and use its DApp browser for alek.best.');
-  },1800);
+  // Must be called directly from the user's tap on iOS.
+  const deepLink='okx://wallet/dapp/url?dappUrl='+encodeURIComponent(DAPP_URL);
+  window.location.assign(deepLink);
 }
-document.getElementById('connectBtn').onclick=()=>{if(isMobile)openModal();else browserConnect()};
-document.getElementById('okxBtn').onclick=()=>{closeModal();openOKX()};
-document.getElementById('browserBtn').onclick=browserConnect;
-document.getElementById('closeBtn').onclick=closeModal;
+async function mainConnect(){
+  // In OKX's DApp browser, connect the injected provider directly.
+  const p=findProvider();
+  if(p){
+    await connectInjected();
+    return;
+  }
+  if(isMobile){openModal();return}
+  setStatus('No browser wallet detected.');
+}
+
+connectBtn.addEventListener('click',mainConnect);
+document.getElementById('okxBtn').addEventListener('click',()=>{closeModal();openOKX()});
+document.getElementById('browserBtn').addEventListener('click',connectInjected);
+document.getElementById('closeBtn').addEventListener('click',closeModal);
 modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
-// If the page is already inside an OKX/injected DApp browser, make the main button connect directly.
-if(getProvider()) document.getElementById('connectBtn').textContent='Connect OKX Wallet';
+
+async function restore(){
+  try{
+    const p=findProvider();
+    if(!p) return;
+    activeProvider=p;
+    const accounts=await p.request({method:'eth_accounts'});
+    if(accounts && accounts[0]) await showWallet(accounts[0]);
+    p.on?.('accountsChanged',a=>{if(a?.[0]) showWallet(a[0]).catch(()=>{}); else {setStatus('Wallet disconnected.');connectBtn.textContent='Connect Wallet'}});
+    p.on?.('chainChanged',()=>{setTimeout(()=>{const a=activeProvider?.selectedAddress;if(a) showWallet(a).catch(()=>{})},500)});
+  }catch(e){console.log('restore',e)}
+}
+setTimeout(restore,300);
+setTimeout(restore,1200);
 </script>
 </body>
 </html>
