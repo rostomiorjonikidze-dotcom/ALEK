@@ -1,383 +1,88 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#070b16">
-  <meta name="description" content="ALEK — ALK utility token and AI + Web3 project.">
-  <meta property="og:title" content="ALEK — AI + Web3 Utility">
-  <meta property="og:description" content="Explore ALEK (ALK), connect your wallet, view your balance and inspect the verified Sepolia contract.">
-  <meta property="og:type" content="website">
-  <title>ALEK — AI + Web3 Utility</title>
-  <style>
-    :root{
-      --bg:#050812;--panel:rgba(13,19,35,.72);--panel2:rgba(17,25,45,.88);
-      --text:#f4f7ff;--muted:#9aa8c7;--line:rgba(148,163,184,.16);
-      --accent:#55b7ff;--accent2:#8b7cff;--good:#4ade80;--warn:#fbbf24;
-      --shadow:0 24px 80px rgba(0,0,0,.38);--radius:22px
-    }
-    *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
-    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      color:var(--text);background:
-      radial-gradient(circle at 15% 10%,rgba(56,189,248,.13),transparent 28%),
-      radial-gradient(circle at 85% 15%,rgba(139,124,255,.13),transparent 28%),
-      linear-gradient(180deg,#050812 0%,#070b16 55%,#04060d 100%);
-      min-height:100vh;overflow-x:hidden}
-    a{color:inherit;text-decoration:none}
-    .container{width:min(1120px,92vw);margin:auto}
-    .nav{position:sticky;top:0;z-index:20;background:rgba(5,8,18,.72);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
-    .navin{height:74px;display:flex;align-items:center;justify-content:space-between;gap:20px}
-    .brand{display:flex;align-items:center;gap:11px;font-weight:900;letter-spacing:.08em}
-    .brand img{width:40px;height:40px;border-radius:12px;object-fit:cover;box-shadow:0 0 30px rgba(85,183,255,.22)}
-    .links{display:flex;gap:20px;color:var(--muted);font-size:14px}
-    .links a:hover{color:#fff}
-    .btn{border:1px solid rgba(85,183,255,.45);background:linear-gradient(135deg,rgba(85,183,255,.2),rgba(139,124,255,.16));
-      color:#fff;border-radius:13px;padding:12px 17px;font-weight:800;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:8px}
-    .btn:hover{transform:translateY(-1px);border-color:rgba(85,183,255,.8);box-shadow:0 10px 35px rgba(85,183,255,.12)}
-    .btn.secondary{background:rgba(255,255,255,.04);border-color:var(--line)}
-    .hero{padding:92px 0 70px;display:grid;grid-template-columns:1.05fr .95fr;gap:55px;align-items:center}
-    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--line);border-radius:999px;color:#c8d5ef;background:rgba(255,255,255,.035);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
-    .dot{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 15px var(--good)}
-    h1{font-size:clamp(48px,8vw,86px);line-height:.93;margin:20px 0 20px;letter-spacing:-.055em}
-    .gradient{background:linear-gradient(100deg,#fff 10%,#8fd8ff 48%,#a69aff 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
-    .lead{font-size:19px;line-height:1.65;color:#b7c2d9;max-width:650px}
-    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
-    .status{margin-top:18px;color:var(--muted);font-size:13px;min-height:20px}
-    .hero-card{position:relative;padding:28px;border:1px solid var(--line);border-radius:30px;background:linear-gradient(180deg,rgba(17,25,45,.78),rgba(7,12,24,.68));box-shadow:var(--shadow);overflow:hidden}
-    .hero-card:before{content:"";position:absolute;inset:-40%;background:conic-gradient(from 90deg,transparent,rgba(85,183,255,.13),transparent,rgba(139,124,255,.12),transparent);animation:spin 16s linear infinite}
-    .hero-card>*{position:relative}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .coin{display:block;width:min(280px,70%);margin:12px auto 25px;border-radius:50%;filter:drop-shadow(0 0 45px rgba(85,183,255,.22))}
-    .balance{padding:18px;border:1px solid var(--line);background:rgba(0,0,0,.18);border-radius:18px}
-    .small{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.1em}
-    .big{font-size:30px;font-weight:900;margin-top:5px}
-    .address{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#a9b7d4;font-size:12px;word-break:break-all;margin-top:7px}
-    section{padding:78px 0}
-    .section-title{font-size:clamp(30px,4vw,48px);letter-spacing:-.04em;margin:0 0 12px}
-    .section-lead{color:var(--muted);max-width:760px;line-height:1.7}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px}
-    .card{padding:24px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:0 12px 45px rgba(0,0,0,.14)}
-    .card h3{margin:0 0 9px;font-size:18px}
-    .card p{margin:0;color:var(--muted);line-height:1.65;font-size:14px}
-    .icon{font-size:25px;margin-bottom:16px}
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:25px}
-    .stat{padding:21px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.025)}
-    .stat b{display:block;font-size:25px;margin-bottom:5px}
-    .stat span{color:var(--muted);font-size:12px}
-    .token-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:28px}
-    .row{display:flex;justify-content:space-between;gap:20px;padding:14px 0;border-bottom:1px solid var(--line);font-size:14px}
-    .row:last-child{border-bottom:0}
-    .row span:first-child{color:var(--muted)}
-    .row span:last-child{font-weight:800;text-align:right}
-    .allocation{display:flex;height:16px;overflow:hidden;border-radius:999px;background:#151c2d;margin:18px 0}
-    .seg1{width:50%}.seg2{width:20%}.seg3{width:15%}.seg4{width:10%}.seg5{width:5%}
-    .legend{display:grid;grid-template-columns:1fr 1fr;gap:9px;color:var(--muted);font-size:13px}
-    .legend span{display:flex;justify-content:space-between}
-    .roadmap{display:grid;gap:13px;margin-top:28px}
-    .phase{display:grid;grid-template-columns:110px 1fr;gap:20px;padding:21px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.025)}
-    .phase strong{color:#8fd8ff}.phase p{margin:5px 0 0;color:var(--muted);line-height:1.6;font-size:14px}
-    .faq{display:grid;gap:10px;margin-top:25px}
-    details{border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025);padding:17px 18px}
-    summary{cursor:pointer;font-weight:800}
-    details p{color:var(--muted);line-height:1.65;margin:12px 0 0;font-size:14px}
-    .notice{padding:18px;border:1px solid rgba(251,191,36,.25);background:rgba(251,191,36,.06);border-radius:18px;color:#d8c48c;font-size:13px;line-height:1.6;margin-top:20px}
-    footer{border-top:1px solid var(--line);padding:35px 0 45px;color:var(--muted);font-size:13px}
-    .footerin{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
-    .toast{position:fixed;right:20px;bottom:20px;z-index:50;background:#11192a;border:1px solid var(--line);padding:13px 16px;border-radius:13px;box-shadow:var(--shadow);display:none}
-    .toast.show{display:block}
-    .wallet-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(2,5,12,.72);backdrop-filter:blur(14px)}
-    .wallet-modal.show{display:flex}
-    .wallet-box{width:min(460px,94vw);border:1px solid rgba(148,163,184,.2);border-radius:24px;background:#0b1222;box-shadow:0 30px 100px rgba(0,0,0,.55);padding:22px}
-    .wallet-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:15px}
-    .wallet-head h3{margin:0;font-size:22px}.close{border:0;background:rgba(255,255,255,.06);color:#fff;width:38px;height:38px;border-radius:12px;cursor:pointer;font-size:20px}
-    .wallet-option{width:100%;display:flex;align-items:center;gap:14px;text-align:left;padding:15px;margin-top:10px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.035);color:#fff;cursor:pointer}
-    .wallet-option:hover{border-color:rgba(85,183,255,.65);background:rgba(85,183,255,.08)}
-    .wallet-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.08);font-size:21px;flex:0 0 auto}
-    .wallet-option b{display:block}.wallet-option span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
-    .wallet-note{color:var(--muted);font-size:12px;line-height:1.55;margin:15px 2px 3px}
-    @media(max-width:850px){
-      .links{display:none}.hero{grid-template-columns:1fr;padding-top:62px}.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.token-grid{grid-template-columns:1fr}
-      .hero-card{max-width:650px;margin:auto}.phase{grid-template-columns:1fr;gap:5px}
-    }
-    @media(max-width:520px){.stats{grid-template-columns:1fr 1fr}.btn{width:100%;justify-content:center}.actions{display:grid}.hero{padding-bottom:30px}section{padding:55px 0}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07111f">
+<meta name="description" content="ALEK — AI + Web3 Utility Project. ALK on Ethereum Sepolia.">
+<title>ALEK — AI + Web3</title>
+<style>
+:root{--bg:#050a12;--card:rgba(13,23,38,.82);--line:rgba(126,170,220,.18);--text:#f4f8ff;--muted:#9db0c8;--accent:#62b4ff;--accent2:#8bd7ff;--ok:#6ee7b7;--shadow:0 20px 70px rgba(0,0,0,.35)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 50% -10%,#12355c 0,#07111f 34%,#050a12 72%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;min-height:100vh}a{color:inherit;text-decoration:none}.wrap{width:min(1120px,92%);margin:auto}.nav{height:76px;display:flex;align-items:center;justify-content:space-between}.brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.08em}.brand img{width:38px;height:38px;border-radius:11px}.navlinks{display:flex;gap:22px;color:var(--muted);font-size:14px}.hero{padding:72px 0 56px;text-align:center}.logo{width:106px;height:106px;border-radius:28px;box-shadow:0 0 50px rgba(98,180,255,.18);margin-bottom:24px}.eyebrow{color:var(--accent2);font-size:13px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}.hero h1{font-size:clamp(44px,8vw,82px);line-height:.95;margin:14px 0 16px;letter-spacing:-.055em}.hero p{max-width:700px;margin:0 auto;color:var(--muted);font-size:18px;line-height:1.65}.actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:30px 0 12px}.btn{border:1px solid var(--line);background:rgba(255,255,255,.05);color:#fff;border-radius:14px;padding:14px 20px;font-weight:750;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:50px;transition:.18s}.btn:hover{transform:translateY(-1px);border-color:rgba(139,215,255,.45)}.btn.primary{background:linear-gradient(135deg,#4b9eff,#6ed4ff);color:#04101c;border:0;box-shadow:0 12px 34px rgba(78,160,255,.25)}.btn.okx{background:linear-gradient(135deg,#fff,#dce8f5);color:#07111f;border:0}.status{min-height:24px;color:var(--muted);font-size:14px}.status.success{color:var(--ok)}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0 72px}.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:var(--shadow);backdrop-filter:blur(16px)}.card h3{margin:0 0 10px}.card p{margin:0;color:var(--muted);line-height:1.6}.section{padding:18px 0 70px}.section h2{font-size:32px;margin:0 0 18px}.facts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.fact{padding:17px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025)}.fact b{display:block;margin-bottom:6px}.fact span{color:var(--muted);word-break:break-word}.roadmap{display:grid;gap:12px}.road{display:flex;gap:14px;align-items:flex-start}.dot{width:11px;height:11px;border-radius:50%;background:var(--accent);margin-top:7px;box-shadow:0 0 18px rgba(98,180,255,.65)}footer{padding:28px 0 42px;color:#71849c;font-size:13px;text-align:center}.modal{position:fixed;inset:0;background:rgba(0,0,0,.68);display:none;align-items:flex-end;justify-content:center;padding:16px;z-index:20}.modal.show{display:flex}.sheet{width:min(520px,100%);background:#0a1422;border:1px solid var(--line);border-radius:26px 26px 18px 18px;padding:22px;box-shadow:0 30px 90px rgba(0,0,0,.55)}.sheet h3{margin:0 0 7px;font-size:23px}.sheet p{color:var(--muted);line-height:1.5;margin:0 0 18px}.choice{width:100%;margin:10px 0}.close{background:transparent;color:var(--muted);border:0;width:100%;padding:12px;cursor:pointer}.walletline{display:flex;align-items:center;justify-content:space-between;gap:12px}.balance{font-size:30px;font-weight:800}.pill{display:inline-block;padding:6px 9px;border-radius:999px;background:rgba(110,231,183,.1);color:var(--ok);font-size:12px;font-weight:700}.small{font-size:12px;color:var(--muted)}@media(max-width:760px){.navlinks{display:none}.hero{padding-top:48px}.grid{grid-template-columns:1fr}.facts{grid-template-columns:1fr}.hero p{font-size:16px}.card{padding:20px}.nav{height:66px}.btn{width:100%}.actions{width:min(430px,100%);margin-left:auto;margin-right:auto}.modal{padding:10px}}
+</style>
 </head>
 <body>
-<header class="nav">
-  <div class="container navin">
-    <a class="brand" href="#top"><img src="alek-logo.png" alt="ALEK logo"><span>ALEK</span></a>
-    <nav class="links">
-      <a href="#about">About</a><a href="#token">Token</a><a href="#roadmap">Roadmap</a><a href="#faq">FAQ</a>
-    </nav>
-    <button class="btn" id="connectBtn">Connect Wallet</button>
-  </div>
-</header>
-
+<header class="wrap nav"><a class="brand" href="#top"><img src="alek-logo.png" alt="ALEK"><span>ALEK</span></a><nav class="navlinks"><a href="#token">Token</a><a href="#roadmap">Roadmap</a><a href="#faq">FAQ</a></nav></header>
 <main id="top">
-  <div class="container hero">
-    <div>
-      <div class="eyebrow"><span class="dot"></span> Live on Sepolia Testnet</div>
-      <h1><span class="gradient">ALEK</span><br>AI + Web3</h1>
-      <p class="lead">A utility-focused Web3 project built around ALK — a fixed-supply ERC-20 token designed to connect future AI services, digital products and Web3 experiences.</p>
-      <div class="actions">
-        <button class="btn" id="connectHero">Connect Wallet</button>
-        <a class="btn secondary" target="_blank" rel="noopener" href="https://eth-sepolia.blockscout.com/address/0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F">View Verified Contract ↗</a>
-        <button class="btn secondary" id="addToken">Add ALK to Wallet</button>
-      </div>
-      <div class="status" id="status">Wallet not connected.</div>
-    </div>
-
-    <div class="hero-card">
-      <img class="coin" src="alek-logo.png" alt="ALEK">
-      <div class="balance">
-        <div class="small">Your ALK balance</div>
-        <div class="big" id="balance">— ALK</div>
-        <div class="address" id="wallet">Connect your wallet to load your balance.</div>
-      </div>
-    </div>
-  </div>
-
-  <section id="about">
-    <div class="container">
-      <h2 class="section-title">Built for real utility.</h2>
-      <p class="section-lead">ALEK is being developed as a product-first project. The goal is to create useful AI/Web3 services where the token can have a clear role, rather than relying on promises of price growth.</p>
-      <div class="grid">
-        <article class="card"><div class="icon">✦</div><h3>AI Services</h3><p>Future premium AI tools and automation features can create real product revenue and practical token utility.</p></article>
-        <article class="card"><div class="icon">◈</div><h3>Web3 Utility</h3><p>ALK can be integrated into access, rewards, service credits and other on-chain experiences as the product matures.</p></article>
-        <article class="card"><div class="icon">◎</div><h3>Transparent Supply</h3><p>The current testnet token has a fixed 1,000,000 ALK supply with 18 decimals and no public mint function.</p></article>
-      </div>
-      <div class="stats">
-        <div class="stat"><b>1,000,000</b><span>Total ALK</span></div>
-        <div class="stat"><b>18</b><span>Decimals</span></div>
-        <div class="stat"><b>ERC-20</b><span>Token standard</span></div>
-        <div class="stat"><b>Sepolia</b><span>Current network</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="token">
-    <div class="container">
-      <h2 class="section-title">Tokenomics</h2>
-      <p class="section-lead">Initial project allocation for planning purposes. This is not a promise of returns or a market valuation.</p>
-      <div class="token-grid">
-        <div class="card">
-          <div class="row"><span>Name</span><span>ALEK</span></div>
-          <div class="row"><span>Symbol</span><span>ALK</span></div>
-          <div class="row"><span>Total supply</span><span>1,000,000 ALK</span></div>
-          <div class="row"><span>Decimals</span><span>18</span></div>
-          <div class="row"><span>Network</span><span>Ethereum Sepolia</span></div>
-          <div class="row"><span>Contract</span><span><a target="_blank" rel="noopener" href="https://eth-sepolia.blockscout.com/address/0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F">0xE06f…70d8F ↗</a></span></div>
-        </div>
-        <div class="card">
-          <h3>Planned allocation</h3>
-          <div class="allocation"><div class="seg1"></div><div class="seg2"></div><div class="seg3"></div><div class="seg4"></div><div class="seg5"></div></div>
-          <div class="legend">
-            <span>Project Treasury <b>50%</b></span><span>Liquidity <b>20%</b></span>
-            <span>Community <b>15%</b></span><span>Development <b>10%</b></span>
-            <span>Partnerships <b>5%</b></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="roadmap">
-    <div class="container">
-      <h2 class="section-title">Roadmap</h2>
-      <p class="section-lead">A practical sequence from the current testnet prototype toward a real product.</p>
-      <div class="roadmap">
-        <div class="phase"><strong>01 — NOW</strong><div><b>Foundation</b><p>Token contract, verification, wallet integration, public website and testnet validation.</p></div></div>
-        <div class="phase"><strong>02 — NEXT</strong><div><b>Product</b><p>Build the first useful AI/Web3 feature, user accounts and a simple service experience.</p></div></div>
-        <div class="phase"><strong>03 — GROW</strong><div><b>Community</b><p>Publish documentation, community channels, transparent updates and usage-based rewards.</p></div></div>
-        <div class="phase"><strong>04 — MAINNET</strong><div><b>Launch</b><p>Only after security, legal, product and economic checks are complete: evaluate mainnet deployment and liquidity.</p></div></div>
-      </div>
-      <div class="notice">Important: ALK is currently a Sepolia testnet token. Testnet tokens do not represent guaranteed real-world value. Mainnet, liquidity and any public sale should be treated as separate future decisions.</div>
-    </div>
-  </section>
-
-  <section id="faq">
-    <div class="container">
-      <h2 class="section-title">FAQ</h2>
-      <div class="faq">
-        <details open><summary>What is ALK?</summary><p>ALK is the ERC-20 token of the ALEK project. The current deployment is on Ethereum Sepolia testnet.</p></details>
-        <details><summary>Can I see the contract?</summary><p>Yes. The current contract is publicly verifiable on Blockscout through the “View Verified Contract” buttons on this page.</p></details>
-        <details><summary>Why does my balance need a wallet?</summary><p>The website reads the connected wallet address and calls the token's standard balanceOf function. ERC-20 balances are stored on-chain, while decimals control how the raw integer is displayed.</p></details>
-        <details><summary>Is this an investment or guaranteed profit?</summary><p>No. The project website does not promise returns. The intended model is to build useful products and services first, with transparent token utility.</p></details>
-      </div>
-    </div>
-  </section>
+<section class="hero wrap">
+<img class="logo" src="alek-logo.png" alt="ALEK logo">
+<div class="eyebrow">AI • BLOCKCHAIN • FUTURE</div>
+<h1>ALEK</h1>
+<p>A utility-focused Web3 project building practical AI-powered products around the ALK token.</p>
+<div class="actions"><button class="btn primary" id="connectBtn">Connect Wallet</button><a class="btn" href="https://eth-sepolia.blockscout.com/address/0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F" target="_blank" rel="noopener">Verified Contract</a></div>
+<div class="status" id="status">Ethereum Sepolia • ALK</div>
+</section>
+<section class="wrap grid">
+<div class="card"><h3>AI + Web3</h3><p>Designed around real utility, automation and future AI services.</p></div>
+<div class="card"><h3>Fixed Supply</h3><p>1,000,000 ALK with 18 decimals. No mint, burn, pause or upgrade functions.</p></div>
+<div class="card"><h3>Testnet First</h3><p>Current deployment is on Ethereum Sepolia for testing before any mainnet release.</p></div>
+</section>
+<section class="wrap section" id="token"><h2>Token</h2><div class="card"><div class="facts"><div class="fact"><b>Name</b><span>ALEK</span></div><div class="fact"><b>Symbol</b><span>ALK</span></div><div class="fact"><b>Total Supply</b><span>1,000,000 ALK</span></div><div class="fact"><b>Network</b><span>Ethereum Sepolia</span></div><div class="fact"><b>Contract</b><span>0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F</span></div><div class="fact"><b>Decimals</b><span>18</span></div></div></div></section>
+<section class="wrap section" id="roadmap"><h2>Roadmap</h2><div class="card roadmap"><div class="road"><i class="dot"></i><div><b>Phase 1 — Foundation</b><p class="small">Token deployment, verification and website.</p></div></div><div class="road"><i class="dot"></i><div><b>Phase 2 — Product</b><p class="small">Build the first useful AI + Web3 service.</p></div></div><div class="road"><i class="dot"></i><div><b>Phase 3 — Security</b><p class="small">Testing, review and security hardening before mainnet.</p></div></div><div class="road"><i class="dot"></i><div><b>Phase 4 — Mainnet</b><p class="small">Mainnet deployment only after the project is ready.</p></div></div></div></section>
+<section class="wrap section" id="faq"><h2>FAQ</h2><div class="card"><h3>What is ALK?</h3><p>ALK is the utility token of the ALEK project. The current contract is a fixed-supply ERC-20 on Ethereum Sepolia.</p><br><h3>Is this mainnet?</h3><p>No. This website currently points to the Sepolia testnet contract. Mainnet will require a separate deployment.</p><br><h3>How do I connect on iPhone?</h3><p>Use the Connect Wallet button and choose “Open in OKX Wallet”. The OKX app's DApp browser can then connect the wallet to ALEK.</p></div></section>
 </main>
-
-<footer>
-  <div class="container footerin">
-    <div>© 2026 ALEK — AI + Web3 Utility</div>
-    <div><a target="_blank" rel="noopener" href="https://eth-sepolia.blockscout.com/address/0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F">Verified Contract ↗</a></div>
-  </div>
-</footer>
-<div class="toast" id="toast"></div>
-
-<div class="wallet-modal" id="walletModal" aria-hidden="true">
-  <div class="wallet-box" role="dialog" aria-modal="true" aria-labelledby="walletTitle">
-    <div class="wallet-head"><h3 id="walletTitle">Connect Wallet</h3><button class="close" id="walletClose" aria-label="Close">×</button></div>
-    <button class="wallet-option" id="okxOption"><div class="wallet-icon">🟢</div><div><b>OKX Wallet</b><span>Desktop extension or mobile OKX app</span></div></button>
-    <button class="wallet-option" id="injectedOption"><div class="wallet-icon">🔗</div><div><b>Browser Wallet</b><span>MetaMask, OKX and other EIP-1193 wallets</span></div></button>
-    <div class="wallet-note">On iPhone/Android Safari or Chrome, OKX Wallet can open its mobile app through OKX Connect. On desktop, an installed browser wallet can connect directly.</div>
-  </div>
-</div>
-
-<script type="module">
-import { OKXUniversalConnectUI, THEME } from "https://esm.sh/@okxconnect/ui@1.9.1";
-
-const CONTRACT = "0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F";
-const CHAIN_ID = 11155111;
-const CHAIN = `eip155:${CHAIN_ID}`;
-const DECIMALS = 18;
-const TOTAL_SUPPLY = "1000000";
-
-let okxUI = null;
-let session = null;
-let connectedAddress = null;
-
-const $ = (id) => document.getElementById(id);
-
-function shortAddress(a) {
-  return a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "";
+<footer>ALEK © 2026 • AI + Web3 Utility Project</footer>
+<div class="modal" id="walletModal" aria-hidden="true"><div class="sheet"><h3>Connect to ALEK</h3><p id="modalText">Choose how you want to connect.</p><button class="btn okx choice" id="okxBtn">Open in OKX Wallet</button><button class="btn choice" id="browserBtn">Browser Wallet</button><button class="close" id="closeBtn">Cancel</button></div></div>
+<script>
+const CONTRACT='0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F';
+const RPC='https://ethereum-sepolia-rpc.publicnode.com';
+const CHAIN='0xaa36a7';
+const DAPP_URL='https://alek.best/';
+const statusEl=document.getElementById('status'), modal=document.getElementById('walletModal');
+const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+function setStatus(t,ok=false){statusEl.textContent=t;statusEl.className='status'+(ok?' success':'')}
+function openModal(){modal.classList.add('show');modal.setAttribute('aria-hidden','false')}
+function closeModal(){modal.classList.remove('show');modal.setAttribute('aria-hidden','true')}
+function shorten(a){return a.slice(0,6)+'…'+a.slice(-4)}
+function hexBalanceToALK(hex){try{return Number(BigInt(hex))/1e18}catch{return 0}}
+async function rpc(method,params=[]){const r=await fetch(RPC,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});const j=await r.json();if(j.error)throw new Error(j.error.message);return j.result}
+async function showWallet(address){
+  const data='0x70a08231'+address.slice(2).padStart(64,'0');
+  const raw=await rpc('eth_call',[{to:CONTRACT,data},'latest']);
+  const bal=hexBalanceToALK(raw);
+  setStatus(shorten(address)+' • '+bal.toLocaleString(undefined,{maximumFractionDigits:6})+' ALK',true);
 }
-
-function setStatus(text) {
-  const el = document.querySelector("#walletStatus, .wallet-status");
-  if (el) el.textContent = text;
-}
-
-function setBalance(text) {
-  const candidates = [
-    document.querySelector("#balanceValue"),
-    document.querySelector("#alkBalance"),
-    document.querySelector(".balance-value")
-  ].filter(Boolean);
-  if (candidates[0]) candidates[0].textContent = text;
-  candidates.slice(1).forEach(el => el.textContent = text);
-}
-
-async function rpc(method, params = []) {
-  const r = await fetch("https://ethereum-sepolia-rpc.publicnode.com", {
-    method: "POST",
-    headers: {"content-type":"application/json"},
-    body: JSON.stringify({jsonrpc:"2.0",id:1,method,params})
-  });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error.message || "RPC error");
-  return j.result;
-}
-
-async function loadBalance(address) {
-  try {
-    // ERC-20 balanceOf(address) = 0x70a08231 + 32-byte address
-    const data = "0x70a08231" + address.slice(2).padStart(64, "0");
-    const raw = await rpc("eth_call", [{to: CONTRACT, data}, "latest"]);
-    const value = BigInt(raw);
-    const whole = value / 10n ** 18n;
-    const frac = (value % 10n ** 18n).toString().padStart(18, "0").replace(/0+$/, "");
-    setBalance(frac ? `${whole}.${frac} ALK` : `${whole} ALK`);
-  } catch (e) {
-    console.error(e);
-    setBalance("—");
-  }
-}
-
-function getAddressFromSession(s) {
-  const accounts = s?.namespaces?.eip155?.accounts || [];
-  const entry = accounts.find(x => x.startsWith(CHAIN + ":")) || accounts[0];
-  return entry ? entry.split(":").pop() : null;
-}
-
-async function initOKX() {
-  if (okxUI) return okxUI;
-  okxUI = await OKXUniversalConnectUI.init({
-    DAppMetaData: {
-      name: "ALEK",
-      icon: "https://alek.best/alek-logo.png"
-    },
-    actionsConfiguration: {
-      modals: "all",
-      returnStrategy: "back"
-    },
-    uiPreferences: {
-      theme: THEME.DARK
-    },
-    language: "en_US",
-    restoreConnection: true
-  });
-
-  okxUI.on("session_update", (s) => {
-    session = s;
-    connectedAddress = getAddressFromSession(s);
-    if (connectedAddress) {
-      setStatus(`Connected: ${shortAddress(connectedAddress)}`);
-      loadBalance(connectedAddress);
+function getProvider(){return window.okxwallet || window.ethereum || null}
+async function browserConnect(){
+  closeModal();
+  const p=getProvider();
+  if(!p){setStatus('No browser wallet detected. On iPhone, choose Open in OKX Wallet.');return}
+  try{
+    const accounts=await p.request({method:'eth_requestAccounts'});
+    const chain=await p.request({method:'eth_chainId'});
+    if(chain!==CHAIN){
+      try{await p.request({method:'wallet_switchEthereumChain',params:[{chainId:CHAIN}]})}
+      catch(e){setStatus('Please switch your wallet to Ethereum Sepolia.');return}
     }
-  });
-
-  okxUI.on("accountChanged", (s) => {
-    session = s;
-    connectedAddress = getAddressFromSession(s);
-    if (connectedAddress) {
-      setStatus(`Connected: ${shortAddress(connectedAddress)}`);
-      loadBalance(connectedAddress);
-    }
-  });
-
-  return okxUI;
+    await showWallet(accounts[0]);
+  }catch(e){setStatus(e?.message||'Wallet connection cancelled.')}
 }
-
-async function connectWallet() {
-  try {
-    const ui = await initOKX();
-    session = await ui.openModal({
-      namespaces: {
-        eip155: {
-          chains: [CHAIN],
-          defaultChain: String(CHAIN_ID),
-          rpcMap: {
-            [String(CHAIN_ID)]: "https://ethereum-sepolia-rpc.publicnode.com"
-          }
-        }
-      }
-    });
-
-    connectedAddress = getAddressFromSession(session);
-    if (connectedAddress) {
-      setStatus(`Connected: ${shortAddress(connectedAddress)}`);
-      await loadBalance(connectedAddress);
-    }
-  } catch (err) {
-    console.error("ALEK wallet connection error:", err);
-    setStatus("Connection cancelled or unavailable");
-  }
+function openOKX(){
+  // Direct user-click deep link: opens the current DApp inside OKX Wallet's built-in DApp browser.
+  const link='okx://wallet/dapp/url?dappUrl='+encodeURIComponent(DAPP_URL);
+  window.location.href=link;
+  setStatus('Opening OKX Wallet…');
+  setTimeout(()=>{
+    if(document.visibilityState==='visible') setStatus('If OKX did not open, open the OKX app and use its DApp browser for alek.best.');
+  },1800);
 }
-
-function bindConnectButtons() {
-  document.querySelectorAll("button, a").forEach(el => {
-    const text = (el.textContent || "").trim().toLowerCase();
-    if (text.includes("connect wallet")) {
-      el.addEventListener("click", (ev) => {
-        ev.preventDefault();
-        connectWallet();
-      });
-    }
-  });
-}
-
-window.addEventListener("DOMContentLoaded", () => {
-  bindConnectButtons();
-  const contractLinks = document.querySelectorAll('a[href*="blockscout"]');
-  contractLinks.forEach(a => {
-    a.href = `https://eth-sepolia.blockscout.com/address/${CONTRACT}`;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-  });
-});
+document.getElementById('connectBtn').onclick=()=>{if(isMobile)openModal();else browserConnect()};
+document.getElementById('okxBtn').onclick=()=>{closeModal();openOKX()};
+document.getElementById('browserBtn').onclick=browserConnect;
+document.getElementById('closeBtn').onclick=closeModal;
+modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
+// If the page is already inside an OKX/injected DApp browser, make the main button connect directly.
+if(getProvider()) document.getElementById('connectBtn').textContent='Connect OKX Wallet';
 </script>
 </body>
 </html>
