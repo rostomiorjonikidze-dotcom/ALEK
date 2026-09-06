@@ -342,18 +342,37 @@ window.copyAddress=()=>account?navigator.clipboard.writeText(account).then(()=>t
 window.copyContract=()=>navigator.clipboard.writeText(CONTRACT).then(()=>toast("Contract address copied."));
 window.disconnect=()=>{clearConnected();toast("Wallet disconnected.")};
 
+let discoveredProviders=[];
+window.addEventListener("eip6963:announceProvider",e=>{
+  const p=e.detail?.provider;
+  if(p && !discoveredProviders.includes(p)) discoveredProviders.push(p);
+},{passive:true});
+try{ window.dispatchEvent(new Event("eip6963:requestProvider")); }catch(e){}
+
+async function getBrowserProvider(){
+  if(window.okxwallet) return window.okxwallet;
+  if(window.ethereum) return window.ethereum;
+  if(discoveredProviders.length) return discoveredProviders[0];
+  // Some wallet extensions inject just after page load. Give them a short window.
+  await new Promise(r=>setTimeout(r,450));
+  if(window.okxwallet) return window.okxwallet;
+  if(window.ethereum) return window.ethereum;
+  if(discoveredProviders.length) return discoveredProviders[0];
+  return null;
+}
+
 async function connectInjected(){
  closeWallet();
  try{
-  provider=window.okxwallet||window.ethereum;
-  if(!provider)throw new Error("No browser wallet detected. Open ALEK inside your wallet app or install a browser wallet.");
+  provider=await getBrowserProvider();
+  if(!provider)throw new Error("No browser wallet detected. Install or enable OKX Wallet, MetaMask, or another EVM browser wallet.");
   await ensureSepolia(provider);
   const accts=await provider.request({method:"eth_requestAccounts"});
   if(!accts?.[0])throw new Error("Wallet connection was cancelled.");
   account=accts[0];await refresh();toast("Wallet connected.");
   provider.on?.("accountsChanged",async a=>{if(a?.[0]){account=a[0];await refresh()}else clearConnected()});
   provider.on?.("chainChanged",()=>refresh());
- }catch(e){toast(e.message||"Could not connect wallet.",false)}
+ }catch(e){console.error(e);toast(e.message||"Could not connect wallet.",false)}
 }
 
 let okxUniversal = null;
