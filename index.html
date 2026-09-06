@@ -192,7 +192,7 @@ html.is-mobile .hamb{display:block!important;}
  <div class="info-grid">
   <div class="card"><h3>Supply</h3><div class="metricgrid"><div class="metric"><span>Total supply</span><strong>1,000,000 ALK</strong></div><div class="metric"><span>Decimals</span><strong>18</strong></div><div class="metric"><span>Mint</span><strong>Disabled</strong></div><div class="metric"><span>Upgrade</span><strong>Disabled</strong></div></div><div class="tokenbar"><span></span></div><div class="tokenlegend"><span>100% fixed supply</span><span>1,000,000 ALK</span></div></div>
   <div class="card"><h3>Utility direction</h3><div class="list"><div class="listrow"><div class="check">1</div><div><b>Wallet tools</b><span>Simple connection, balances and token actions.</span></div></div><div class="listrow"><div class="check">2</div><div><b>Web3 services</b><span>Future platform actions and on-chain tools.</span></div></div><div class="listrow"><div class="check">3</div><div><b>Ecosystem access</b><span>Potential access/payment utility inside ALEK products.</span></div></div></div></div>
-  <div class="card"><h3>Market status</h3><div class="metricgrid"><div class="metric"><span>Network</span><strong>Sepolia</strong></div><div class="metric"><span>Market price</span><strong>Not applicable</strong></div><div class="metric"><span>Liquidity</span><strong>Not launched</strong></div><div class="metric"><span>Mainnet</span><strong>Planned</strong></div></div><p class="muted" style="margin-top:15px">No artificial price, market-cap or investment claims are shown while ALEK is in testnet development.</p></div>
+  <div class="card"><h3>Market status</h3><div class="metricgrid"><div class="metric"><span>Network</span><strong>Sepolia</strong></div><div class="metric"><span>Market price</span><strong>Not applicable</strong></div><div class="metric"><span>Liquidity</span><strong>Not launched</strong></div><div class="metric"><span>Mainnet</span><strong>Planned</strong></div></div><p class="muted" style="margin-top:15px">No unverified price, market-cap or investment claims are shown while ALEK is in testnet development.</p></div>
  </div>
 </div></section>
 
@@ -257,12 +257,9 @@ html.is-mobile .hamb{display:block!important;}
 <div class="modal" id="walletModal" onclick="if(event.target===this)closeWallet()"><div class="sheet">
  <div class="sheethead"><h3>Connect to ALEK</h3><button class="close" onclick="closeWallet()">×</button></div>
  <p>Choose your wallet. Connection approval happens inside the wallet. ALEK never asks for a seed phrase, private key or wallet password.</p>
- <button class="option" id="okxOption" onclick="connectOKX()"><div class="ico">◈</div><div><b>OKX Wallet</b><div class="small">Open OKX Wallet and connect</div></div></button>
- <button class="option" onclick="connectInjected()"><div class="ico">🦊</div><div><b>Browser Wallet</b><div class="small">MetaMask, Coinbase, OKX and other injected EVM wallets</div></div></button>
- <button class="option" onclick="openMobileWallet('metamask')"><div class="ico">🦊</div><div><b>MetaMask Mobile</b><div class="small">Open ALEK inside MetaMask</div></div></button>
- <button class="option" onclick="openMobileWallet('coinbase')"><div class="ico">🔵</div><div><b>Coinbase Wallet</b><div class="small">Open ALEK in Coinbase Wallet</div></div></button>
- <button class="option" onclick="openMobileWallet('trust')"><div class="ico">🛡</div><div><b>Trust Wallet</b><div class="small">Open ALEK in Trust Wallet</div></div></button>
- <div class="note">Desktop wallets connect through the browser provider. OKX mobile uses the official OKX connection SDK. MetaMask, Coinbase and Trust may open ALEK inside their wallet browser depending on iOS/Android behavior.</div>
+ <button class="option" id="okxOption" onclick="connectOKX()"><div class="ico">◈</div><div><b>OKX Wallet</b><div class="small">Connect when OKX is available in this browser</div></div></button>
+ <button class="option" onclick="connectInjected()"><div class="ico">◆</div><div><b>Connect Browser Wallet</b><div class="small">MetaMask, Coinbase, Trust, OKX and other injected EVM wallets</div></div></button>
+ <div class="note">Fast, SDK-free connection. Desktop users need an EVM wallet extension. On mobile, use the wallet's built-in browser when the normal browser does not expose a wallet provider.</div>
 </div></div>
 
 <div class="modal" id="sendModal" onclick="if(event.target===this)closeSend()"><div class="sheet">
@@ -282,7 +279,7 @@ const RPC="https://ethereum-sepolia-rpc.publicnode.com";
 const EXPLORER="https://eth-sepolia.blockscout.com";
 const SYMBOL="ALK", DECIMALS=18;
 const ALEK_RETURN_URL="https://alek.best/";
-let provider=null, account=null, okxProvider=null, okxReady=null;
+let provider=null, account=null;
 
 const $=id=>document.getElementById(id);
 const short=a=>a?a.slice(0,6)+"…"+a.slice(-4):"";
@@ -348,110 +345,32 @@ async function connectInjected(){
  }catch(e){console.error(e);toast(e.message||"Could not connect wallet.",false)}
 }
 
-let okxUniversal = null;
-let okxUI = null;
-let okxUIReady = null;
-
-function isMobileDevice(){
- const ua=navigator.userAgent||navigator.vendor||window.opera||"";
- return /android|iphone|ipad|ipod|mobile/i.test(ua) || (navigator.maxTouchPoints>1 && /Macintosh/i.test(ua));
-}
-
-// Load OKX Connect only when the user explicitly chooses OKX Wallet.
-function preloadOKXConnect(){
- okxUIReady=import("https://cdn.jsdelivr.net/npm/@okxconnect/ui@1.9.1/+esm")
-  .then(async mod=>{
-   const UI=mod.OKXUniversalConnectUI;
-   const THEME=mod.THEME;
-   okxUI=await UI.init({
-    dappMetaData:{name:"ALEK",icon:"https://alek.best/alek-logo.png"},
-    actionsConfiguration:{modals:"all",returnStrategy:"none"},
-    uiPreferences:{theme:THEME.DARK},
-    language:"en_US",
-    restoreConnection:true
-   });
-   return okxUI;
-  })
-  .catch(e=>{console.error("OKX Connect preload failed",e);return null;});
- return okxUIReady;
-}
-
-async function connectOKXMobile(){
+async function connectOKX(){
  try{
-  const mod=await import("https://cdn.jsdelivr.net/npm/@okxconnect/universal-provider@1.9.1/+esm");
-  const OKXUniversalProvider=mod.OKXUniversalProvider;
-  okxUniversal=await OKXUniversalProvider.init({dappMetaData:{name:"ALEK",icon:"https://alek.best/alek-logo.png"}});
-  const session=await okxUniversal.connect({
-   namespaces:{eip155:{chains:["eip155:11155111"],defaultChain:"11155111",rpcMap:{"11155111":RPC}}}
-  });
-  const ns=session?.namespaces?.eip155;
-  const raw=ns?.accounts?.find(x=>x.toLowerCase().startsWith("eip155:11155111:")) || ns?.accounts?.[0];
-  account=raw ? raw.split(":").pop() : null;
-  if(!account) throw new Error("No account returned from OKX Wallet.");
-  provider={request:(args)=>okxUniversal.request(args,"eip155:11155111")};
+  closeWallet();
+  let p=window.okxwallet||null;
+  if(!p && window.ethereum?.providers){
+   p=window.ethereum.providers.find(x=>x?.isOkxWallet||x?.isOKExWallet||/okx/i.test(x?.providerInfo?.name||""))||null;
+  }
+  if(!p && (window.ethereum?.isOkxWallet||window.ethereum?.isOKExWallet))p=window.ethereum;
+  if(!p)throw new Error("OKX Wallet is not available in this browser. On mobile, open alek.best from the OKX Wallet browser.");
+  provider=p;
   await ensureSepolia(provider);
+  const accts=await provider.request({method:"eth_requestAccounts"});
+  if(!accts?.[0])throw new Error("Wallet connection was cancelled.");
+  account=accts[0];
   await refresh();
-  localStorage.setItem("alek.okx.connected","1");
+  provider.on?.("accountsChanged",async a=>{if(a?.[0]){account=a[0];await refresh()}else clearConnected()});
+  provider.on?.("chainChanged",()=>refresh());
   toast("OKX Wallet connected.");
   return true;
  }catch(e){
-  console.error("OKX mobile connection failed",e);
-  toast(e?.message || "Could not connect OKX Wallet.",false);
+  console.error(e);
+  toast(e?.message||"Could not connect OKX Wallet.",false);
   return false;
  }
 }
-
-async function connectOKXUniversal(){
- if(!okxUI) await preloadOKXConnect();
- if(!okxUI && okxUIReady) await okxUIReady;
- if(!okxUI) throw new Error("OKX Connect is unavailable. Refresh the page and try again.");
- const session=await okxUI.openModal({
-  namespaces:{eip155:{chains:["eip155:11155111"],defaultChain:"11155111",rpcMap:{"11155111":RPC}}}
- });
- const ns=session?.namespaces?.eip155;
- const raw=ns?.accounts?.find(x=>x.toLowerCase().startsWith("eip155:11155111:")) || ns?.accounts?.[0];
- account=raw ? raw.split(":").pop() : null;
- if(!account) throw new Error("No wallet account was returned.");
- provider={request:(args)=>okxUI.request(args,"eip155:11155111")};
- await refresh();
- localStorage.setItem("alek.okx.connected","1");
- toast("OKX Wallet connected.");
- return true;
-}
-
-async function connectOKX(){
- closeWallet();
- if(isMobileDevice()) return connectOKXMobile();
- const p=await getBrowserProvider();
- if(p){
-  try{
-   provider=p;
-   await ensureSepolia(provider);
-   const accts=await provider.request({method:"eth_requestAccounts"});
-   if(!accts?.[0]) throw new Error("Wallet connection was cancelled.");
-   account=accts[0];
-   await refresh();
-   provider.on?.("accountsChanged",async a=>{if(a?.[0]){account=a[0];await refresh()}else clearConnected()});
-   provider.on?.("chainChanged",()=>refresh());
-   toast("Wallet connected.");
-   return true;
-  }catch(e){console.error("Injected OKX connection failed",e)}
- }
- try{return await connectOKXUniversal()}
- catch(e){console.error("OKX Connect UI failed",e);toast(e?.message||"Could not connect wallet.",false);return false}
-}
 window.connectOKX=connectOKX;
-window.startOKXDirect=connectOKX;
-
-window.openMobileWallet=(kind)=>{
- const url=location.href;
- const encoded=encodeURIComponent(url);
- let deep="";
- if(kind==="metamask") deep="https://metamask.app.link/dapp/"+location.host+location.pathname+location.search;
- if(kind==="coinbase") deep="https://go.cb-w.com/dapp?cb_url="+encoded;
- if(kind==="trust") deep="https://link.trustwallet.com/open_url?coin_id=60&url="+encoded;
- closeWallet();toast("Opening wallet app…");setTimeout(()=>{location.href=deep},60);
-};
 
 window.addToken=async()=>{
  try{
