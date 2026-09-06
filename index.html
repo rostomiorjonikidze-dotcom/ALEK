@@ -191,7 +191,7 @@ footer{padding:18px 0 35px;border-top:1px solid #17365777}.footer{display:flex;j
 
 <div class="modal" id="modal"><div class="sheet">
 <div class="sheet-top"><div><h3>Connect Wallet</h3><p>Select a wallet. On mobile, the wallet app may open its DApp browser.</p></div><button class="close" onclick="closeWallet()">×</button></div>
-<button class="wallet-option" onclick="choose('okx')"><span class="wico">🟢</span>OKX Wallet</button>
+<button id="okxWalletOption" class="wallet-option" onclick="choose('okx')"><span class="wico">🟢</span><span id="okxWalletLabel">OKX Wallet</span></button>
 <button class="wallet-option" onclick="choose('metamask')"><span class="wico">🦊</span>MetaMask</button>
 <button class="wallet-option" onclick="choose('coinbase')"><span class="wico">🔵</span>Coinbase Wallet</button>
 <button class="wallet-option" onclick="choose('trust')"><span class="wico">🛡️</span>Trust Wallet</button>
@@ -272,17 +272,24 @@ async function connectInjected(p){
   closeWallet();
 }
 
+let okxInitPromise=null;
+let okxInitError=null;
+
+function setOKXReady(ready){
+  const btn=document.getElementById("okxWalletOption");
+  const label=document.getElementById("okxWalletLabel");
+  if(!btn) return;
+  // Keep the button clickable even while the SDK is warming up.
+  btn.disabled=false;
+  btn.style.opacity="1";
+  if(label) label.textContent=ready?"OKX Wallet":"OKX Wallet (opens OKX App)";
+}
+
 async function initOKX(){
   if(okxUI) return okxUI;
-
-  okxUI=await OKXUniversalConnectUI.init({
-    // Keep both metadata keys for compatibility with OKX Connect builds.
-    // Some current mobile builds validate the lower-case dappMetaData key.
+  if(okxInitPromise) return okxInitPromise;
+  okxInitPromise=OKXUniversalConnectUI.init({
     dappMetaData:{
-      name:"ALEK",
-      icon:"https://alek.best/alek-logo.png"
-    },
-    DAppMetaData:{
       name:"ALEK",
       icon:"https://alek.best/alek-logo.png"
     },
@@ -290,14 +297,30 @@ async function initOKX(){
       modals:"all",
       returnStrategy:"https://alek.best"
     },
-    uiPreferences:{
-      theme:THEME.DARK
-    },
+    uiPreferences:{theme:THEME.DARK},
     language:"en_US",
     restoreConnection:true
+  }).then(ui=>{
+    okxUI=ui;
+    okxInitError=null;
+    setOKXReady(true);
+    return ui;
+  }).catch(err=>{
+    okxInitError=err;
+    setOKXReady(false);
+    throw err;
   });
+  return okxInitPromise;
+}
 
-  return okxUI;
+function directOKXApp(){
+  // Fallback is intentionally synchronous and called directly from the user's click.
+  // This is important on iOS Safari, where an async operation before a deeplink can be blocked.
+  const dapp="https://alek.best/";
+  const deep="okx://wallet/dapp/url?dappUrl="+encodeURIComponent(dapp);
+  try{ window.location.assign(deep); }catch(e){
+    window.location.href=deep;
+  }
 }
 
 function getOKXAccount(session){
@@ -305,7 +328,6 @@ function getOKXAccount(session){
     const accounts=session?.namespaces?.eip155?.accounts || [];
     const evm=accounts.find(x=>x.startsWith("eip155:11155111:"));
     if(evm) return evm.split(":").pop();
-
     const any=accounts.find(x=>x.startsWith("eip155:"));
     if(any) return any.split(":").pop();
   }catch(e){}
@@ -313,41 +335,43 @@ function getOKXAccount(session){
 }
 
 async function connectOKX(){
-  try{
-    // openModal is initiated by the user's click. OKX Connect handles the
-    // mobile app handoff and returns to https://alek.best after approval.
-    const ui=await initOKX();
-
-    const session=await ui.openModal({
-      namespaces:{
-        eip155:{
-          chains:[OKX_CHAIN],
-          defaultChain:"11155111",
-          rpcMap:{
-            "11155111":RPC
+  // If the UI SDK is ready, open it immediately from this click.
+  if(okxUI){
+    try{
+      const session=await okxUI.openModal({
+        namespaces:{
+          eip155:{
+            chains:[OKX_CHAIN],
+            defaultChain:"11155111",
+            rpcMap:{"11155111":RPC}
           }
         }
-      }
-    });
-
-    const addr=getOKXAccount(session);
-    if(!addr) throw Error("OKX connection was not completed.");
-
-    current={okx:true,session};
-    await showConnected(addr);
-    closeWallet();
-  }catch(e){
-    console.error("OKX Connect error:",e);
-    alert(e?.message || "OKX Wallet connection was cancelled or failed.");
+      });
+      const addr=getOKXAccount(session);
+      if(!addr) throw Error("OKX connection was not completed.");
+      current={okx:true,session};
+      await showConnected(addr);
+      closeWallet();
+      return;
+    }catch(e){
+      console.error("OKX Connect UI error:",e);
+      // If the user cancelled, don't launch a second flow.
+      const msg=String(e?.message||e||"").toLowerCase();
+      if(msg.includes("cancel") || msg.includes("reject")) return;
+    }
   }
+
+  // SDK is not ready or failed: use a direct user-click deeplink instead of
+  // waiting for another async import. This is the Safari/iOS-safe fallback.
+  directOKXApp();
 }
 
 async function choose(type){
   closeWallet();
 
   if(type==="okx"){
-    // On every device, use the official OKX Connect flow.
-    await connectOKX();
+    // Must remain a direct user action for iOS Safari.
+    connectOKX();
     return;
   }
 
@@ -423,6 +447,17 @@ window.choose=choose;
 // Prepare OKX Connect in advance so the actual wallet handoff is initiated
 // from the user's Connect Wallet click without waiting for a network import.
 initOKX().catch(e=>console.warn("OKX UI preload:",e));
+
+// If the user returns from OKX App, let the SDK restore the session and refresh the UI.
+window.addEventListener("pageshow",()=>{
+  if(okxUI && okxUI.connected && okxUI.connected()){
+    try{
+      const session=okxUI.session;
+      const addr=getOKXAccount(session);
+      if(addr) showConnected(addr).catch(()=>{});
+    }catch(e){}
+  }
+});
 
 // Restore an existing desktop/browser connection.
 (async()=>{
