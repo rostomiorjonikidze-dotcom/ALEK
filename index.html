@@ -48,6 +48,10 @@ footer{padding:22px 0 40px;border-top:1px solid #163754}.foot{display:flex;justi
 .mobile-menu a{padding:12px 10px;border-bottom:1px solid #153550;color:#cfe3f7;font-size:13px;font-weight:700;border-radius:9px}
 .mobile-menu a:last-child{border-bottom:0}.mobile-menu a:active{background:#0a2540;color:#6dd5ff}
 .hamb{display:none;background:#06172d;border:1px solid #275b86;color:#fff;border-radius:10px;padding:9px 11px;cursor:pointer;font-size:17px;line-height:1}
+@media(max-width:1100px){
+ .navlinks{display:none!important}
+ .hamb{display:block!important}
+}
 @media(max-width:1050px){.navlinks{display:none}.hamb{display:block}.hero-grid,.command{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}.info-grid{grid-template-columns:1fr 1fr}.info-grid .card:first-child{grid-column:span 2}.dashgrid{grid-template-columns:1fr 1fr}.roadmap{grid-template-columns:1fr 1fr}.phase:nth-child(2){border-right:0}.phase{border-bottom:1px solid #214866}}
 @media(max-width:680px){
  :root{--shadow:0 18px 55px #0009}
@@ -68,7 +72,34 @@ footer{padding:22px 0 40px;border-top:1px solid #163754}.foot{display:flex;justi
  .modal{padding:8px;align-items:flex-end}.sheet{width:100%;max-height:88vh;border-radius:20px;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom));}.sheet h3{font-size:18px}.option{padding:12px;border-radius:12px;margin:7px 0}.option .ico{width:35px;height:35px}.note{font-size:8px}
  .toast{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));max-width:none;font-size:10px}
 }
-@media(max-width:380px){.navtools .btn{padding:8px 8px;font-size:9px}.hamb{padding:8px 9px}.brand{font-size:17px}.brand img{width:35px;height:35px}h1{font-size:51px}.hero h2{font-size:30px}.visual{min-height:425px}.planet{width:230px;height:230px}.ring{width:250px}.coin{width:185px}.wallet-card{width:calc(100vw - 24px)}.stats{font-size:9px}.stat{padding:10px 6px}.stat strong{font-size:11px}.stat span{font-size:7px}}ot{flex-direction:column;gap:12px;text-align:center}.footlinks{flex-wrap:wrap;justify-content:center}.title{font-size:31px}}
+@media(max-width:680px){
+ nav{overflow:visible}
+ .nav{height:68px;min-width:0}
+ .brand{flex:1;min-width:0;overflow:hidden;white-space:nowrap}
+ .navtools{flex-shrink:0}
+ .navtools .btn{max-width:125px;overflow:hidden;text-overflow:ellipsis}
+ .hamb{flex-shrink:0}
+ .mobile-menu{position:absolute;left:10px;right:10px;top:calc(100% - 1px);margin:0!important;z-index:100}
+}
+@media(max-width:380px){.navtools .btn{padding:8px 8px;font-size:9px}.hamb{padding:8px 9px}.brand{font-size:17px}.brand img{width:35px;height:35px}h1{font-size:51px}.hero h2{font-size:30px}.visual{min-height:425px}.planet{width:230px;height:230px}.ring{width:250px}.coin{width:185px}.wallet-card{width:calc(100vw - 24px)}.stats{font-size:9px}.stat{padding:10px 6px}.stat strong{font-size:11px}.stat span{font-size:7px}}
+
+/* FINAL MOBILE OVERRIDES */
+@media screen and (max-width:1100px){
+  .navlinks{display:none!important;}
+  .hamb{display:block!important;}
+}
+@media screen and (max-width:680px){
+  nav .navlinks{display:none!important;}
+  nav .nav{width:100%;padding:0 12px;}
+  nav .mobile-menu{display:none!important;flex-direction:column!important;gap:0!important;line-height:1.2;}
+  nav html.is-mobile .navlinks{display:none!important;}
+html.is-mobile .hamb{display:block!important;}
+.mobile-menu.open{display:flex!important;}
+  nav .mobile-menu a{display:block!important;width:100%!important;padding:13px 12px!important;margin:0!important;white-space:nowrap;}
+}
+html.is-mobile .navlinks{display:none!important;}
+html.is-mobile .hamb{display:block!important;}
+.mobile-menu.open{display:flex!important;}
 </style>
 </head>
 <body>
@@ -233,11 +264,16 @@ footer{padding:22px 0 40px;border-top:1px solid #163754}.foot{display:flex;justi
  <button class="btn" style="width:100%" onclick="sendALK()">Review in Wallet</button>
 </div></div>
 
+<div class="modal" id="okxContinueModal" onclick="if(event.target===this)hideOKXContinue()"><div class="sheet">
+ <div class="sheethead"><h3>Open OKX Wallet</h3><button class="close" onclick="hideOKXContinue()">×</button></div>
+ <p>On iPhone, OKX requires the wallet handoff to start from a direct tap.</p>
+ <button id="okxDirectBtn" class="option" onclick="startOKXDirect()"><div class="ico">◈</div><div><b>Open OKX Wallet</b><div class="small">Continue to OKX and approve the connection</div></div></button>
+ <div class="note">After approval, OKX uses the configured return address for ALEK. No seed phrase or private key is requested.</div>
+</div></div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
-import { OKXUniversalProvider } from "https://esm.sh/@okxconnect/universal-provider@1.9.1";
-
 const CONTRACT="0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F";
 const CHAIN_ID=11155111, CHAIN_HEX="0xaa36a7";
 const RPC="https://ethereum-sepolia-rpc.publicnode.com";
@@ -249,15 +285,31 @@ let provider=null, account=null, okxProvider=null, okxReady=null;
 const $=id=>document.getElementById(id);
 const short=a=>a?a.slice(0,6)+"…"+a.slice(-4):"";
 const pad64=x=>x.replace(/^0x/,"").padStart(64,"0");
+function applyMobileLayout(){
+ const mobile=window.innerWidth<=1100;
+ document.documentElement.classList.toggle("is-mobile",mobile);
+ const links=document.querySelector(".navlinks");
+ const menu=document.getElementById("mobileMenu");
+ if(links) links.style.display=mobile?"none":"";
+ if(!mobile && menu) menu.classList.remove("open");
+}
+window.addEventListener("resize",applyMobileLayout,{passive:true});
+window.addEventListener("orientationchange",()=>setTimeout(applyMobileLayout,50),{passive:true});
+document.addEventListener("DOMContentLoaded",applyMobileLayout);
+
 const rpc=async(method,params=[])=>{const r=await fetch(RPC,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method,params})});const j=await r.json();if(j.error)throw new Error(j.error.message||"RPC error");return j.result};
 
 function toast(msg,ok=true){const t=$("toast");t.textContent=msg;t.className="toast show "+(ok?"ok":"err");clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.className="toast",4200)}
+function showOKXContinue(){ $("okxContinueModal").classList.add("show"); }
+function hideOKXContinue(){ $("okxContinueModal").classList.remove("show"); }
+window.showOKXContinue=showOKXContinue;
+window.hideOKXContinue=hideOKXContinue;
 function setConnected(a,alk,eth){account=a;$("wstatus").textContent="Connected";$("wstatus").className="green";$("waddr").textContent=short(a);$("wbal").innerHTML=`${alk} <span class="balanceunit">ALK</span>`;$("dashAddr").textContent=short(a);$("dashAddress").textContent=a;$("dashALK").textContent=alk+" ALK";$("dashETH").textContent=eth+" ETH";loadHistory();localStorage.setItem("alek.account",a)}
 function clearConnected(){$("wstatus").textContent="Not connected";$("waddr").textContent="Connect to view wallet";$("wbal").innerHTML='— <span class="balanceunit">ALK</span>';$("dashAddr").textContent="Not connected";$("dashAddress").textContent="Connect a wallet to load your address.";$("dashALK").textContent="—";$("dashETH").textContent="—";account=null;localStorage.removeItem("alek.account")}
 async function refresh(){if(!provider||!account)return;try{const raw=await provider.request({method:"eth_call",params:[{to:CONTRACT,data:"0x70a08231"+pad64(account)},"latest"]});const alk=(BigInt(raw)/10n**18n).toString();const eraw=await provider.request({method:"eth_getBalance",params:[account,"latest"]});const eth=(Number(BigInt(eraw))/1e18).toFixed(5);setConnected(account,alk,eth)}catch(e){console.error(e)}}
 async function ensureSepolia(p=provider){if(!p)throw new Error("Wallet provider not found");const id=await p.request({method:"eth_chainId"});if(id.toLowerCase()!==CHAIN_HEX){try{await p.request({method:"wallet_switchEthereumChain",params:[{chainId:CHAIN_HEX}]})}catch(e){if(e.code===4902||/unrecognized|not added/i.test(e.message||"")){await p.request({method:"wallet_addEthereumChain",params:[{chainId:CHAIN_HEX,chainName:"Sepolia",nativeCurrency:{name:"Sepolia Ether",symbol:"ETH",decimals:18},rpcUrls:[RPC],blockExplorerUrls:[EXPLORER]}]})}else throw e}}}
 window.openWallet=()=>{$("walletModal").classList.add("show")};window.closeWallet=()=>{$("walletModal").classList.remove("show")};window.openSend=()=>{if(!account){toast("Connect a wallet first.",false);openWallet();return}$("sendModal").classList.add("show")};window.closeSend=()=>{$("sendModal").classList.remove("show")};
-window.toggleMenu=()=>{const m=$("mobileMenu");m.style.display=m.style.display==="flex"?"none":"flex"};
+window.toggleMenu=()=>{const m=$("mobileMenu");m.classList.toggle("open");};
 window.copyAddress=()=>account?navigator.clipboard.writeText(account).then(()=>toast("Wallet address copied.")):toast("No wallet connected.",false);
 window.copyContract=()=>navigator.clipboard.writeText(CONTRACT).then(()=>toast("Contract address copied."));
 window.disconnect=()=>{clearConnected();toast("Wallet disconnected.")};
@@ -276,18 +328,32 @@ async function connectInjected(){
  }catch(e){toast(e.message||"Could not connect wallet.",false)}
 }
 
-async function initOKX(){
- try{
-  okxProvider=await OKXUniversalProvider.init({
-   DAppMetaData:{
-    name:"ALEK",
-    icon:"https://alek.best/alek-logo.png"
-   }
-  });
-  return okxProvider;
- }catch(e){console.error("OKX Connect init failed",e);throw e}
+let OKXUniversalProviderClass=null;
+
+function isMobileDevice(){
+ return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+   (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
 }
-okxReady=initOKX();
+
+async function initOKX(){
+ if(okxProvider)return okxProvider;
+ try{
+  if(!OKXUniversalProviderClass){
+   const mod=await import("https://esm.sh/@okxconnect/universal-provider@1.9.1");
+   OKXUniversalProviderClass=mod.OKXUniversalProvider;
+  }
+  okxProvider=await OKXUniversalProviderClass.init({
+   dappMetaData:{name:"ALEK",icon:"https://alek.best/alek-logo.png"}
+  });
+  window.dispatchEvent(new Event("alek-okx-ready"));
+  return okxProvider;
+ }catch(e){
+  console.error("OKX Connect init failed",e);
+  window.dispatchEvent(new CustomEvent("alek-okx-error",{detail:String(e?.message||e)}));
+  throw e;
+ }
+}
+okxReady=null;
 
 function sessionAccount(session){
  const raw=session?.namespaces?.eip155?.accounts?.[0];
@@ -296,8 +362,8 @@ function sessionAccount(session){
 
 async function restoreOKX(){
  try{
-  const p=await (okxReady||initOKX());
-  if(!p?.connected?.()) return false;
+  const p=okxProvider || await (okxReady||initOKX());
+  if(!p?.connected?.())return false;
   const a=sessionAccount(p.session);
   if(!a)return false;
   account=a;
@@ -308,32 +374,58 @@ async function restoreOKX(){
  }catch(e){console.warn("OKX restore",e);return false}
 }
 
+async function performOKXConnect(){
+ const p=okxProvider;
+ if(!p)throw new Error("OKX Wallet is still loading. Please tap Open OKX again.");
+ const session=await p.connect({
+  namespaces:{eip155:{chains:["eip155:11155111"],defaultChain:"11155111",rpcMap:{"11155111":RPC}}},
+  sessionConfig:{redirect:ALEK_RETURN_URL}
+ });
+ const a=sessionAccount(session)||sessionAccount(p.session);
+ if(!a)throw new Error("OKX connection was cancelled or no account was returned.");
+ account=a;
+ const rawBal=await rpc("eth_call",[{"to":CONTRACT,"data":"0x70a08231"+pad64(a)},"latest"]);
+ const rawEth=await rpc("eth_getBalance",[a,"latest"]);
+ setConnected(a,(BigInt(rawBal)/10n**18n).toString(),(Number(BigInt(rawEth))/1e18).toFixed(5));
+ localStorage.setItem("alek.okx.connected","1");
+ toast("OKX Wallet connected — welcome back to ALEK.");
+}
+
 async function connectOKX(){
  closeWallet();
- let handoff=null;
- try{ handoff=window.open("about:blank","alek_okx_handoff","width=420,height=760"); }catch(_){}
+ if(isMobileDevice()){
+  showOKXContinue();
+  return;
+ }
  try{
-  const p=await (okxReady||initOKX());
-  const onURI=(uri)=>{ try{ if(handoff && !handoff.closed) handoff.location.href=uri; else window.location.href=uri; }catch(_){ window.location.href=uri; } };
-  p.once?.("display_uri",onURI); p.on?.("display_uri",onURI);
-  const session=await p.connect({
-   namespaces:{eip155:{chains:["eip155:11155111"],defaultChain:"11155111",rpcMap:{"11155111":RPC}}},
-   sessionConfig:{redirect:ALEK_RETURN_URL}
-  });
-  const a=sessionAccount(session)||sessionAccount(p.session);
-  if(!a)throw new Error("OKX connection was cancelled or no account was returned.");
-  account=a;
-  const rawBal=await rpc("eth_call",[{to:CONTRACT,data:"0x70a08231"+pad64(a)},"latest"]);
-  const rawEth=await rpc("eth_getBalance",[a,"latest"]);
-  setConnected(a,(BigInt(rawBal)/10n**18n).toString(),(Number(BigInt(rawEth))/1e18).toFixed(5));
-  localStorage.setItem("alek.okx.connected","1");
-  if(handoff && !handoff.closed) handoff.close();
-  toast("OKX Wallet connected — welcome back to ALEK.");
+  if(!okxProvider)await initOKX();
+  await performOKXConnect();
  }catch(e){
-  console.error(e); if(handoff && !handoff.closed) handoff.close(); toast(e?.message||"OKX connection failed.",false);
+  console.error(e);
+  toast(e?.message||"OKX connection failed.",false);
  }
 }
 window.connectOKX=connectOKX;
+
+window.startOKXDirect=async()=>{
+ try{
+  // iOS fallback: the previous ALEK build successfully opened OKX through
+  // the direct DApp deep-link. Keep that path as the immediate, user-tap
+  // fallback; once ALEK is inside OKX, the injected provider restores the
+  // account automatically.
+  hideOKXContinue();
+  if(isMobileDevice()){
+    const dappUrl=encodeURIComponent(location.href);
+    window.location.href="okx://wallet/dapp/url?dappUrl="+dappUrl;
+    return;
+  }
+  if(!okxProvider) await initOKX();
+  await performOKXConnect();
+ }catch(e){
+  console.error(e);
+  toast(e?.message||"OKX connection failed.",false);
+ }
+};
 
 window.openMobileWallet=(kind)=>{
  const url=location.href;
