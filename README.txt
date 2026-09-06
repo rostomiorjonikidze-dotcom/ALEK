@@ -1,11 +1,14 @@
-ALEK UX REFRESH
+ALEK — official Reown npm/Vite build
 
-Upload:
-- index.html
-- alek-logo.png
+This replaces runtime esm.sh imports with the official npm packages:
+@reown/appkit
+@reown/appkit-adapter-ethers
+ethers
+vite
 
-Keep your existing CNAME file in GitHub.
+Project ID: 15a319297e48913a316f8f756c08db92
+Domain metadata is derived from window.location.origin (https://alek.best).
+CNAME is included in public/CNAME.
+No AI code and no service worker.
 
-Important:
-Universal Safari/Chrome-to-wallet app connection requires ALEK's own public Reown Project ID.
-The current build deliberately does not fake this capability or use unstable wallet deep links.
+GitHub Actions builds the production dist and deploys it to GitHub Pages.
