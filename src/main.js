@@ -87,54 +87,56 @@ async function connected(address) {
   }
 }
 
-async function resolveConnectedAddress(state = {}) {
-  // 1. AppKit provider-state address
-  if (state.address) return state.address
+function extractAccountAddress(state = {}) {
+  return state?.accountState?.address || state?.address || null
+}
 
-  // 2. AppKit account getter
-  const appKitAddress = modal.getAddress?.()
-  if (appKitAddress) return appKitAddress
+async function applyConnectedAddress(address) {
+  if (!address) return false
+  await connected(address)
+  document.querySelectorAll('.connectBtn').forEach(btn => {
+    btn.textContent = short(address)
+  })
+  return true
+}
 
-  // 3. Wallet provider accounts (important after WalletConnect return)
-  let provider = state.provider || modal.getWalletProvider?.()
-  if (!provider) {
-    const providers = modal.getProviders?.()
-    provider = providers?.eip155
-  }
+async function syncFromAppKit() {
+  const address = modal.getAddress?.()
+  if (address) return applyConnectedAddress(address)
+
+  const providers = modal.getProviders?.()
+  const provider = providers?.eip155 || modal.getWalletProvider?.()
   if (provider?.request) {
     try {
       const accounts = await provider.request({ method: 'eth_accounts' })
-      if (accounts?.[0]) return accounts[0]
+      if (accounts?.[0]) return applyConnectedAddress(accounts[0])
     } catch (e) {
-      console.debug('ALEK account restore:', e)
+      console.debug('ALEK eth_accounts restore:', e)
     }
   }
-  return null
-}
-
-async function sync(state = {}) {
-  const address = await resolveConnectedAddress(state)
-  const connectedFlag =
-    state.isConnected ??
-    modal.getIsConnected?.() ??
-    Boolean(address)
-
-  if (connectedFlag && address) {
-    await connected(address)
-    return true
-  }
-
-  if (state.isConnected === false) disconnected()
   return false
 }
 
+modal.subscribeAccount?.(state => {
+  const address = extractAccountAddress(state)
+  if (address) {
+    applyConnectedAddress(address)
+  } else if (state?.accountState?.isConnected === false || state?.isConnected === false) {
+    disconnected()
+  }
+})
+
 modal.subscribeProvider?.(state => {
-  sync(state)
+  if (state?.address) applyConnectedAddress(state.address)
+  else if (state?.isConnected === false) disconnected()
 })
 
 modal.subscribeProviders?.(providers => {
   const provider = providers?.eip155
-  if (provider) sync({ provider, isConnected: true })
+  if (!provider?.request) return
+  provider.request({ method: 'eth_accounts' })
+    .then(accounts => accounts?.[0] && applyConnectedAddress(accounts[0]))
+    .catch(() => {})
 })
 
 document.querySelectorAll('.connectBtn').forEach(btn => {
@@ -149,13 +151,16 @@ document.querySelectorAll('.connectBtn').forEach(btn => {
 })
 
 $('disconnectBtn')?.addEventListener('click', async () => {
-  try { await modal.disconnect() } finally { disconnected() }
+  try { await modal.disconnect() } finally {
+    disconnected()
+    document.querySelectorAll('.connectBtn').forEach(btn => { btn.textContent = 'Connect Wallet' })
+  }
 })
 
 async function restore() {
   for (const delay of [0, 150, 300, 600, 1000, 1800, 3000, 5000]) {
     if (delay) await sleep(delay)
-    if (await sync()) return
+    if (await syncFromAppKit()) return
   }
 }
 window.addEventListener('pageshow', restore)
