@@ -11,7 +11,7 @@
   "dependencies": {
     "@reown/appkit": "latest",
     "@reown/appkit-adapter-ethers": "latest",
-    "ethers": "latest"
+    "ethers": "^6.0.0"
   },
   "devDependencies": {
     "vite": "latest"

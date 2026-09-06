@@ -1,8 +1,17 @@
-ALEK FINAL CLEAN
+ALEK FINAL ALK MARKET
 
-This is a clean Vite + Reown AppKit build.
-Replace the project files with these files, keeping the included folder structure.
-The existing GitHub Actions workflow must run npm install, npm run build, and deploy ./dist.
+Included:
+- Reown external Buy Crypto / On-Ramp disabled.
+- Reown Swap disabled.
+- Wallet connection retained.
+- Connected wallet address retained.
+- Sepolia ETH balance retained.
+- ALK balance retained.
+- New on-site Buy ALK / Sell ALK section.
 
-Wallet session: Ethereum Mainnet only.
-Displayed balances: Sepolia ETH + ALK, read independently from Sepolia RPC.
+Important:
+ALK is currently on Sepolia and does not yet have a sale/liquidity contract or liquidity pool.
+The site therefore does NOT fake a live purchase/sale. The trading controls are prepared visually,
+and actual execution can be enabled after an on-chain sale/liquidity mechanism is deployed.
+
+Deploy with the included GitHub Actions Vite workflow.
