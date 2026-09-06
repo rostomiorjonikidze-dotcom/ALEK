@@ -1,12 +1,18 @@
-ALEK FINAL MARKET — WORKING WALLET BASE
+ALEK — Sepolia Balance + Market Ready
 
-This package is based directly on ALEK-FINAL-CLEAN, the version where wallet connection worked.
+What changed:
+- AppKit now targets Ethereum Sepolia instead of Ethereum mainnet.
+- Wallet section is labeled ALEK Wallet.
+- ALK balance is read directly from the verified ALK contract:
+  0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F
+- Multiple Sepolia RPC fallbacks are used for more reliable ALK/ETH balance loading.
+- If the connected address owns 1,000,000 ALK on-chain, the page will show 1,000,000 ALK.
+- Added on-site Buy ALK / Sell ALK UI.
+- Added contracts/ALEKMarket.sol, a deploy-ready Sepolia test market.
 
-Changes only:
-- Reown external On-Ramp / Buy Crypto disabled.
-- Reown Swap disabled.
-- Added on-site Buy / Sell ALK section.
-- Existing wallet connection logic was not replaced.
-- Existing connected address, Sepolia ETH and ALK balance logic was kept.
+Important:
+The market UI cannot execute trades until ALEKMarket.sol is deployed and funded.
+After deployment, put its address into MARKET_CONTRACT in src/main.js.
+For sells, the market also needs Sepolia ETH liquidity and the seller must approve ALK to the market contract.
 
-Use the existing GitHub Actions workflow that runs npm install, npm run build, then deploys ./dist.
+Testnet only. No real-money value.

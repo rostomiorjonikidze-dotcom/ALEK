@@ -1,16 +1,21 @@
 import { createAppKit } from '@reown/appkit'
 import { EthersAdapter } from '@reown/appkit-adapter-ethers'
-import { mainnet } from '@reown/appkit/networks'
+import { sepolia } from '@reown/appkit/networks'
 
 const PROJECT_ID = '15a319297e48913a316f8f756c08db92'
 const ALK_CONTRACT = '0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F'
-const SEPOLIA_RPC = 'https://ethereum-sepolia-rpc.publicnode.com'
+const SEPOLIA_RPCS = [
+  'https://ethereum-sepolia-rpc.publicnode.com',
+  'https://rpc.sepolia.org',
+  'https://ethereum-sepolia.publicnode.com'
+]
+const MARKET_CONTRACT = '' // Fill after deploying contracts/ALEKMarket.sol
 const $ = id => document.getElementById(id)
 
 const modal = createAppKit({
   adapters: [new EthersAdapter()],
-  networks: [mainnet],
-  defaultNetwork: mainnet,
+  networks: [sepolia],
+  defaultNetwork: sepolia,
   projectId: PROJECT_ID,
   metadata: {
     name: 'ALEK',
@@ -50,33 +55,53 @@ function format18(hex, places=5) {
 }
 
 async function rpc(method, params) {
-  const r = await fetch(SEPOLIA_RPC, {
-    method:'POST',
-    headers:{'content-type':'application/json'},
-    body:JSON.stringify({jsonrpc:'2.0', id:1, method, params})
-  })
-  const j = await r.json()
-  if (j.error) throw new Error(j.error.message)
-  return j.result
+  let lastError
+  for (const url of SEPOLIA_RPCS) {
+    try {
+      const r = await fetch(url, {
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({jsonrpc:'2.0', id:1, method, params})
+      })
+      if (!r.ok) throw new Error(`RPC HTTP ${r.status}`)
+      const j = await r.json()
+      if (j.error) throw new Error(j.error.message)
+      return j.result
+    } catch (e) {
+      lastError = e
+    }
+  }
+  throw lastError || new Error('Sepolia RPC unavailable')
 }
 
 async function balances(address) {
+  setText('alkBalance', 'Loading…')
+  setText('ethBalance', 'Loading…')
+
   const padded = address.toLowerCase().replace(/^0x/,'').padStart(64,'0')
   const data = '0x70a08231' + padded
-  const [eth, alk] = await Promise.all([
-    rpc('eth_getBalance', [address, 'latest']),
-    rpc('eth_call', [{to: ALK_CONTRACT, data}, 'latest'])
-  ])
+
+  const eth = await rpc('eth_getBalance', [address, 'latest'])
   setText('ethBalance', `${format18(eth)} ETH`)
-  setText('alkBalance', `${format18(alk)} ALK`)
+
+  const alk = await rpc('eth_call', [{to: ALK_CONTRACT, data}, 'latest'])
+  const alkFormatted = format18(alk, 4)
+  setText('alkBalance', `${alkFormatted} ALK`)
+
+  const hint = $('alkHint')
+  if (hint) {
+    hint.textContent = BigInt(alk || '0x0') === 0n
+      ? 'This connected Sepolia address currently returns 0 ALK from the verified token contract.'
+      : `Verified on-chain balance for ${short(address)}`
+  }
 }
 
 async function connected(address) {
-  setText('walletTitle', 'Wallet Connected ✓')
+  setText('walletTitle', 'ALEK Wallet Connected ✓')
   setText('walletAddress', address)
   setText('heroWallet', `Connected: ${short(address)}`)
-  setText('status', 'Wallet Connected ✓')
-  setText('chain', 'Ethereum wallet · Sepolia balances')
+  setText('status', 'ALEK Wallet Connected ✓')
+  setText('chain', 'Ethereum Sepolia · ALK')
   const d = $('disconnectBtn')
   if (d) d.hidden = false
   try { await balances(address) }
@@ -156,6 +181,74 @@ $('disconnectBtn')?.addEventListener('click', async () => {
     document.querySelectorAll('.connectBtn').forEach(btn => { btn.textContent = 'Connect Wallet' })
   }
 })
+
+
+function marketReady() {
+  return /^0x[a-fA-F0-9]{40}$/.test(MARKET_CONTRACT)
+}
+
+function setMarketMessage(text) {
+  setText('marketMessage', text)
+}
+
+function hexQuantityFromEthInput(value) {
+  const s = String(value || '').trim()
+  if (!/^\d+(\.\d{0,18})?$/.test(s)) throw new Error('Enter a valid ETH amount')
+  const [whole, frac=''] = s.split('.')
+  const wei = BigInt(whole) * 10n**18n + BigInt((frac + '0'.repeat(18)).slice(0,18))
+  if (wei <= 0n) throw new Error('Amount must be greater than 0')
+  return '0x' + wei.toString(16)
+}
+
+function uint256Word(value) {
+  return BigInt(value).toString(16).padStart(64, '0')
+}
+
+async function getWalletProvider() {
+  const providers = modal.getProviders?.()
+  return providers?.eip155 || modal.getWalletProvider?.() || null
+}
+
+async function buyALK() {
+  if (!marketReady()) {
+    setMarketMessage('ALK Market contract is not deployed yet. Deploy contracts/ALEKMarket.sol first.')
+    return
+  }
+  const provider = await getWalletProvider()
+  const from = modal.getAddress?.()
+  if (!provider?.request || !from) {
+    await modal.open()
+    return
+  }
+  try {
+    setMarketMessage('Confirm the Buy ALK transaction in your wallet…')
+    const value = hexQuantityFromEthInput($('buyEth')?.value)
+    const tx = await provider.request({
+      method: 'eth_sendTransaction',
+      params: [{ from, to: MARKET_CONTRACT, value, data: '0xa6f2ae3a' }]
+    })
+    setMarketMessage(`Buy submitted: ${tx}`)
+    setTimeout(() => balances(from), 5000)
+  } catch (e) {
+    console.error(e)
+    setMarketMessage(e?.message || 'Buy transaction failed')
+  }
+}
+
+async function sellALK() {
+  if (!marketReady()) {
+    setMarketMessage('ALK Market contract is not deployed yet. Deploy contracts/ALEKMarket.sol first.')
+    return
+  }
+  setMarketMessage('Sell requires ALK approval to the market contract first. The market deployment step will enable this safely.')
+}
+
+$('buyAlkBtn')?.addEventListener('click', buyALK)
+$('sellAlkBtn')?.addEventListener('click', sellALK)
+
+if (!marketReady()) {
+  setMarketMessage('Trading UI is ready. The on-chain ALK Market contract still needs to be deployed and funded on Sepolia.')
+}
 
 async function restore() {
   for (const delay of [0, 150, 300, 600, 1000, 1800, 3000, 5000]) {
