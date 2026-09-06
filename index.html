@@ -376,34 +376,66 @@ async function connectInjected(){
 }
 
 let okxUniversal = null;
+let okxUI = null;
+let okxUIReady = null;
 
 function isMobileDevice(){
  const ua=navigator.userAgent||navigator.vendor||window.opera||"";
  return /android|iphone|ipad|ipod|mobile/i.test(ua) || (navigator.maxTouchPoints>1 && /Macintosh/i.test(ua));
 }
 
+// Preload the official OKX Connect UI while the page is loading.
+// This is important on iOS Safari: OKX documents that a mobile-app jump can fail
+// when an asynchronous SDK operation happens only after the user click.
+function preloadOKXConnect(){
+ okxUIReady=import("https://esm.sh/@okxconnect/ui@1.9.1")
+  .then(async mod=>{
+   const UI=mod.OKXUniversalConnectUI;
+   const THEME=mod.THEME;
+   okxUI=await UI.init({
+    DAppMetaData:{name:"ALEK",icon:"https://alek.best/alek-logo.png"},
+    actionsConfiguration:{modals:"all",returnStrategy:"https://alek.best/"},
+    uiPreferences:{theme:THEME.DARK},
+    language:"en_US",
+    restoreConnection:true
+   });
+   return okxUI;
+  })
+  .catch(e=>{console.error("OKX Connect preload failed",e);return null;});
+ return okxUIReady;
+}
+preloadOKXConnect();
+
 async function connectOKXMobile(){
+ // The SDK is intentionally initialized before the click. Once ready, openModal()
+ // is called directly from the user's click path so iOS Safari can hand off to OKX.
+ if(!okxUI){
+  toast("OKX Connect is still loading. Please tap Connect Wallet again in a moment.",false);
+  preloadOKXConnect();
+  return false;
+ }
  try{
-  const mod=await import("https://cdn.jsdelivr.net/npm/@okxconnect/universal-provider@1.9.1/+esm");
-  const OKXUniversalProvider=mod.OKXUniversalProvider;
-  okxUniversal=await OKXUniversalProvider.init({DAppMetaData:{name:"ALEK",icon:"https://alek.best/alek-logo.png"}});
-  const session=await okxUniversal.connect({
-   namespaces:{eip155:{chains:["eip155:11155111"],defaultChain:"11155111"}},
-   sessionConfig:{redirect:location.href}
+  const session=await okxUI.openModal({
+   namespaces:{
+    eip155:{
+     chains:["eip155:11155111"],
+     defaultChain:"11155111",
+     rpcMap:{"11155111":RPC}
+    }
+   }
   });
   const ns=session?.namespaces?.eip155;
   const rawAccount=ns?.accounts?.find(x=>x.toLowerCase().startsWith("eip155:11155111:")) || ns?.accounts?.[0];
   account=rawAccount ? rawAccount.split(":").pop() : null;
-  if(!account)throw new Error("No account returned");
-  provider={request:(args)=>okxUniversal.request(args,"eip155:11155111")};
-  await ensureSepolia(provider);
+  if(!account) throw new Error("No account returned from OKX Wallet.");
+  provider={request:(args)=>okxUI.request(args,"eip155:11155111")};
   await refresh();
   localStorage.setItem("alek.okx.connected","1");
   toast("OKX Wallet connected — welcome back to ALEK.");
   return true;
  }catch(e){
   console.error(e);
-  toast("Could not open OKX Wallet",false);
+  toast(e?.message||"Could not connect OKX Wallet.",false);
   return false;
  }
 }
@@ -415,6 +447,7 @@ async function connectOKX(){
 }
 window.connectOKX=connectOKX;
 window.startOKXDirect=connectOKX;
+
 window.openMobileWallet=(kind)=>{
  const url=location.href;
  const encoded=encodeURIComponent(url);
