@@ -310,37 +310,30 @@ async function restoreOKX(){
 
 async function connectOKX(){
  closeWallet();
+ let handoff=null;
+ try{ handoff=window.open("about:blank","alek_okx_handoff","width=420,height=760"); }catch(_){}
  try{
-  // Use the official OKX Connect EVM SDK directly. This is the mobile
-  // App-Wallet flow documented by OKX and is preferable to a custom
-  // okx:// deep-link. The SDK owns the hand-off to OKX and the return.
   const p=await (okxReady||initOKX());
+  const onURI=(uri)=>{ try{ if(handoff && !handoff.closed) handoff.location.href=uri; else window.location.href=uri; }catch(_){ window.location.href=uri; } };
+  p.once?.("display_uri",onURI); p.on?.("display_uri",onURI);
   const session=await p.connect({
-   namespaces:{
-    eip155:{
-     chains:["eip155:11155111"],
-     defaultChain:"11155111",
-     rpcMap:{"11155111":RPC}
-    }
-   },
+   namespaces:{eip155:{chains:["eip155:11155111"],defaultChain:"11155111",rpcMap:{"11155111":RPC}}},
    sessionConfig:{redirect:ALEK_RETURN_URL}
   });
-
   const a=sessionAccount(session)||sessionAccount(p.session);
   if(!a)throw new Error("OKX connection was cancelled or no account was returned.");
-
   account=a;
-  const rawBal=await rpc("eth_call",[{"to":CONTRACT,"data":"0x70a08231"+pad64(a)},"latest"]);
+  const rawBal=await rpc("eth_call",[{to:CONTRACT,data:"0x70a08231"+pad64(a)},"latest"]);
   const rawEth=await rpc("eth_getBalance",[a,"latest"]);
   setConnected(a,(BigInt(rawBal)/10n**18n).toString(),(Number(BigInt(rawEth))/1e18).toFixed(5));
   localStorage.setItem("alek.okx.connected","1");
+  if(handoff && !handoff.closed) handoff.close();
   toast("OKX Wallet connected — welcome back to ALEK.");
  }catch(e){
-  console.error(e);
-  const msg=e?.message||"OKX connection failed.";
-  toast(msg,false);
+  console.error(e); if(handoff && !handoff.closed) handoff.close(); toast(e?.message||"OKX connection failed.",false);
  }
 }
+window.connectOKX=connectOKX;
 
 window.openMobileWallet=(kind)=>{
  const url=location.href;
