@@ -103,6 +103,22 @@ footer{border-top:1px solid rgba(77,117,158,.22);padding:25px 0 40px;color:#8095
 </div>
 </div>
 </section>
+
+<section id="creator">
+<div class="wrap">
+  <div class="eyebrow">Creator</div>
+  <h2 class="title">Created by Rostom Orjonikidze</h2>
+  <p class="desc">ALEK was created by <strong style="color:#fff">Rostom Orjonikidze</strong> as a Web3 utility project focused on transparent blockchain tools, wallet connectivity and practical ALK use.</p>
+  <div class="grid" style="margin-top:22px">
+    <div class="card" style="grid-column:1/-1">
+      <h3>Project Creator</h3>
+      <div class="metric">Rostom Orjonikidze</div>
+      <p>Creator of ALEK and the ALK Web3 utility project.</p>
+    </div>
+  </div>
+</div>
+</section>
+
 </main>
 
 <footer><div class="wrap foot"><span>© ALEK — Sepolia testnet</span><span>alek.best</span></div></footer>
@@ -178,22 +194,32 @@ async function initAppKit(){
           name:"ALEK",
           description:"ALEK Web3 Utility",
           url:"https://alek.best",
-          icons:["https://alek.best/alek-logo.png"]
+          icons:["https://alek.best/alek-logo.png"],
+          redirect:{ universal:"https://alek.best/" }
         },
         features:{analytics:false,email:false,socials:[]},
         themeMode:"dark",
         themeVariables:{"--w3m-accent":"#319cff","--w3m-border-radius-master":"3px"}
       });
 
-      appKit.subscribeProvider((state)=>{
-        const address=state?.address||appKit.getAddress?.();
-        const connected=state?.isConnected??appKit.getIsConnected?.();
-        if(connected && address)applyConnected(address,state?.chainId||appKit.getChainId?.());
-        else if(connected===false)applyDisconnected();
-      });
+      const syncAppKitState=async(state={})=>{
+        try{
+          const address=state?.address || appKit.getAddress?.();
+          const connected=(state?.isConnected ?? appKit.getIsConnected?.());
+          const chainId=state?.chainId || appKit.getChainId?.();
+          if(connected && address){
+            await applyConnected(address,chainId);
+            try{ await appKit.close?.(); }catch(_){}
+          }else if(connected===false){
+            applyDisconnected();
+          }
+        }catch(e){ console.error("ALEK wallet sync:",e); }
+      };
 
-      const existing=appKit.getAddress?.();
-      if(appKit.getIsConnected?.() && existing)applyConnected(existing,appKit.getChainId?.());
+      appKit.subscribeProvider(syncAppKitState);
+      appKit.subscribeAccount?.(state=>syncAppKitState(state));
+      await syncAppKitState();
+      window.__alekSyncWallet=()=>syncAppKitState();
       return appKit;
     }catch(e){
       console.error(e);
@@ -222,7 +248,19 @@ $("disconnectBtn").addEventListener("click",async()=>{
     toast("Wallet disconnected.");
   }catch(e){console.error(e);toast("Open the wallet account menu to disconnect.")}
 });
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&currentAddress)refreshBalances(currentAddress)});
+async function resumeWalletSync(){
+  try{
+    if(appKit){
+      const address=appKit.getAddress?.();
+      const connected=appKit.getIsConnected?.();
+      if(connected && address) await applyConnected(address,appKit.getChainId?.());
+    }
+    if(currentAddress) await refreshBalances(currentAddress);
+  }catch(e){ console.error("ALEK resume sync:",e); }
+}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(resumeWalletSync,350)});
+window.addEventListener("pageshow",()=>setTimeout(resumeWalletSync,350));
+window.addEventListener("focus",()=>setTimeout(resumeWalletSync,350));
 </script>
 </body>
 </html>
