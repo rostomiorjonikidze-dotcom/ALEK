@@ -164,7 +164,7 @@ async function connected(address,chainId){
   $("walletAddress").textContent=address;
   $("heroWallet").textContent=short(address);
   $("status").textContent="Connected";
-  $("chain").textContent=String(chainId)==="11155111"||String(chainId)==="eip155:11155111"?"Sepolia":String(chainId||"Sepolia");
+  $("chain").textContent="Sepolia balances";
   $("disconnectBtn").hidden=false;
   await refreshBalances(address);
   return true;
@@ -192,13 +192,13 @@ async function init(){
     ]);
     appKit=core.createAppKit({
       adapters:[new adapterPkg.EthersAdapter()],
-      networks:[netPkg.sepolia],
-      defaultNetwork:netPkg.sepolia,
+      networks:[netPkg.mainnet],
+      defaultNetwork:netPkg.mainnet,
       projectId:PROJECT_ID,
       metadata:{
         name:"ALEK",
         description:"ALEK Web3 Utility",
-        url:"https://alek.best",
+        url:window.location.origin,
         icons:["https://alek.best/alek-logo.png"]
       },
       features:{analytics:false,email:false,socials:[]},
@@ -229,7 +229,7 @@ document.querySelectorAll(".connectBtn").forEach(b=>b.addEventListener("click",o
 $("disconnectBtn").addEventListener("click",async()=>{
   try{await appKit?.open?.({view:"Account"})}catch(e){console.error(e)}
 });
-async function resume(){try{await init();for(let i=0;i<8;i++){if(await sync())break;await new Promise(r=>setTimeout(r,500))}}catch(e){console.error(e)}}
+async function resume(){try{await init();for(let i=0;i<20;i++){if(await sync())break;await new Promise(r=>setTimeout(r,500))}}catch(e){console.error(e)}}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(resume,300)});
 window.addEventListener("pageshow",()=>setTimeout(resume,300));
 window.addEventListener("focus",()=>setTimeout(resume,300));
