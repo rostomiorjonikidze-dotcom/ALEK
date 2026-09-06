@@ -1,8 +1,0 @@
-ALEK OKX Connect Return Fix
-- Uses official @okxconnect/ui 1.9.1.
-- Preloads the SDK instead of dynamically importing after the tap.
-- Sends sessionConfig.redirect=https://alek.best/ on connection.
-- Uses returnStrategy=https://alek.best/.
-- Restores the OKX session after returning to the site.
-- Keeps desktop injected-wallet fallback.
-- Requires a current OKX Wallet app version supporting OKX Connect.
