@@ -236,7 +236,7 @@ footer{padding:22px 0 40px;border-top:1px solid #163754}.foot{display:flex;justi
 <div class="toast" id="toast"></div>
 
 <script type="module">
-import { OKXUniversalConnectUI, THEME } from "https://esm.sh/@okxconnect/ui@1.9.1";
+import { OKXUniversalProvider } from "https://esm.sh/@okxconnect/universal-provider@1.9.1";
 
 const CONTRACT="0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F";
 const CHAIN_ID=11155111, CHAIN_HEX="0xaa36a7";
@@ -244,7 +244,7 @@ const RPC="https://ethereum-sepolia-rpc.publicnode.com";
 const EXPLORER="https://eth-sepolia.blockscout.com";
 const SYMBOL="ALK", DECIMALS=18;
 const ALEK_RETURN_URL="https://alek.best/";
-let provider=null, account=null, okxUI=null, okxReady=null;
+let provider=null, account=null, okxProvider=null, okxReady=null;
 
 const $=id=>document.getElementById(id);
 const short=a=>a?a.slice(0,6)+"…"+a.slice(-4):"";
@@ -278,28 +278,27 @@ async function connectInjected(){
 
 async function initOKX(){
  try{
-  okxUI=await OKXUniversalConnectUI.init({
-   DAppMetaData:{name:"ALEK",icon:"https://alek.best/alek-logo.png"},
-   actionsConfiguration:{
-    modals:"all",
-    returnStrategy:ALEK_RETURN_URL
-   },
-   uiPreferences:{theme:THEME.DARK},
-   language:"en_US",
-   restoreConnection:true
+  okxProvider=await OKXUniversalProvider.init({
+   DAppMetaData:{
+    name:"ALEK",
+    icon:"https://alek.best/alek-logo.png"
+   }
   });
-  return okxUI;
- }catch(e){console.error("OKX init failed",e);throw e}
+  return okxProvider;
+ }catch(e){console.error("OKX Connect init failed",e);throw e}
 }
 okxReady=initOKX();
 
+function sessionAccount(session){
+ const raw=session?.namespaces?.eip155?.accounts?.[0];
+ return raw?.split(":").pop()||null;
+}
+
 async function restoreOKX(){
  try{
-  const ui=await (okxReady||initOKX());
-  if(!ui?.connected?.()) return false;
-  const session=ui.session;
-  const raw=session?.namespaces?.eip155?.accounts?.[0];
-  const a=raw?.split(":").pop();
+  const p=await (okxReady||initOKX());
+  if(!p?.connected?.()) return false;
+  const a=sessionAccount(p.session);
   if(!a)return false;
   account=a;
   const rawBal=await rpc("eth_call",[{"to":CONTRACT,"data":"0x70a08231"+pad64(a)},"latest"]);
@@ -312,11 +311,11 @@ async function restoreOKX(){
 async function connectOKX(){
  closeWallet();
  try{
-  // The SDK is preloaded during page load so iOS does not have to wait for a
-  // dynamic import after the user's tap. OKX specifically warns about async
-  // work before a mobile deep-link.
-  const ui=await (okxReady||initOKX());
-  const params={
+  // Use the official OKX Connect EVM SDK directly. This is the mobile
+  // App-Wallet flow documented by OKX and is preferable to a custom
+  // okx:// deep-link. The SDK owns the hand-off to OKX and the return.
+  const p=await (okxReady||initOKX());
+  const session=await p.connect({
    namespaces:{
     eip155:{
      chains:["eip155:11155111"],
@@ -325,19 +324,9 @@ async function connectOKX(){
     }
    },
    sessionConfig:{redirect:ALEK_RETURN_URL}
-  };
+  });
 
-  // Prefer the SDK's direct connect flow. Fall back to the UI modal for
-  // versions where connect() is not exposed by the UI wrapper.
-  let session;
-  if(typeof ui.connect==="function"){
-    session=await ui.connect(params);
-  }else{
-    session=await ui.openModal(params);
-  }
-
-  const raw=session?.namespaces?.eip155?.accounts?.[0] || ui.session?.namespaces?.eip155?.accounts?.[0];
-  const a=raw?.split(":").pop();
+  const a=sessionAccount(session)||sessionAccount(p.session);
   if(!a)throw new Error("OKX connection was cancelled or no account was returned.");
 
   account=a;
