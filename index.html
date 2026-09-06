@@ -276,6 +276,12 @@ async function initOKX(){
   if(okxUI) return okxUI;
 
   okxUI=await OKXUniversalConnectUI.init({
+    // Keep both metadata keys for compatibility with OKX Connect builds.
+    // Some current mobile builds validate the lower-case dappMetaData key.
+    dappMetaData:{
+      name:"ALEK",
+      icon:"https://alek.best/alek-logo.png"
+    },
     DAppMetaData:{
       name:"ALEK",
       icon:"https://alek.best/alek-logo.png"
@@ -308,13 +314,9 @@ function getOKXAccount(session){
 
 async function connectOKX(){
   try{
-    // IMPORTANT for iOS: initialize OKX before the user taps Connect.
-    // The actual openModal() call must happen directly from the tap.
-    const ui=okxUI;
-    if(!ui){
-      alert("OKX Connect is still loading. Please tap Connect Wallet again in a moment.");
-      return;
-    }
+    // openModal is initiated by the user's click. OKX Connect handles the
+    // mobile app handoff and returns to https://alek.best after approval.
+    const ui=await initOKX();
 
     const session=await ui.openModal({
       namespaces:{
@@ -339,10 +341,6 @@ async function connectOKX(){
     alert(e?.message || "OKX Wallet connection was cancelled or failed.");
   }
 }
-
-// Pre-initialize OKX Connect while the page is idle. This avoids an async
-// initialization step between the iPhone tap and the wallet handoff.
-initOKX().catch(e=>console.warn("OKX Connect initialization:",e));
 
 async function choose(type){
   closeWallet();
