@@ -87,19 +87,54 @@ async function connected(address) {
   }
 }
 
-async function sync(state={}) {
-  const address = state.address || modal.getAddress?.()
-  const isConnected = state.isConnected ?? modal.getIsConnected?.()
-  if (isConnected && address) {
+async function resolveConnectedAddress(state = {}) {
+  // 1. AppKit provider-state address
+  if (state.address) return state.address
+
+  // 2. AppKit account getter
+  const appKitAddress = modal.getAddress?.()
+  if (appKitAddress) return appKitAddress
+
+  // 3. Wallet provider accounts (important after WalletConnect return)
+  let provider = state.provider || modal.getWalletProvider?.()
+  if (!provider) {
+    const providers = modal.getProviders?.()
+    provider = providers?.eip155
+  }
+  if (provider?.request) {
+    try {
+      const accounts = await provider.request({ method: 'eth_accounts' })
+      if (accounts?.[0]) return accounts[0]
+    } catch (e) {
+      console.debug('ALEK account restore:', e)
+    }
+  }
+  return null
+}
+
+async function sync(state = {}) {
+  const address = await resolveConnectedAddress(state)
+  const connectedFlag =
+    state.isConnected ??
+    modal.getIsConnected?.() ??
+    Boolean(address)
+
+  if (connectedFlag && address) {
     await connected(address)
     return true
   }
+
+  if (state.isConnected === false) disconnected()
   return false
 }
 
 modal.subscribeProvider?.(state => {
-  if (state?.isConnected && state?.address) connected(state.address)
-  else if (state?.isConnected === false) disconnected()
+  sync(state)
+})
+
+modal.subscribeProviders?.(providers => {
+  const provider = providers?.eip155
+  if (provider) sync({ provider, isConnected: true })
 })
 
 document.querySelectorAll('.connectBtn').forEach(btn => {
@@ -118,9 +153,9 @@ $('disconnectBtn')?.addEventListener('click', async () => {
 })
 
 async function restore() {
-  for (let i=0;i<8;i++) {
+  for (const delay of [0, 150, 300, 600, 1000, 1800, 3000, 5000]) {
+    if (delay) await sleep(delay)
     if (await sync()) return
-    await sleep(400)
   }
 }
 window.addEventListener('pageshow', restore)
