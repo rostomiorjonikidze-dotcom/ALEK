@@ -17,7 +17,7 @@
  --text:#f3f8ff;--muted:#91a8c4;--blue:#27a8ff;--blue2:#6c6cff;--cyan:#58e0ff;
  --green:#22e3a0;--purple:#9a55ff;--danger:#ff617a;--shadow:0 25px 90px #0008
 }
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;overflow-x:hidden;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:
 radial-gradient(circle at 50% -10%,#1258b433,transparent 30%),radial-gradient(circle at 8% 45%,#168eff15,transparent 25%),radial-gradient(circle at 92% 65%,#8d45ff12,transparent 28%),linear-gradient(#020611,#041127 55%,#020611);min-height:100vh}
 body:before{content:"";position:fixed;inset:0;z-index:-1;opacity:.18;pointer-events:none;background-image:radial-gradient(#8fd8ff 1px,transparent 1px),radial-gradient(#6b8fff 1px,transparent 1px);background-size:95px 95px,145px 145px;background-position:12px 25px,70px 80px}
 a{color:inherit;text-decoration:none}button,input,textarea{font:inherit}.wrap{width:min(1200px,calc(100% - 32px));margin:auto}
@@ -44,9 +44,31 @@ section{padding:75px 0 5px}.center{text-align:center}.eyebrow{font-size:11px;let
 footer{padding:22px 0 40px;border-top:1px solid #163754}.foot{display:flex;justify-content:space-between;align-items:center;color:#71869f;font-size:10px}.footlinks{display:flex;gap:14px}.footlinks a:hover{color:#6dcfff}
 .modal{display:none;position:fixed;inset:0;z-index:100;background:#000b;backdrop-filter:blur(10px);align-items:flex-end;justify-content:center;padding:13px}.modal.show{display:flex}.sheet{width:min(560px,100%);max-height:90vh;overflow:auto;background:#06162c;border:1px solid #2b73ad;border-radius:22px;padding:20px;box-shadow:0 -25px 90px #000c}.sheethead{display:flex;justify-content:space-between;align-items:center}.sheet h3{margin:0;font-size:22px}.close{background:none;border:0;color:#fff;font-size:26px;cursor:pointer}.option{width:100%;display:flex;align-items:center;gap:12px;padding:13px;margin:8px 0;border:1px solid #244d74;border-radius:13px;background:#0a203a;color:#fff;cursor:pointer;text-align:left}.option:hover{border-color:#57caff;background:#0c2949}.ico{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#102f50;font-size:18px}.note{padding:10px;border-radius:10px;background:#041025;color:#728aa4;font-size:9px;line-height:1.55;margin-top:10px}
 .toast{position:fixed;right:18px;bottom:18px;z-index:200;max-width:340px;padding:12px 14px;border:1px solid #2d77b5;border-radius:12px;background:#061a34ee;box-shadow:0 15px 45px #0009;display:none;font-size:11px}.toast.show{display:block}.toast.ok{border-color:#0e8f6b}.toast.err{border-color:#9b3550}
-.mobile-menu{display:none}
+.mobile-menu{display:none;flex-direction:column;padding:8px 12px 14px;border-top:1px solid #143957;background:#030b19f5;backdrop-filter:blur(18px)}
+.mobile-menu a{padding:12px 10px;border-bottom:1px solid #153550;color:#cfe3f7;font-size:13px;font-weight:700;border-radius:9px}
+.mobile-menu a:last-child{border-bottom:0}.mobile-menu a:active{background:#0a2540;color:#6dd5ff}
+.hamb{display:none;background:#06172d;border:1px solid #275b86;color:#fff;border-radius:10px;padding:9px 11px;cursor:pointer;font-size:17px;line-height:1}
 @media(max-width:1050px){.navlinks{display:none}.hamb{display:block}.hero-grid,.command{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}.info-grid{grid-template-columns:1fr 1fr}.info-grid .card:first-child{grid-column:span 2}.dashgrid{grid-template-columns:1fr 1fr}.roadmap{grid-template-columns:1fr 1fr}.phase:nth-child(2){border-right:0}.phase{border-bottom:1px solid #214866}}
-@media(max-width:680px){.wrap{width:calc(100% - 24px)}.nav{height:67px}.brand{font-size:20px}.brand img{width:42px;height:42px}.navtools .net{display:none}.navtools .btn{padding:9px 11px;font-size:10px}.hero{padding-top:32px}h1{font-size:70px;letter-spacing:-5px}.hero h2{font-size:39px}.lead{font-size:15px}.actions{display:grid}.actions .btn{width:100%;text-align:center}.visual{min-height:515px}.planet{width:300px;height:300px;right:2px}.ring{width:315px;height:140px}.coin{width:245px}.wallet-card{width:285px;top:auto;bottom:0;right:50%;transform:translateX(50%)}.stats{grid-template-columns:1fr 1fr}.stat{padding:13px 9px}.stat:nth-child(2){border-right:0}.stat:nth-child(-n+2){border-bottom:1px solid #27476588}.stat strong{font-size:13px}.grid4,.info-grid,.dashgrid,.faq{grid-template-columns:1fr}.info-grid .card:first-child{grid-column:auto}.roadmap{grid-template-columns:1fr}.phase{border-right:0}.cta{flex-direction:column;align-items:flex-start}.foot{flex-direction:column;gap:12px;text-align:center}.footlinks{flex-wrap:wrap;justify-content:center}.title{font-size:31px}}
+@media(max-width:680px){
+ :root{--shadow:0 18px 55px #0009}
+ html{scroll-padding-top:72px}
+ .wrap{width:calc(100% - 20px)}
+ nav{padding-top:env(safe-area-inset-top);}
+ .nav{height:64px;gap:7px}.brand{font-size:19px;letter-spacing:2px;gap:7px;min-width:0}.brand img{width:39px;height:39px}.navtools{gap:6px;margin-left:auto}.navtools .net{display:none}.navtools .btn{padding:9px 10px;font-size:10px;white-space:nowrap}.hamb{padding:9px 10px;font-size:16px}
+ .mobile-menu{margin:0 10px 8px;border:1px solid #173c5c;border-radius:14px;box-shadow:0 16px 45px #0009}
+ .hero{padding:28px 0 12px}.hero-grid{gap:10px}h1{font-size:58px;line-height:.9;letter-spacing:-4px}.hero h2{font-size:34px;margin-top:8px}.lead{font-size:14px;line-height:1.6;margin:15px 0}.badge{font-size:9px;padding:7px 9px}.chips{gap:6px}.chip{font-size:8px;padding:7px 8px}.actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:17px}.actions .btn{width:100%;text-align:center;min-height:44px}.micro{gap:9px;flex-wrap:wrap;font-size:9px;margin-top:14px}
+ .visual{min-height:445px;margin-top:2px;overflow:visible}.orb{filter:blur(24px)}.planet{width:255px;height:255px;right:50%;transform:translateX(50%);top:20px}.ring{width:275px;height:122px;right:50%;transform:translateX(50%) rotate(-12deg);top:82px}.coin{width:205px;top:58px;right:50%;transform:translateX(50%)}.wallet-card{width:min(330px,calc(100vw - 34px));top:auto;bottom:0;right:50%;transform:translateX(50%);padding:14px;border-radius:16px}.wallet-card .w-actions{gap:7px}.wallet-card .btn{min-height:38px}.bigbalance{font-size:24px}
+ section{padding:44px 0}.stats{grid-template-columns:1fr 1fr;border-radius:15px}.stat{padding:12px 8px;gap:8px}.stat:nth-child(2){border-right:0}.stat:nth-child(4){border-right:0}.stat:nth-child(-n+2){border-bottom:1px solid #27476588}.stat strong{font-size:12px}.stat span{font-size:8px}.sicon{width:28px;height:28px;font-size:10px}
+ .center{margin-bottom:20px}.eyebrow{font-size:9px}.title{font-size:29px}.subtitle{font-size:12px;line-height:1.6}.grid4,.info-grid,.dashgrid,.faq{grid-template-columns:1fr;gap:9px}.info-grid .card:first-child{grid-column:auto}.card{padding:15px;border-radius:15px}.feature h3,.card h3{font-size:15px}.feature p,.card p{font-size:11px;line-height:1.55}.roadmap{grid-template-columns:1fr;gap:9px}.phase{border-right:0;padding:16px}.phase h3{font-size:17px}.phase li{font-size:10px;margin:6px 0}.phase p{font-size:8px}
+ .command{gap:9px}.ai-head{gap:8px}.ai-badge{font-size:7px}.chat{min-height:220px;max-height:280px}.askbar{display:grid;grid-template-columns:1fr auto}.askbar input{min-width:0}.quick{gap:5px}.quick button{font-size:9px;padding:7px 8px}
+ .metricgrid{grid-template-columns:1fr 1fr;gap:7px}.metric{padding:10px}.metric span{font-size:8px}.metric strong{font-size:11px}.addressbox{font-size:9px;word-break:break-all}.copyline{display:grid;grid-template-columns:1fr 1fr;gap:7px}.copyline .btn{width:100%}
+ .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}.tx{min-width:650px;font-size:9px}.tx th,.tx td{padding:9px 7px;white-space:nowrap}
+ .row{gap:10px;font-size:10px}.row b{font-size:10px;text-align:right}.tokenlegend{font-size:8px}.creator{gap:10px}.creator-logo{width:48px;height:48px}.creator-name{font-size:14px}.creator-role{font-size:9px}
+ .cta{flex-direction:column;align-items:stretch;gap:12px;padding:18px}.cta .btn{width:100%;text-align:center}.foot{flex-direction:column;align-items:flex-start;gap:12px;font-size:9px}.footlinks{flex-wrap:wrap;gap:9px}
+ .modal{padding:8px;align-items:flex-end}.sheet{width:100%;max-height:88vh;border-radius:20px;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom));}.sheet h3{font-size:18px}.option{padding:12px;border-radius:12px;margin:7px 0}.option .ico{width:35px;height:35px}.note{font-size:8px}
+ .toast{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));max-width:none;font-size:10px}
+}
+@media(max-width:380px){.navtools .btn{padding:8px 8px;font-size:9px}.hamb{padding:8px 9px}.brand{font-size:17px}.brand img{width:35px;height:35px}h1{font-size:51px}.hero h2{font-size:30px}.visual{min-height:425px}.planet{width:230px;height:230px}.ring{width:250px}.coin{width:185px}.wallet-card{width:calc(100vw - 24px)}.stats{font-size:9px}.stat{padding:10px 6px}.stat strong{font-size:11px}.stat span{font-size:7px}}ot{flex-direction:column;gap:12px;text-align:center}.footlinks{flex-wrap:wrap;justify-content:center}.title{font-size:31px}}
 </style>
 </head>
 <body>
@@ -214,12 +236,15 @@ footer{padding:22px 0 40px;border-top:1px solid #163754}.foot{display:flex;justi
 <div class="toast" id="toast"></div>
 
 <script type="module">
+import { OKXUniversalConnectUI, THEME } from "https://esm.sh/@okxconnect/ui@1.9.1";
+
 const CONTRACT="0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F";
 const CHAIN_ID=11155111, CHAIN_HEX="0xaa36a7";
 const RPC="https://ethereum-sepolia-rpc.publicnode.com";
 const EXPLORER="https://eth-sepolia.blockscout.com";
 const SYMBOL="ALK", DECIMALS=18;
-let provider=null, account=null, okxUI=null;
+const ALEK_RETURN_URL="https://alek.best/";
+let provider=null, account=null, okxUI=null, okxReady=null;
 
 const $=id=>document.getElementById(id);
 const short=a=>a?a.slice(0,6)+"…"+a.slice(-4):"";
@@ -251,30 +276,81 @@ async function connectInjected(){
  }catch(e){toast(e.message||"Could not connect wallet.",false)}
 }
 
-async function connectOKX(){
- closeWallet();
+async function initOKX(){
  try{
-  if(!okxUI){
-   const mod=await import("https://esm.sh/@okxconnect/ui@1.9.1");
-   const {OKXUniversalConnectUI,THEME}=mod;
-   okxUI=await OKXUniversalConnectUI.init({
-    DAppMetaData:{name:"ALEK",icon:"https://alek.best/alek-logo.png"},
-    actionsConfiguration:{modals:"all",returnStrategy:"https://alek.best"},
-    uiPreferences:{theme:THEME.DARK},
-    language:"en_US",restoreConnection:true
-   });
-  }
-  const session=await okxUI.openModal({namespaces:{eip155:{chains:["eip155:11155111"],defaultChain:"11155111",rpcMap:{"11155111":RPC}}}});
+  okxUI=await OKXUniversalConnectUI.init({
+   DAppMetaData:{name:"ALEK",icon:"https://alek.best/alek-logo.png"},
+   actionsConfiguration:{
+    modals:"all",
+    returnStrategy:ALEK_RETURN_URL
+   },
+   uiPreferences:{theme:THEME.DARK},
+   language:"en_US",
+   restoreConnection:true
+  });
+  return okxUI;
+ }catch(e){console.error("OKX init failed",e);throw e}
+}
+okxReady=initOKX();
+
+async function restoreOKX(){
+ try{
+  const ui=await (okxReady||initOKX());
+  if(!ui?.connected?.()) return false;
+  const session=ui.session;
   const raw=session?.namespaces?.eip155?.accounts?.[0];
   const a=raw?.split(":").pop();
-  if(!a)throw new Error("Connection was cancelled.");
+  if(!a)return false;
   account=a;
-  // Read public chain data directly; the OKX session is the authorization/session layer.
   const rawBal=await rpc("eth_call",[{"to":CONTRACT,"data":"0x70a08231"+pad64(a)},"latest"]);
   const rawEth=await rpc("eth_getBalance",[a,"latest"]);
   setConnected(a,(BigInt(rawBal)/10n**18n).toString(),(Number(BigInt(rawEth))/1e18).toFixed(5));
-  toast("OKX Wallet connected.");
- }catch(e){console.error(e);toast(e.message||"OKX connection failed.",false)}
+  return true;
+ }catch(e){console.warn("OKX restore",e);return false}
+}
+
+async function connectOKX(){
+ closeWallet();
+ try{
+  // The SDK is preloaded during page load so iOS does not have to wait for a
+  // dynamic import after the user's tap. OKX specifically warns about async
+  // work before a mobile deep-link.
+  const ui=await (okxReady||initOKX());
+  const params={
+   namespaces:{
+    eip155:{
+     chains:["eip155:11155111"],
+     defaultChain:"11155111",
+     rpcMap:{"11155111":RPC}
+    }
+   },
+   sessionConfig:{redirect:ALEK_RETURN_URL}
+  };
+
+  // Prefer the SDK's direct connect flow. Fall back to the UI modal for
+  // versions where connect() is not exposed by the UI wrapper.
+  let session;
+  if(typeof ui.connect==="function"){
+    session=await ui.connect(params);
+  }else{
+    session=await ui.openModal(params);
+  }
+
+  const raw=session?.namespaces?.eip155?.accounts?.[0] || ui.session?.namespaces?.eip155?.accounts?.[0];
+  const a=raw?.split(":").pop();
+  if(!a)throw new Error("OKX connection was cancelled or no account was returned.");
+
+  account=a;
+  const rawBal=await rpc("eth_call",[{"to":CONTRACT,"data":"0x70a08231"+pad64(a)},"latest"]);
+  const rawEth=await rpc("eth_getBalance",[a,"latest"]);
+  setConnected(a,(BigInt(rawBal)/10n**18n).toString(),(Number(BigInt(rawEth))/1e18).toFixed(5));
+  localStorage.setItem("alek.okx.connected","1");
+  toast("OKX Wallet connected — welcome back to ALEK.");
+ }catch(e){
+  console.error(e);
+  const msg=e?.message||"OKX connection failed.";
+  toast(msg,false);
+ }
 }
 
 window.openMobileWallet=(kind)=>{
@@ -361,9 +437,12 @@ async function autoRestore(){
   const p=window.okxwallet||window.ethereum;
   if(p){
    provider=p;const a=(await p.request({method:"eth_accounts"}))?.[0];
-   if(a){account=a;await ensureSepolia(p).catch(()=>{});await refresh()}
+   if(a){account=a;await refresh();return}
   }
- }catch(e){}
+  // If OKX returned the browser to ALEK after approval, restore the OKX
+  // session and immediately render the connected dashboard.
+  await restoreOKX();
+ }catch(e){console.warn("autoRestore",e)}
 }
 autoRestore();
 </script>
