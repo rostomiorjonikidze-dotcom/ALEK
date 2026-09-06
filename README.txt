@@ -1,14 +1,8 @@
-ALEK — official Reown npm/Vite build
+ALEK FINAL CLEAN
 
-This replaces runtime esm.sh imports with the official npm packages:
-@reown/appkit
-@reown/appkit-adapter-ethers
-ethers
-vite
+This is a clean Vite + Reown AppKit build.
+Replace the project files with these files, keeping the included folder structure.
+The existing GitHub Actions workflow must run npm install, npm run build, and deploy ./dist.
 
-Project ID: 15a319297e48913a316f8f756c08db92
-Domain metadata is derived from window.location.origin (https://alek.best).
-CNAME is included in public/CNAME.
-No AI code and no service worker.
-
-GitHub Actions builds the production dist and deploys it to GitHub Pages.
+Wallet session: Ethereum Mainnet only.
+Displayed balances: Sepolia ETH + ALK, read independently from Sepolia RPC.
