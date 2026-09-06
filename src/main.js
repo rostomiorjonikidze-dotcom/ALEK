@@ -1,21 +1,21 @@
 import { createAppKit } from '@reown/appkit'
 import { EthersAdapter } from '@reown/appkit-adapter-ethers'
-import { sepolia } from '@reown/appkit/networks'
+import { mainnet } from '@reown/appkit/networks'
 
 const PROJECT_ID = '15a319297e48913a316f8f756c08db92'
-const ALK_CONTRACT = '0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F'
-const SEPOLIA_RPCS = [
-  'https://ethereum-sepolia-rpc.publicnode.com',
-  'https://rpc.sepolia.org',
-  'https://ethereum-sepolia.publicnode.com'
+const ALK_CONTRACT = '0x6B6Ecc1B213aF556E240290E677A09D565D085c4'
+const MAINNET_RPCS = [
+  'https://ethereum-rpc.publicnode.com',
+  'https://eth.llamarpc.com',
+  'https://rpc.ankr.com/eth'
 ]
 const MARKET_CONTRACT = '' // Fill after deploying contracts/ALEKMarket.sol
 const $ = id => document.getElementById(id)
 
 const modal = createAppKit({
   adapters: [new EthersAdapter()],
-  networks: [sepolia],
-  defaultNetwork: sepolia,
+  networks: [mainnet],
+  defaultNetwork: mainnet,
   projectId: PROJECT_ID,
   metadata: {
     name: 'ALEK',
@@ -39,7 +39,7 @@ function disconnected() {
   setText('walletAddress', 'Press Connect Wallet to choose a wallet.')
   setText('heroWallet', 'Not connected')
   setText('status', 'Ready')
-  setText('chain', 'Sepolia balances')
+  setText('chain', 'Ethereum Mainnet balances')
   setText('ethBalance', '—')
   setText('alkBalance', '—')
   const d = $('disconnectBtn')
@@ -56,7 +56,7 @@ function format18(hex, places=5) {
 
 async function rpc(method, params) {
   let lastError
-  for (const url of SEPOLIA_RPCS) {
+  for (const url of MAINNET_RPCS) {
     try {
       const r = await fetch(url, {
         method:'POST',
@@ -71,7 +71,7 @@ async function rpc(method, params) {
       lastError = e
     }
   }
-  throw lastError || new Error('Sepolia RPC unavailable')
+  throw lastError || new Error('Ethereum Mainnet RPC unavailable')
 }
 
 async function balances(address) {
@@ -91,7 +91,7 @@ async function balances(address) {
   const hint = $('alkHint')
   if (hint) {
     hint.textContent = BigInt(alk || '0x0') === 0n
-      ? 'This connected Sepolia address currently returns 0 ALK from the verified token contract.'
+      ? 'This connected Ethereum Mainnet address currently returns 0 ALK from the ALEK token contract.'
       : `Verified on-chain balance for ${short(address)}`
   }
 }
@@ -101,7 +101,7 @@ async function connected(address) {
   setText('walletAddress', address)
   setText('heroWallet', `Connected: ${short(address)}`)
   setText('status', 'ALEK Wallet Connected ✓')
-  setText('chain', 'Ethereum Sepolia · ALK')
+  setText('chain', 'Ethereum Mainnet · ALK')
   const d = $('disconnectBtn')
   if (d) d.hidden = false
   try { await balances(address) }
@@ -247,7 +247,7 @@ $('buyAlkBtn')?.addEventListener('click', buyALK)
 $('sellAlkBtn')?.addEventListener('click', sellALK)
 
 if (!marketReady()) {
-  setMarketMessage('Trading UI is ready. The on-chain ALK Market contract still needs to be deployed and funded on Sepolia.')
+  setMarketMessage('Trading UI is ready. The on-chain ALK Market contract still needs to be deployed and funded on Ethereum Mainnet.')
 }
 
 async function restore() {

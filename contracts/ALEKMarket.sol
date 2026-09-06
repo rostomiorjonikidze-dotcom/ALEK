@@ -7,7 +7,7 @@ interface IERC20Minimal {
     function balanceOf(address account) external view returns (uint256);
 }
 
-/// @notice Simple Sepolia test-market for ALK.
+/// @notice Reference fixed-rate market contract for ALK. Not deployed by this website package.
 /// Owner must fund this contract with ALK for buys and ETH for sells.
 /// tokensPerEth uses ALK's 18 decimals: e.g. 100_000 means 100,000 ALK per 1 ETH.
 contract ALEKMarket {

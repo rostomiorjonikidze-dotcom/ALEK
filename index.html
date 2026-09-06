@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#050914">
-<meta name="description" content="ALEK — Web3 utility on Ethereum Sepolia.">
+<meta name="description" content="ALEK — Web3 utility on Ethereum Mainnet.">
 <meta property="og:title" content="ALEK — Web3 Utility">
 <meta property="og:description" content="Connect your wallet, view ALK balance and verify the ALEK contract.">
 <meta property="og:image" content="https://alek.best/alek-logo.png">
@@ -35,7 +35,7 @@ footer{border-top:1px solid rgba(77,117,158,.22);padding:25px 0 40px;color:#8095
 <div class="wrap nav">
 <a class="brand" href="#top"><img src="alek-logo.png" alt="ALEK"><span>ALEK</span></a>
 <div class="grow"></div>
-<div class="badge"><span class="dot"></span>Sepolia Testnet</div>
+<div class="badge"><span class="dot"></span>Ethereum Mainnet</div>
 <button class="btn connectBtn">Connect Wallet</button>
 </div>
 </header>
@@ -44,20 +44,20 @@ footer{border-top:1px solid rgba(77,117,158,.22);padding:25px 0 40px;color:#8095
 <div class="wrap hero">
 <div class="heroGrid">
 <div>
-<div class="kicker"><span class="dot"></span>LIVE ON ETHEREUM SEPOLIA</div>
+<div class="kicker"><span class="dot"></span>LIVE ON ETHEREUM MAINNET</div>
 <h1>ALEK</h1>
 <h2 class="subhero">Web3 Utility</h2>
 <p class="lead">A focused Web3 interface for wallet connectivity, ALK balance and transparent smart-contract verification.</p>
 <div class="actions">
 <button class="btn connectBtn">Connect Wallet</button>
-<a class="btn secondary" target="_blank" rel="noopener" href="https://eth-sepolia.blockscout.com/address/0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F">Verified Contract</a>
+<a class="btn secondary" target="_blank" rel="noopener" href="https://etherscan.io/address/0x6B6Ecc1B213aF556E240290E677A09D565D085c4">Verified Contract</a>
 </div>
 <div class="facts"><span>Token <b>ALK</b></span><span>Supply <b>1,000,000</b></span><span>Decimals <b>18</b></span></div>
 </div>
 <div class="visual">
 <img src="alek-logo.png" alt="ALEK token">
 <div class="stateCard">
-<div class="r"><span class="muted">Network</span><strong>Sepolia</strong></div>
+<div class="r"><span class="muted">Network</span><strong>Ethereum Mainnet</strong></div>
 <div class="r"><span class="muted">Contract</span><strong class="good">Verified</strong></div>
 <div class="r"><span class="muted">Wallet</span><strong id="heroWallet">Not connected</strong></div>
 </div>
@@ -69,7 +69,7 @@ footer{border-top:1px solid rgba(77,117,158,.22);padding:25px 0 40px;color:#8095
 <div class="wrap">
 <div class="eyebrow">Wallet</div>
 <h2 class="title">ALEK Wallet</h2>
-<p class="desc">Connect your EVM wallet to ALEK on Ethereum Sepolia. The same 0x address is used for ETH and ALK.</p>
+<p class="desc">Connect your EVM wallet to ALEK on Ethereum Mainnet. The same 0x address is used for ETH and ALK.</p>
 <div class="walletGrid">
 <div class="card">
 <h3>Your wallet</h3>
@@ -84,7 +84,7 @@ footer{border-top:1px solid rgba(77,117,158,.22);padding:25px 0 40px;color:#8095
 <h3>Wallet data</h3>
 <div class="row"><span>ALK Balance</span><b id="alkBalance">—</b></div><div class="note" id="alkHint">Connect your ALEK wallet to load the verified on-chain ALK balance.</div>
 <div class="row"><span>ETH Balance</span><b id="ethBalance">—</b></div>
-<div class="row"><span>Chain</span><b id="chain">Sepolia</b></div>
+<div class="row"><span>Chain</span><b id="chain">Ethereum Mainnet</b></div>
 <div class="row"><span>Status</span><b id="status">Ready</b></div>
 </div>
 </div>
@@ -97,8 +97,8 @@ footer{border-top:1px solid rgba(77,117,158,.22);padding:25px 0 40px;color:#8095
 <h2 class="title">Only the useful parts</h2>
 <p class="desc">No experimental AI assistant, no OKX-specific SDK and no service worker cache. Wallet connectivity is handled by one standard connection layer.</p>
 <div class="grid">
-<div class="card"><h3>Verified contract</h3><div class="metric">ALK</div><p class="addr">0xE06f0383c58D85Ef7dD70B696f19a7A52fB70d8F</p></div>
-<div class="card"><h3>Fixed supply</h3><div class="metric">1,000,000</div><p>18 decimals. Current deployment: Ethereum Sepolia testnet.</p></div>
+<div class="card"><h3>Verified contract</h3><div class="metric">ALK</div><p class="addr">0x6B6Ecc1B213aF556E240290E677A09D565D085c4</p></div>
+<div class="card"><h3>Fixed supply</h3><div class="metric">1,000,000</div><p>18 decimals. Current deployment: Ethereum Mainnet.</p></div>
 <div class="card"><h3>Security</h3><div class="metric">Non-custodial</div><p>Connection approval happens in the user's own wallet.</p></div>
 </div>
 </div>
@@ -125,12 +125,12 @@ footer{border-top:1px solid rgba(77,117,158,.22);padding:25px 0 40px;color:#8095
   <div class="wrap">
     <div class="eyebrow">ALEK MARKET</div>
     <h2 class="title">Trade ALK on alek.best</h2>
-    <p class="desc">The trading interface stays on ALEK. Transactions are confirmed in your own wallet and execute on Ethereum Sepolia.</p>
+    <p class="desc">The trading interface stays on ALEK. Trading remains disabled until a Mainnet liquidity/market contract is deployed and funded.</p>
 
     <div class="walletGrid">
       <div class="card">
         <h3>Buy ALK</h3>
-        <div class="row"><span>Pay with</span><b>Sepolia ETH</b></div>
+        <div class="row"><span>Pay with</span><b>ETH</b></div>
         <label class="muted" for="buyEth" style="display:block;margin:14px 0 7px">ETH amount</label>
         <input id="buyEth" inputmode="decimal" placeholder="0.01" style="width:100%;padding:13px 14px;border-radius:12px;border:1px solid #2b5682;background:#071426;color:#fff;outline:none">
         <button class="btn" id="buyAlkBtn" type="button" style="width:100%;margin-top:12px">Buy ALK</button>
@@ -138,7 +138,7 @@ footer{border-top:1px solid rgba(77,117,158,.22);padding:25px 0 40px;color:#8095
 
       <div class="card">
         <h3>Sell ALK</h3>
-        <div class="row"><span>Receive</span><b>Sepolia ETH</b></div>
+        <div class="row"><span>Receive</span><b>ETH</b></div>
         <label class="muted" for="sellAlk" style="display:block;margin:14px 0 7px">ALK amount</label>
         <input id="sellAlk" inputmode="decimal" placeholder="1000" style="width:100%;padding:13px 14px;border-radius:12px;border:1px solid #2b5682;background:#071426;color:#fff;outline:none">
         <button class="btn secondary" id="sellAlkBtn" type="button" style="width:100%;margin-top:12px">Sell ALK</button>
@@ -146,16 +146,16 @@ footer{border-top:1px solid rgba(77,117,158,.22);padding:25px 0 40px;color:#8095
     </div>
 
     <div class="note" id="marketMessage" style="margin-top:14px">
-      Trading UI is ready. The ALK market contract must be deployed and funded before real Sepolia trades can execute.
+      Trading is not active yet. Mainnet liquidity must be deployed and funded before ALK trades can execute.
     </div>
-    <p class="muted" style="margin-top:10px">Sepolia testnet only. Testnet ETH and ALK have no real-money value.</p>
+    <p class="muted" style="margin-top:10px">Ethereum Mainnet. Wallet transactions use real ETH and can have real monetary value.</p>
   </div>
 </section>
 
 
 </main>
 
-<footer><div class="wrap foot"><span>© ALEK — Sepolia testnet</span><span>alek.best</span></div></footer>
+<footer><div class="wrap foot"><span>© ALEK — Ethereum Mainnet</span><span>alek.best</span></div></footer>
 <div class="toast" id="toast"></div>
 
 
