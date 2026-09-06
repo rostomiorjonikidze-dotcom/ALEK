@@ -406,44 +406,104 @@ function preloadOKXConnect(){
 }
 preloadOKXConnect();
 
+function openOKXDeepLink(){
+ const dapp='https://alek.best/';
+ const deep='okx://wallet/dapp/url?dappUrl='+encodeURIComponent(dapp);
+ try { window.location.href=deep; return true; }
+ catch(e){ console.error(e); return false; }
+}
+
 async function connectOKXMobile(){
- // The SDK is intentionally initialized before the click. Once ready, openModal()
- // is called directly from the user's click path so iOS Safari can hand off to OKX.
- if(!okxUI){
-  toast("OKX Connect is still loading. Please tap Connect Wallet again in a moment.",false);
-  preloadOKXConnect();
-  return false;
+ // Prefer the official OKX Connect UI. If it is not ready (a common Safari/iOS
+ // timing case), use OKX's DApp deep-link directly from the user's click.
+ if(okxUI){
+  try{
+   const session=await okxUI.openModal({
+    namespaces:{eip155:{
+     chains:['eip155:11155111'],
+     defaultChain:'11155111',
+     rpcMap:{'11155111':RPC}
+    }}
+   });
+   const ns=session?.namespaces?.eip155;
+   const raw=ns?.accounts?.find(x=>x.toLowerCase().startsWith('eip155:11155111:')) || ns?.accounts?.[0];
+   account=raw ? raw.split(':').pop() : null;
+   if(!account) throw new Error('No account returned from OKX Wallet.');
+   provider={request:(args)=>okxUI.request(args,'eip155:11155111')};
+   await refresh();
+   localStorage.setItem('alek.okx.connected','1');
+   toast('OKX Wallet connected — welcome back to ALEK.');
+   return true;
+  }catch(e){
+   console.error('OKX Connect UI error:',e);
+   // User cancellation should not force a deep-link; other failures can.
+   if(e?.message && /cancel|reject|denied|closed/i.test(e.message)) return false;
+  }
  }
- try{
-  const session=await okxUI.openModal({
-   namespaces:{
-    eip155:{
-     chains:["eip155:11155111"],
-     defaultChain:"11155111",
-     rpcMap:{"11155111":RPC}
-    }
-   }
-  });
-  const ns=session?.namespaces?.eip155;
-  const rawAccount=ns?.accounts?.find(x=>x.toLowerCase().startsWith("eip155:11155111:")) || ns?.accounts?.[0];
-  account=rawAccount ? rawAccount.split(":").pop() : null;
-  if(!account) throw new Error("No account returned from OKX Wallet.");
-  provider={request:(args)=>okxUI.request(args,"eip155:11155111")};
-  await refresh();
-  localStorage.setItem("alek.okx.connected","1");
-  toast("OKX Wallet connected — welcome back to ALEK.");
-  return true;
- }catch(e){
-  console.error(e);
-  toast(e?.message||"Could not connect OKX Wallet.",false);
-  return false;
- }
+
+ toast('Opening OKX Wallet…');
+ return openOKXDeepLink();
 }
 
 async function connectOKX(){
  closeWallet();
+
+ // Safari and other browsers may not expose an injected wallet provider.
+ // Always fall back to the official OKX Connect UI instead of showing
+ // "No browser wallet detected". Mobile devices use the same official UI.
  if(isMobileDevice()) return connectOKXMobile();
- return connectInjected();
+
+ const p=await getBrowserProvider();
+ if(p){
+  try {
+   await ensureSepolia(p);
+   provider=p;
+   const accts=await provider.request({method:"eth_requestAccounts"});
+   if(!accts?.[0]) throw new Error("Wallet connection was cancelled.");
+   account=accts[0];
+   await refresh();
+   toast("Wallet connected.");
+   provider.on?.("accountsChanged",async a=>{if(a?.[0]){account=a[0];await refresh()}else clearConnected()});
+   provider.on?.("chainChanged",()=>refresh());
+   return true;
+  } catch(e){
+   console.error("Injected wallet failed, trying OKX Connect UI",e);
+  }
+ }
+
+ try {
+  return await connectOKXUniversal();
+ } catch(e) {
+  console.error("OKX Connect UI failed",e);
+  toast(e?.message || "Could not connect wallet.",false);
+  return false;
+ }
+}
+
+async function connectOKXUniversal(){
+ if(!okxUI){
+  if(okxUIReady) await okxUIReady;
+ }
+ if(!okxUI) throw new Error("OKX Connect is unavailable. Please refresh the page and try again.");
+ const session=await okxUI.openModal({
+  namespaces:{
+   eip155:{
+    chains:["eip155:11155111"],
+    defaultChain:"11155111",
+    rpcMap:{"11155111":RPC}
+   }
+  }
+ });
+ const ns=session?.namespaces?.eip155;
+ const rawAccount=ns?.accounts?.find(x=>x.toLowerCase().startsWith("eip155:11155111:")) || ns?.accounts?.[0];
+ const a=rawAccount ? rawAccount.split(":").pop() : null;
+ if(!a) throw new Error("No wallet account was returned.");
+ account=a;
+ provider={request:(args)=>okxUI.request(args,"eip155:11155111")};
+ await refresh();
+ localStorage.setItem("alek.okx.connected","1");
+ toast("OKX Wallet connected — welcome back to ALEK.");
+ return true;
 }
 window.connectOKX=connectOKX;
 window.startOKXDirect=connectOKX;
