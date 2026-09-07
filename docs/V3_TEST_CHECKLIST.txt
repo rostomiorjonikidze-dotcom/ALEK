@@ -1,0 +1,15 @@
+V3 TEST CHECKLIST
+1. Open /arena/ on phone and desktop.
+2. Test Full Screen.
+3. Test camera sensitivity and distance.
+4. Test movement, sprint, jump and dash.
+5. Test normal and heavy attacks.
+6. Survive at least 3 waves.
+7. Verify Raider / Scout / Brute classes appear.
+8. Pick up glowing loot with LOOT / E.
+9. Gather wood and stone.
+10. Craft Battle Axe.
+11. Craft Armor Upgrade after collecting scrap.
+12. Confirm day/night changes gradually.
+13. Open game from Telegram bot /start.
+14. Confirm Telegram Mini App shows the same game.
