@@ -1,0 +1,62 @@
+ALEK ARENA LAUNCH CHECKLIST
+
+PHASE 1 — LIVE UI (NOW)
+[ ] Upload public/arena files
+[ ] Confirm https://alek.best/arena/
+[ ] Change BOT_USERNAME in app.js if needed
+[ ] Set BotFather Web App/Menu Button to https://alek.best/arena/
+[ ] Test on iPhone + Android + desktop Telegram
+
+PHASE 2 — REAL ACCOUNTS
+[ ] Deploy server/ to a Node host
+[ ] Add BOT_TOKEN only in host environment variables
+[ ] Route /api to backend OR set API_BASE to backend URL
+[ ] Confirm /health returns {"ok":true}
+[ ] Open through Telegram and confirm server mode
+[ ] Test daily rewards
+[ ] Test battles
+[ ] Test leaderboard from 2 different Telegram accounts
+
+PHASE 3 — REFERRALS / ANTI-ABUSE
+[ ] Store start/referrer parameters server-side
+[ ] Count referral only after invited user opens app
+[ ] Prevent self-referrals
+[ ] Add rate limiting
+[ ] Add duplicate-device / suspicious-account monitoring if rewards become valuable
+
+PHASE 4 — CONTENT / RETENTION
+[ ] Weekly missions
+[ ] 30-day seasons
+[ ] Tournament leaderboard reset
+[ ] More base modules
+[ ] Cosmetic inventory
+[ ] Push/Telegram reminders (opt-in)
+
+PHASE 5 — ADS / SPONSORS
+[ ] Admin dashboard
+[ ] Sponsored-mission creation
+[ ] Campaign start/end dates
+[ ] Impression/click/completion analytics
+[ ] Clearly label every paid campaign as Sponsored
+[ ] Reject misleading/scam projects
+
+PHASE 6 — MONEY
+[ ] Keep free/in-game boxes first
+[ ] If adding payments, use server-side verification
+[ ] Publish exact prices, odds and terms
+[ ] Do not promise profit or token appreciation
+[ ] Keep ALK utility separate from guaranteed earnings claims
+
+PHASE 7 — ALK / WEB3
+[ ] Add verified ALK contract display
+[ ] Add official Uniswap link only after pool is live
+[ ] Add wallet connect if genuinely useful
+[ ] Never request seed phrases/private keys
+[ ] Keep game usable without mandatory crypto purchase
+
+PHASE 8 — SCALE
+[ ] Move SQLite -> Postgres
+[ ] Add caching
+[ ] Add server logs/monitoring
+[ ] Backups
+[ ] Security review
