@@ -1,0 +1,9 @@
+{
+  "name": "ALEK Arena",
+  "short_name": "ALEK Arena",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
+  "description": "ALEK Arena Telegram Mini App"
+}
