@@ -170,3 +170,9 @@ body{
 }
 html,body{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 button{touch-action:manipulation}
+
+/* V4 clean-logo polish */
+.cinematic-hero>img{object-fit:cover;object-position:center 48%}
+.premium-coin img{object-fit:cover;object-position:center}
+.identity img{object-fit:cover}
+.feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.feature-card{min-height:104px;text-align:left;border-radius:18px;border:1px solid rgba(60,130,200,.34);background:linear-gradient(145deg,#0d223c,#071426);color:#fff;padding:14px}.feature-card span{font-size:28px;display:block;margin-bottom:7px}.feature-card b{display:block}.feature-card small{color:#819ab8}.event-card{margin:12px 0;background:linear-gradient(135deg,rgba(20,48,89,.95),rgba(20,18,55,.95))}.event-top{display:flex;justify-content:space-between;color:#68d9ff;font-size:10px}.event-card p{color:#8fa6c2;font-size:12px}.event-progress{height:5px;background:#071323;border-radius:99px;overflow:hidden}.event-progress i{display:block;width:68%;height:100%;background:linear-gradient(90deg,#36baff,#765bff)}.boss-card{text-align:center}.boss-icon{font-size:72px}.boss-hp{height:12px;background:#071321;border-radius:99px;overflow:hidden;margin:16px 0}.boss-hp i{display:block;height:100%;background:linear-gradient(90deg,#a632ff,#ff4f78)}.boss-card .primary{width:100%;margin-top:14px}.season-item{display:flex;align-items:center;gap:12px;margin:10px 0}.season-node{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#16385f;font-weight:900}.vault-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.vault{min-height:145px;border-radius:20px;border:1px solid #2a5884;background:linear-gradient(160deg,#0d2745,#091526);color:#fff;font-size:38px}.vault b{display:block;font-size:12px;margin-top:12px}.splash .loading-row,.splash .loading{display:none!important}

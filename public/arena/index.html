@@ -9,24 +9,14 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-<div id="splash" class="splash">
-  <div class="splash-logo-only">
-    <div class="logo-orbit">
-      <img src="./assets/alek-hero-art.png" alt="ALEK logo" class="logo-only-img">
-    </div>
-    <div class="brand splash-brand">ALEK</div>
-    <div class="splash-title">TAP ARENA</div>
-    <div class="creator">Created by <b>Rostom Orjonikidze</b></div>
-    <div class="loading-row"><span>LOADING</span><b id="loadingPct">0%</b></div>
-    <div class="loading loading-real"><i id="loadingBar"></i><em></em></div>
-  </div>
-</div>
-</div>
-</div>
+<div id="splash" class="splash"><div class="splash-logo-only">
+<div class="logo-orbit"><img src="./assets/alek-logo-clean.jpg" alt="ALEK" class="logo-only-img"></div>
+<div class="brand splash-brand">ALEK</div><div class="splash-title">TAP ARENA</div>
+<div class="creator">Created by <b>Rostom Orjonikidze</b></div></div></div>
 
 <div class="app" id="app">
 <header class="topbar">
-  <div class="identity"><img src="./assets/alek-logo.png" alt="ALEK"><div><b>ALEK</b><small id="playerName">Guest Player</small></div></div>
+  <div class="identity"><img src="./assets/alek-logo-clean.jpg" alt="ALEK"><div><b>ALEK</b><small id="playerName">Guest Player</small></div></div>
   <div class="level">LV <span id="level">1</span></div>
 </header>
 
@@ -39,7 +29,7 @@
 <main>
 <section class="home-view view active" data-view="home">
   <section class="cinematic-hero">
-    <img src="./assets/alek-hero-art.png" alt="ALEK Tap Arena artwork">
+    <img src="./assets/alek-hero-clean.jpg" alt="ALEK Tap Arena artwork">
     <div class="cinematic-shade"></div>
     <div class="hero-topline">
       <span class="live-dot"></span>
@@ -62,7 +52,7 @@
     <div class="coin-wrap">
       <button class="coin premium-coin" id="tapCoin" aria-label="Tap ALEK coin">
         <span class="coin-glow"></span>
-        <img src="./assets/alek-hero-art.png" alt="">
+        <img src="./assets/alek-logo-clean.jpg" alt="">
       </button>
       <div id="floatLayer"></div>
     </div>
@@ -76,7 +66,8 @@
 
   <div class="quick-grid premium-actions">
     <button class="panel quick premium-card" data-go="boost"><span>⚡</span><b>Boosts</b><small>Increase tap power</small></button>
-    <button class="panel quick premium-card" id="dailyBtn"><span>🎁</span><b>Daily Reward</b><small id="dailyText">Claim reward</small></button>
+    <button class="panel quick premium-card" id="dailyBtn"><span>🔥</span><b>Daily Streak</b><small id="dailyText">Claim reward</small></button>
+<button class="panel quick premium-card" data-go="vault"><span>🔐</span><b>Daily Vault</b><small>Choose one reward</small></button>
   </div>
 
   <section class="ad-slot premium-ad top-ad">
@@ -90,6 +81,13 @@
     <div><small>CRYSTALS</small><b>250</b></div>
     <div><small>RANK</small><b>#—</b></div>
   </section>
+  <section class="event-card panel"><div class="event-top"><span>🌌 LIVE EVENT</span><b id="eventTimer">02:00:00</b></div><h3>Energy Storm</h3><p>Recharge speed doubles while the event is active.</p><div class="event-progress"><i></i></div></section>
+  <div class="feature-grid">
+    <button class="feature-card" data-go="base"><span>🏗️</span><b>ALEK Base</b><small>Build passive power</small></button>
+    <button class="feature-card" data-go="boss"><span>👾</span><b>World Boss</b><small>Fight Void Titan</small></button>
+    <button class="feature-card" data-go="season"><span>🎟️</span><b>Season 01</b><small>Genesis rewards</small></button>
+    <button class="feature-card" data-go="clan"><span>🛡️</span><b>Squad</b><small>Team progression</small></button>
+  </div>
 
   <section class="ad-slot premium-ad mid-ad">
     <span>SPONSORED</span><b id="adMidTitle">Featured partner</b><small>Banner / campaign / tracked link</small>
@@ -122,6 +120,11 @@
   <div class="panel row"><span>Referrals</span><b id="refCount">0</b></div>
 </section>
 
+<section class="view" data-view="base"><h2>ALEK Base</h2><p class="muted">Upgrade modules and grow passive income.</p><div id="baseList"></div><div class="panel row"><span>Passive income</span><b id="passiveRate">0/min</b></div></section>
+<section class="view" data-view="boss"><h2>World Boss</h2><div class="boss-card panel"><div class="boss-icon">👾</div><small>COMMUNITY RAID</small><h3>VOID TITAN</h3><div class="boss-hp"><i id="bossFill"></i></div><div class="row"><span>Boss HP</span><b id="bossHpText">100%</b></div><button class="primary" id="bossHitBtn">⚔ Attack · 10 Energy</button><p class="muted">Global community progress activates after backend connection.</p></div></section>
+<section class="view" data-view="season"><h2>Season 01 · Genesis</h2><p class="muted">Reach levels and unlock seasonal rewards.</p><div id="seasonTrack"></div></section>
+<section class="view" data-view="clan"><h2>Squad</h2><div class="panel"><div class="big-icon">🛡️</div><h3 id="clanName">No Squad Yet</h3><p class="muted">Create your squad. Online squad rankings activate with the Telegram backend.</p><button class="primary" id="clanBtn">Create Squad</button></div><div class="panel row"><span>Squad Power</span><b id="clanPower">0</b></div></section>
+<section class="view" data-view="vault"><h2>Daily Vault</h2><p class="muted">Choose one vault each day.</p><div class="vault-grid"><button class="vault" data-vault="0">🔒<b>Vault A</b></button><button class="vault" data-vault="1">🔒<b>Vault B</b></button><button class="vault" data-vault="2">🔒<b>Vault C</b></button></div></section>
 <section class="leader-view view" data-view="leader">
   <h2>Leaderboard</h2>
   <div id="leaderList"></div>

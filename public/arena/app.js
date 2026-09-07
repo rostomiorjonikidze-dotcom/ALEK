@@ -1,122 +1,26 @@
-
-const tg=window.Telegram?.WebApp;
-if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#06101d');tg.setBackgroundColor('#06101d')}catch{}}
-const user=tg?.initDataUnsafe?.user||null;
-const key='alekTapGameV1';
-let combo=1,lastTapAt=0,comboTimer=null;
-let s=JSON.parse(localStorage.getItem(key)||'null')||{
- points:0,energy:1000,maxEnergy:1000,tapPower:1,recharge:3,level:1,referrals:0,lastDaily:0,
- boosts:{tap:1,energy:1,recharge:1},missions:{tap100:false,tap1000:false,boost:false,daily:false,invite:false}
-};
-
-const $=q=>document.querySelector(q), $$=q=>[...document.querySelectorAll(q)];
-const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),1300)};
-const save=()=>localStorage.setItem(key,JSON.stringify(s));
-if(user) $('#playerName').textContent=user.first_name+(user.username?' · @'+user.username:'');
-
-let loadPct=0;
-const loadingBar=$('#loadingBar'),loadingPct=$('#loadingPct');
-const loader=setInterval(()=>{
-  const step=loadPct<70?Math.floor(5+Math.random()*9):Math.floor(2+Math.random()*5);
-  loadPct=Math.min(100,loadPct+step);
-  if(loadingBar) loadingBar.style.width=loadPct+'%';
-  if(loadingPct) loadingPct.textContent=loadPct+'%';
-  if(loadPct>=100){
-    clearInterval(loader);
-    setTimeout(()=>$('#splash').classList.add('hide'),220);
-  }
-},110);
-
-function levelFor(p){return Math.max(1,Math.floor(Math.sqrt(p/2500))+1)}
-function leagueFor(l){return l<3?'Bronze League':l<6?'Silver League':l<10?'Gold League':l<15?'Diamond League':'ALEK Elite'}
-function render(){
- s.level=levelFor(s.points);
- $('#points').textContent=Math.floor(s.points).toLocaleString();
- $('#energy').textContent=Math.floor(s.energy);
- $('#maxEnergy').textContent=s.maxEnergy;
- $('#recharge').textContent=s.recharge;
- $('#level').textContent=s.level;
- const tp=$('#tapPower'); if(tp) tp.textContent=s.tapPower;
- const hr=$('#homeRefs'); if(hr) hr.textContent=s.referrals;
- $('#league').textContent=leagueFor(s.level);
- $('#energyFill').style.width=`${Math.max(0,Math.min(100,s.energy/s.maxEnergy*100))}%`;
- $('#refCount').textContent=s.referrals;
- renderBoosts();renderMissions();renderLeader();
- save();
-}
-function tap(e){
- if(s.energy<1){toast('Energy depleted');return}
- const now=Date.now();
- combo=(now-lastTapAt<650)?Math.min(10,combo+1):1;
- lastTapAt=now;
- const comboBonus=combo>=5?1:0;
- const raw=s.tapPower+comboBonus;
- const val=Math.min(raw,s.energy);
- s.points+=val;s.energy-=val;
- s.missions.tap100=s.points>=100;s.missions.tap1000=s.points>=1000;
- const f=document.createElement('span');f.className='float';f.textContent='+'+val;
- const r=$('.coin-wrap').getBoundingClientRect();
- f.style.left=`${e.clientX-r.left-12}px`;f.style.top=`${e.clientY-r.top-10}px`;
- $('#floatLayer').appendChild(f);setTimeout(()=>f.remove(),800);
- const cb=$('#comboBadge');
- if(cb){cb.textContent=`COMBO x${combo}`;cb.classList.toggle('hot',combo>1)}
- clearTimeout(comboTimer);
- comboTimer=setTimeout(()=>{combo=1;if(cb){cb.textContent='COMBO x1';cb.classList.remove('hot')}},800);
- try{tg?.HapticFeedback?.impactOccurred(combo>=5?'medium':'light')}catch{}
- render();
-}
-$('#tapCoin').addEventListener('pointerdown',tap);
-
-const boosts=[
- {id:'tap',icon:'👆',name:'Multi Tap',desc:'More points per tap',price:()=>250*s.boosts.tap,val:()=>s.tapPower},
- {id:'energy',icon:'🔋',name:'Energy Limit',desc:'Increase max energy',price:()=>400*s.boosts.energy,val:()=>s.maxEnergy},
- {id:'recharge',icon:'⚡',name:'Recharge Speed',desc:'Faster energy recharge',price:()=>600*s.boosts.recharge,val:()=>s.recharge}
-];
-function renderBoosts(){
- const box=$('#boostList');if(!box)return;
- box.innerHTML=boosts.map(b=>`<div class="panel boost-item"><div class="iconbox">${b.icon}</div><div class="grow"><b>${b.name}</b><small>${b.desc} · Lv ${s.boosts[b.id]}</small><div class="price">${b.price().toLocaleString()} Points</div></div><button class="buy" data-buy="${b.id}">Upgrade</button></div>`).join('');
- $$('[data-buy]').forEach(btn=>btn.onclick=()=>buyBoost(btn.dataset.buy));
-}
-function buyBoost(id){
- const b=boosts.find(x=>x.id===id),price=b.price();if(s.points<price){toast('Not enough points');return}
- s.points-=price;s.boosts[id]++;
- if(id==='tap')s.tapPower++;
- if(id==='energy'){s.maxEnergy+=500;s.energy=Math.min(s.maxEnergy,s.energy+500)}
- if(id==='recharge')s.recharge++;
- s.missions.boost=true;toast('Boost upgraded');render();
-}
-function renderMissions(){
- const items=[
-  ['tap100','👆','Earn 100 Points',250],
-  ['tap1000','🔥','Earn 1,000 Points',1000],
-  ['boost','⚡','Buy any Boost',500],
-  ['daily','🎁','Claim Daily Reward',750],
-  ['invite','👥','Invite a Friend',5000]
- ];
- $('#missionList').innerHTML=items.map(([id,ic,n,r])=>`<div class="panel mission-item"><div class="iconbox">${ic}</div><div class="grow"><b>${n}</b><small>Reward: ${r.toLocaleString()} Points</small></div><b>${s.missions[id]?'✓':'•'}</b></div>`).join('');
-}
-const demoLeaders=[['Nova',875420],['Kael',681250],['Nyx',522910],['Orion',411200],['Lyra',298330]];
-function renderLeader(){
- $('#leaderList').innerHTML=demoLeaders.map((x,i)=>`<div class="panel leader-item"><div class="iconbox">${i+1}</div><div class="grow"><b>${x[0]}</b><small>ALEK Player</small></div><b>${x[1].toLocaleString()}</b></div>`).join('');
-}
-function showView(v){
- $$('.view').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
- $$('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.go===v));
- window.scrollTo({top:0,behavior:'smooth'});
-}
-$$('[data-go]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.go)));
-
-$('#dailyBtn').addEventListener('click',()=>{
- const now=Date.now(),day=86400000;if(now-s.lastDaily<day){toast('Daily reward already claimed');return}
- s.lastDaily=now;s.points+=1500;s.missions.daily=true;$('#dailyText').textContent='Come back tomorrow';toast('+1,500 ALEK Points');render();
-});
-$('#inviteBtn').addEventListener('click',()=>{
- s.missions.invite=true;
- const url='https://alek.best/arena/';
- const text='Join me in ALEK Tap Arena ⚡';
- try{tg?.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`)}catch{}
- toast('Invite opened');render();
-});
-
-setInterval(()=>{if(s.energy<s.maxEnergy){s.energy=Math.min(s.maxEnergy,s.energy+s.recharge);render()}},1000);
-render();
+const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#06101d');tg.setBackgroundColor('#06101d')}catch{}}
+const user=tg?.initDataUnsafe?.user||null,$=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],key='alekTapFinalV1';
+const defaults={points:0,energy:1000,maxEnergy:1000,tapPower:1,recharge:3,level:1,referrals:0,lastDaily:0,streak:0,boosts:{tap:1,energy:1,recharge:1},missions:{tap100:false,tap1000:false,boost:false,daily:false,invite:false,boss:false,base:false},base:{mine:1,core:1,lab:1,vault:1},bossHp:100000,bossMax:100000,bossDamage:0,seasonClaimed:[],lastVault:0,clan:'',clanPower:0,lastSeen:Date.now(),totalTaps:0};
+let s=Object.assign({},defaults,JSON.parse(localStorage.getItem(key)||'null')||{});s.boosts=Object.assign({},defaults.boosts,s.boosts||{});s.missions=Object.assign({},defaults.missions,s.missions||{});s.base=Object.assign({},defaults.base,s.base||{});
+let combo=1,lastTapAt=0,comboTimer=null,fever=0,feverCharge=0;
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),1400)},save=()=>{s.lastSeen=Date.now();localStorage.setItem(key,JSON.stringify(s))};
+if(user)$('#playerName').textContent=user.first_name+(user.username?' · @'+user.username:'');setTimeout(()=>$('#splash')?.classList.add('hide'),1200);
+const levelFor=p=>Math.max(1,Math.floor(Math.sqrt(p/2500))+1),leagueFor=l=>l<3?'Bronze League':l<6?'Silver League':l<10?'Gold League':l<15?'Diamond League':l<22?'Master League':'ALEK Elite',passivePerMin=()=>s.base.mine*8+s.base.core*5+s.base.lab*3+s.base.vault*4,eventActive=()=>Math.floor(Date.now()/7200000)%2===0;
+{const mins=Math.min(120,Math.max(0,(Date.now()-(s.lastSeen||Date.now()))/60000)),r=Math.floor(mins*passivePerMin());if(r){s.points+=r;setTimeout(()=>toast(`Offline reward +${r.toLocaleString()}`),1400)}}
+function render(){s.level=levelFor(s.points);for(const [id,v] of Object.entries({points:Math.floor(s.points).toLocaleString(),energy:Math.floor(s.energy),maxEnergy:s.maxEnergy,recharge:s.recharge,level:s.level,tapPower:s.tapPower,homeRefs:s.referrals,refCount:s.referrals,league:leagueFor(s.level)})){const e=$('#'+id);if(e)e.textContent=v}if($('#energyFill'))$('#energyFill').style.width=Math.min(100,s.energy/s.maxEnergy*100)+'%';if($('#passiveRate'))$('#passiveRate').textContent=passivePerMin()+'/min';if($('#bossFill'))$('#bossFill').style.width=s.bossHp/s.bossMax*100+'%';if($('#bossHpText'))$('#bossHpText').textContent=Math.ceil(s.bossHp/s.bossMax*100)+'%';if($('#clanName'))$('#clanName').textContent=s.clan||'No Squad Yet';if($('#clanPower'))$('#clanPower').textContent=s.clanPower.toLocaleString();renderBoosts();renderMissions();renderLeader();renderBase();renderSeason();save()}
+function tap(e){if(s.energy<1)return toast('Energy depleted');const now=Date.now();combo=now-lastTapAt<620?Math.min(15,combo+1):1;lastTapAt=now;s.totalTaps++;feverCharge=Math.min(100,feverCharge+(combo>3?4:2));if(feverCharge>=100&&fever<=0){fever=12;feverCharge=0;toast('⚡ ALEK FEVER · 2X POWER')}const val=Math.min((s.tapPower+(combo>=6?1:0))*(fever>0?2:1),s.energy);s.points+=val;s.energy-=Math.min(s.tapPower,s.energy);s.missions.tap100=s.points>=100;s.missions.tap1000=s.points>=1000;const f=document.createElement('span');f.className='float';f.textContent='+'+val;const r=$('.coin-wrap').getBoundingClientRect();f.style.left=e.clientX-r.left-12+'px';f.style.top=e.clientY-r.top-10+'px';$('#floatLayer').appendChild(f);setTimeout(()=>f.remove(),800);const cb=$('#comboBadge');if(cb){cb.textContent=fever>0?`FEVER ${Math.ceil(fever)}s`:`COMBO x${combo}`;cb.classList.toggle('hot',combo>1||fever>0)}clearTimeout(comboTimer);comboTimer=setTimeout(()=>{combo=1;if(cb&&fever<=0){cb.textContent='COMBO x1';cb.classList.remove('hot')}},850);try{tg?.HapticFeedback?.impactOccurred(combo>=6?'medium':'light')}catch{}render()}$('#tapCoin')?.addEventListener('pointerdown',tap);
+const boosts=[['tap','👆','Multi Tap','More points per tap',()=>250*s.boosts.tap],['energy','🔋','Energy Limit','Increase max energy',()=>400*s.boosts.energy],['recharge','⚡','Recharge Speed','Faster energy recharge',()=>600*s.boosts.recharge]];
+function renderBoosts(){if(!$('#boostList'))return;$('#boostList').innerHTML=boosts.map(b=>`<div class="panel boost-item"><div class="iconbox">${b[1]}</div><div class="grow"><b>${b[2]}</b><small>${b[3]} · Lv ${s.boosts[b[0]]}</small><div class="price">${b[4]().toLocaleString()} Points</div></div><button class="buy" data-buy="${b[0]}">Upgrade</button></div>`).join('');$$('[data-buy]').forEach(x=>x.onclick=()=>{const b=boosts.find(y=>y[0]===x.dataset.buy),p=b[4]();if(s.points<p)return toast('Not enough points');s.points-=p;s.boosts[x.dataset.buy]++;if(x.dataset.buy==='tap')s.tapPower++;if(x.dataset.buy==='energy'){s.maxEnergy+=500;s.energy+=500}if(x.dataset.buy==='recharge')s.recharge++;s.missions.boost=true;toast('Boost upgraded');render()})}
+const mods=[['mine','⛏️','ALEK Mine','Passive Points',l=>800*l],['core','⚛️','Energy Core','Base production',l=>1100*l],['lab','🧪','Research Lab','Research power',l=>1500*l],['vault','🏦','Vault','Offline storage',l=>1800*l]];
+function renderBase(){if(!$('#baseList'))return;$('#baseList').innerHTML=mods.map(m=>`<div class="panel boost-item"><div class="iconbox">${m[1]}</div><div class="grow"><b>${m[2]}</b><small>${m[3]} · Lv ${s.base[m[0]]}</small><div class="price">${m[4](s.base[m[0]]).toLocaleString()} Points</div></div><button class="buy" data-base="${m[0]}">Build</button></div>`).join('');$$('[data-base]').forEach(b=>b.onclick=()=>{const m=mods.find(x=>x[0]===b.dataset.base),p=m[4](s.base[b.dataset.base]);if(s.points<p)return toast('Not enough points');s.points-=p;s.base[b.dataset.base]++;s.missions.base=true;toast('Base upgraded');render()})}
+function renderMissions(){if(!$('#missionList'))return;const a=[['tap100','👆','Earn 100 Points'],['tap1000','🔥','Earn 1,000 Points'],['boost','⚡','Buy a Boost'],['daily','🎁','Claim Daily Streak'],['base','🏗️','Upgrade ALEK Base'],['boss','👾','Attack World Boss'],['invite','👥','Invite a Friend']];$('#missionList').innerHTML=a.map(x=>`<div class="panel mission-item"><div class="iconbox">${x[1]}</div><div class="grow"><b>${x[2]}</b><small>ALEK mission</small></div><b>${s.missions[x[0]]?'✓':'•'}</b></div>`).join('')}
+function renderLeader(){if(!$('#leaderList'))return;const a=[['Nova',875420],['Kael',681250],['Nyx',522910],['Orion',411200],['Lyra',298330]];$('#leaderList').innerHTML=a.map((x,i)=>`<div class="panel leader-item"><div class="iconbox">${i+1}</div><div class="grow"><b>${x[0]}</b><small>ALEK Player</small></div><b>${x[1].toLocaleString()}</b></div>`).join('')}
+const sr=[500,1000,1800,3000,5000,8000];function renderSeason(){if(!$('#seasonTrack'))return;$('#seasonTrack').innerHTML=sr.map((r,i)=>{const req=(i+1)*3,ok=s.level>=req,c=s.seasonClaimed.includes(i);return`<div class="panel season-item"><div class="season-node">${req}</div><div class="grow"><b>Genesis Level ${req}</b><small>${r.toLocaleString()} Points</small></div><button class="buy" data-season="${i}" ${!ok||c?'disabled':''}>${c?'Claimed':ok?'Claim':'Locked'}</button></div>`}).join('');$$('[data-season]').forEach(b=>b.onclick=()=>{const i=+b.dataset.season;if(s.seasonClaimed.includes(i)||s.level<(i+1)*3)return;s.points+=sr[i];s.seasonClaimed.push(i);toast('Season reward claimed');render()})}
+function showView(v){$$('.view').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$$('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.go===v));scrollTo({top:0,behavior:'smooth'})}$$('[data-go]').forEach(b=>b.onclick=()=>showView(b.dataset.go));
+$('#dailyBtn')?.addEventListener('click',()=>{const now=Date.now(),day=86400000;if(now-s.lastDaily<day)return toast('Daily already claimed');s.streak=now-s.lastDaily<day*2.2?Math.min(7,s.streak+1):1;s.lastDaily=now;const r=500+s.streak*350;s.points+=r;s.missions.daily=true;$('#dailyText').textContent=`Day ${s.streak}/7 claimed`;toast(`🔥 Day ${s.streak} · +${r}`);render()});
+$('#inviteBtn')?.addEventListener('click',()=>{s.missions.invite=true;try{tg?.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent('https://alek.best/arena/')}&text=${encodeURIComponent('Join me in ALEK Tap Arena ⚡')}`)}catch{}toast('Invite opened');render()});
+$('#bossHitBtn')?.addEventListener('click',()=>{if(s.energy<10)return toast('Need 10 Energy');const d=(25+s.tapPower*8)*(fever>0?2:1);s.energy-=10;s.bossHp=Math.max(0,s.bossHp-d);s.bossDamage+=d;s.missions.boss=true;if(s.bossHp<=0){s.points+=10000;s.bossHp=s.bossMax;toast('🏆 Titan defeated · +10,000')}else toast(`Boss -${Math.floor(d)} HP`);render()});
+$('#clanBtn')?.addEventListener('click',()=>{if(s.clan)return toast('Squad already created');s.clan='ALEK Pioneers';s.clanPower=Math.floor(s.points/10)+s.level*100;toast('Squad created');render()});
+$$('[data-vault]').forEach(b=>b.onclick=()=>{const now=Date.now(),day=86400000;if(now-s.lastVault<day)return toast('Vault already opened');const rs=[750,1250,2000],r=rs[(+b.dataset.vault+Math.floor(now/day))%3];s.lastVault=now;s.points+=r;b.innerHTML=`✨<b>+${r}</b>`;toast('Vault opened');render()});
+setInterval(()=>{const rate=s.recharge*(eventActive()?2:1);if(s.energy<s.maxEnergy)s.energy=Math.min(s.maxEnergy,s.energy+rate);if(fever>0)fever=Math.max(0,fever-1);render()},1000);
+setInterval(()=>{if(!$('#eventTimer'))return;const r=7200000-Date.now()%7200000,h=String(Math.floor(r/3600000)).padStart(2,'0'),m=String(Math.floor(r%3600000/60000)).padStart(2,'0'),sec=String(Math.floor(r%60000/1000)).padStart(2,'0');$('#eventTimer').textContent=`${h}:${m}:${sec}`},1000);render();
