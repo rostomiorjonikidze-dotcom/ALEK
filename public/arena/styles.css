@@ -10,12 +10,12 @@ radial-gradient(circle at 20% 0%, rgba(53,167,255,.12), transparent 35%),
 radial-gradient(circle at 90% 10%, rgba(139,92,246,.12), transparent 30%),
 var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 body{min-height:100vh}
-button{font:inherit}
-.app-shell{max-width:520px;margin:0 auto;min-height:100vh;padding:18px 16px 92px}
+button,input{font:inherit}
+.app-shell{max-width:520px;margin:0 auto;min-height:100vh;padding:18px 16px 96px}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .eyebrow{font-size:10px;letter-spacing:.18em;color:var(--cyan);font-weight:800}
 h1{font-size:22px;margin:3px 0 0}
-.wallet-pill{display:flex;align-items:center;gap:4px;padding:10px 12px;border:1px solid var(--line);background:rgba(13,26,45,.92);border-radius:999px;color:var(--gold)}
+.energy-pill{display:flex;align-items:center;gap:4px;padding:10px 12px;border:1px solid var(--line);background:rgba(13,26,45,.92);border-radius:999px;color:var(--gold)}
 .hero,.card{background:linear-gradient(180deg,rgba(17,31,54,.96),rgba(10,22,39,.96));border:1px solid var(--line);border-radius:22px;box-shadow:0 16px 40px rgba(0,0,0,.22)}
 .hero{padding:20px;overflow:hidden;position:relative}
 .hero:after{content:"A";position:absolute;right:-4px;bottom:-55px;font-size:180px;font-weight:900;color:rgba(53,167,255,.05)}
@@ -48,8 +48,6 @@ h1{font-size:22px;margin:3px 0 0}
 .center{text-align:center}
 .big{font-size:34px;font-weight:900}
 .muted{color:var(--muted)}
-.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);opacity:0;transition:.25s;background:#12243e;border:1px solid #2e5b90;color:white;padding:12px 16px;border-radius:14px;z-index:10;max-width:90%;text-align:center}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .bottom-nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(520px,100%);display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:9px 10px calc(9px + env(safe-area-inset-bottom));background:rgba(5,13,24,.96);backdrop-filter:blur(16px);border-top:1px solid #173050;z-index:8}
 .nav-btn{border:0;background:transparent;color:#7890ad;padding:7px 3px;border-radius:12px;display:flex;flex-direction:column;gap:2px;align-items:center}
 .nav-btn span{font-size:20px}.nav-btn small{font-size:10px}.nav-btn.active{color:#59c8ff;background:#10243d}
@@ -58,4 +56,8 @@ h1{font-size:22px;margin:3px 0 0}
 .pill.active{background:#1b4d80;color:white}
 .sponsor{border:1px solid #5a3a88;background:linear-gradient(180deg,#1d1530,#101a2e)}
 .notice{font-size:12px;line-height:1.5;color:var(--muted);padding:12px;border:1px dashed #31557e;border-radius:14px}
+.profile-head{display:flex;gap:12px;align-items:center}
+.avatar{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#15395f,#513283);font-size:26px}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);opacity:0;transition:.25s;background:#12243e;border:1px solid #2e5b90;color:white;padding:12px 16px;border-radius:14px;z-index:20;max-width:90%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media (max-width:360px){.box-grid,.grid2{grid-template-columns:1fr}.app-shell{padding-left:12px;padding-right:12px}}
