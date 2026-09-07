@@ -1,0 +1,13 @@
+RESERVED AD PLACEMENTS
+
+1. Top banner under the profile/header.
+2. Mid-page sponsored banner under quick actions.
+3. Missions sponsor slot.
+
+These are placeholders only. They can later be connected to:
+- direct sponsors
+- campaign links
+- tracked impressions/clicks
+- rewarded ad providers, where platform rules allow
+
+Do not promise investment/token returns in ads.
