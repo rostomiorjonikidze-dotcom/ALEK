@@ -21,10 +21,10 @@ function home(){return `<section class="hero"><div class="eyebrow">ALEK WORLD ·
 <div class="section-title"><h3>Creator</h3><span>ALEK</span></div><div class="card"><div class="title">Created by Rostom Orjonikidze</div><div class="sub">Founder & Creator of ALEK / ALEK World</div></div>`}
 
 function worldPage(){return `<div class="game-toolbar">
-<button class="secondary compact" id="fullscreenBtn">⛶ Full Screen</button>
-<button class="secondary compact" id="settingsBtn">⚙ Camera</button>
-<button class="secondary compact" id="craftBtn">🛠 Craft</button>
-<button class="secondary compact" id="exitBtn">← Exit</button>
+<button class="secondary compact" id="fullscreenBtn">⛶ FULL SCREEN</button>
+<button class="secondary compact" id="settingsBtn">⚙ CAMERA</button>
+<button class="secondary compact" id="craftBtn">🛠 CRAFT</button>
+<button class="secondary compact" id="exitBtn">← EXIT</button>
 </div>
 <div class="camera-panel" id="cameraPanel" hidden>
 <label>Sensitivity <input id="sensRange" type="range" min="1.5" max="12" step=".5" value="${state.camSensitivity}"><b id="sensVal">${state.camSensitivity}</b></label>
@@ -57,7 +57,14 @@ function worldPage(){return `<div class="game-toolbar">
 <button class="action-btn sprint" id="sprintBtn">SPRINT</button>
 <button class="action-btn build" id="buildBtn">BUILD</button>
 <button class="action-btn interact" id="interactBtn">LOOT</button>
-</div></div></div></div>
+</div>
+<div class="camera-touch">
+<button class="cam-btn" id="camLeft">↶</button>
+<button class="cam-btn" id="camNear">＋</button>
+<button class="cam-btn" id="camFar">−</button>
+<button class="cam-btn" id="camRight">↷</button>
+</div>
+</div></div></div>
 <div class="card world-tip" style="margin-top:12px"><b>Desktop:</b> WASD move · Shift sprint · Space jump · Q dash · F attack · R heavy attack · E loot/use · mouse drag camera · wheel zoom. <b>Mobile:</b> joystick + action buttons; drag the world to rotate camera.</div>`}
 
 function missions(){return `<div class="section-title"><h3>Missions</h3><span>Daily</span></div>${[['login','✅','Enter ALEK World',100],['wood','🪵','Collect 10 Wood',200],['kills','⚔','Defeat 3 Raiders',300],['build','🏗','Build 5 blocks',250]].map(([id,ic,n,r])=>`<div class="card row"><div><div class="title">${ic} ${n}</div><div class="sub reward">+${r} Points</div></div><span>${state.missions[id]?'DONE':'ACTIVE'}</span></div>`).join('')}`}
@@ -67,23 +74,31 @@ function shop(){return `<div class="section-title"><h3>Shop</h3><span>${state.cr
 function render(){save();app.innerHTML=route==='home'?home():route==='world'?worldPage():route==='missions'?missions():route==='friends'?friends():shop();bind();if(route==='world')initWorld()}
 function bind(){
 document.querySelector('#playBtn')?.addEventListener('click',()=>nav('world'));
-document.querySelector('#exitBtn')?.addEventListener('click',()=>nav('home'));
+document.querySelector('#exitBtn')?.addEventListener('click',()=>{
+ document.body.classList.remove('game-immersive');
+ try{if(document.fullscreenElement)document.exitFullscreen()}catch{}
+ nav('home');
+});
 document.querySelector('#inviteBtn')?.addEventListener('click',()=>{const url='https://alek.best/arena/';try{tg?.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent('Join ALEK World 🌍')}`)}catch{toast('Invite link ready')}})
 }
 
 async function toggleFullscreen(){
  const shell=document.querySelector('#worldShell');
- if(!document.fullscreenElement){
-   try{await shell.requestFullscreen?.();}catch{}
+ const active=document.body.classList.contains('game-immersive');
+ if(!active){
+   document.body.classList.add('game-immersive');
    shell.classList.add('pseudo-fullscreen');
-   document.body.classList.add('playing-fullscreen');
-   document.querySelector('#fullscreenBtn').textContent='✕ Exit Full Screen';
+   try{tg?.expand();tg?.requestFullscreen?.()}catch{}
+   try{if(shell.requestFullscreen && !document.fullscreenElement) await shell.requestFullscreen()}catch{}
+   document.querySelector('#fullscreenBtn').textContent='✕ EXIT FULL SCREEN';
  }else{
-   try{await document.exitFullscreen?.();}catch{}
-   shell.classList.remove('pseudo-fullscreen');document.body.classList.remove('playing-fullscreen');
-   document.querySelector('#fullscreenBtn').textContent='⛶ Full Screen';
+   document.body.classList.remove('game-immersive');
+   shell.classList.remove('pseudo-fullscreen');
+   try{tg?.exitFullscreen?.()}catch{}
+   try{if(document.fullscreenElement) await document.exitFullscreen()}catch{}
+   document.querySelector('#fullscreenBtn').textContent='⛶ FULL SCREEN';
  }
- setTimeout(()=>world?.resize(),80);
+ setTimeout(()=>world?.resize(),120);
 }
 
 function initWorld(){
@@ -94,6 +109,7 @@ function initWorld(){
    if(s.wood>=10)state.missions.wood=true;if(s.kills>=3)state.missions.kills=true;save();
  }});
  world.setCameraSettings({sensitivity:state.camSensitivity/1000,distance:state.camDistance,autoLock:state.autoLock});world.start();
+ setTimeout(()=>{document.body.classList.add('game-immersive');document.querySelector('#worldShell')?.classList.add('pseudo-fullscreen');world?.resize()},120);
 
  const joy=document.querySelector('#joystick'),knob=document.querySelector('#joyKnob');let active=false;
  const updateJoy=(x,y)=>{const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=(x-cx)/(r.width/2),dy=(y-cy)/(r.height/2),len=Math.hypot(dx,dy);if(len>1){dx/=len;dy/=len}knob.style.transform=`translate(${dx*31}px,${dy*31}px)`;world.setJoystick(dx,dy)};
@@ -108,6 +124,11 @@ function initWorld(){
  const sprint=document.querySelector('#sprintBtn');sprint.addEventListener('pointerdown',()=>{world.setSprint(true);sprint.classList.add('held')});['pointerup','pointercancel','pointerleave'].forEach(ev=>sprint.addEventListener(ev,()=>{world.setSprint(false);sprint.classList.remove('held')}));
  document.querySelector('#buildBtn').addEventListener('pointerdown',()=>{world.build();buildCount++;if(buildCount>=5)state.missions.build=true;save()});
  document.querySelector('#interactBtn').addEventListener('pointerdown',()=>world.interact());
+ const rotate=(d)=>{world.cameraYaw+=d;};
+ document.querySelector('#camLeft').addEventListener('pointerdown',()=>rotate(.28));
+ document.querySelector('#camRight').addEventListener('pointerdown',()=>rotate(-.28));
+ document.querySelector('#camNear').addEventListener('pointerdown',()=>{world.cameraDistance=Math.max(4.5,world.cameraDistance-.7)});
+ document.querySelector('#camFar').addEventListener('pointerdown',()=>{world.cameraDistance=Math.min(12,world.cameraDistance+.7)});
 
  document.querySelector('#fullscreenBtn').addEventListener('click',toggleFullscreen);
  document.querySelector('#settingsBtn').addEventListener('click',()=>{const p=document.querySelector('#cameraPanel');p.hidden=!p.hidden});
