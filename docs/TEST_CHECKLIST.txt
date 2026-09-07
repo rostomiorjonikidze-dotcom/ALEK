@@ -1,0 +1,15 @@
+ALEK WORLD 3D TEST CHECKLIST
+
+1. Replace public/arena with this package.
+2. Commit to GitHub.
+3. Wait for deploy.
+4. Open https://alek.best/arena/
+5. Tap Enter World.
+6. Test mobile joystick.
+7. Drag world to rotate camera.
+8. Attack a tree until it disappears.
+9. Confirm wood increases.
+10. Build a block.
+11. Fight a Raider.
+12. Confirm HP drops and player respawns if HP reaches 0.
+13. Test on Telegram after connecting the Mini App URL.
