@@ -1,36 +1,106 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#07111f" />
-  <title>ALEK World</title>
-  <link rel="stylesheet" href="./styles.css" />
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06101d">
+<title>ALEK Tap Game</title>
+<link rel="stylesheet" href="./styles.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div>
-        <div class="eyebrow">ALEK ECOSYSTEM</div>
-        <h1>ALEK WORLD</h1>
-      </div>
-      <div class="status-pill">⚡ <span id="energy">20</span>/20</div>
-    </header>
+<div id="splash" class="splash">
+  <div class="splash-inner">
+    <img src="./assets/alek-logo.png" class="splash-logo" alt="ALEK logo">
+    <div class="brand">ALEK</div>
+    <div class="splash-title">TAP ARENA</div>
+    <div class="creator">Created by <b>Rostom Orjonikidze</b></div>
+    <div class="loading"><i></i></div>
+  </div>
+</div>
 
-    <main id="app"></main>
+<div class="app" id="app">
+<header class="topbar">
+  <div class="identity"><img src="./assets/alek-logo.png" alt="ALEK"><div><b>ALEK</b><small id="playerName">Guest Player</small></div></div>
+  <div class="level">LV <span id="level">1</span></div>
+</header>
 
-    <nav class="bottom-nav">
-      <button data-route="home" class="nav-btn active"><span>⌂</span><small>Home</small></button>
-      <button data-route="world" class="nav-btn"><span>🌍</span><small>World</small></button>
-      <button data-route="missions" class="nav-btn"><span>◎</span><small>Missions</small></button>
-      <button data-route="friends" class="nav-btn"><span>♟</span><small>Friends</small></button>
-      <button data-route="shop" class="nav-btn"><span>◇</span><small>Shop</small></button>
-    </nav>
+<section class="ad-slot top-ad">
+  <span>ADVERTISEMENT</span>
+  <b id="adTopTitle">Your sponsor here</b>
+  <small>Reserved advertising space</small>
+</section>
+
+<main>
+<section class="home-view view active" data-view="home">
+  <div class="balance-label">ALEK POINTS</div>
+  <div class="balance" id="points">0</div>
+  <div class="league" id="league">Bronze League</div>
+
+  <div class="coin-wrap">
+    <button class="coin" id="tapCoin" aria-label="Tap ALEK coin">
+      <span class="coin-glow"></span>
+      <img src="./assets/alek-logo.png" alt="">
+    </button>
+    <div id="floatLayer"></div>
   </div>
 
-  <div id="toast" class="toast"></div>
+  <div class="energy-row">
+    <span>⚡ <b id="energy">1000</b>/<span id="maxEnergy">1000</span></span>
+    <span>+<b id="recharge">3</b>/sec</span>
+  </div>
+  <div class="energy-bar"><i id="energyFill"></i></div>
 
-  <script type="module" src="./app.js"></script>
+  <div class="quick-grid">
+    <button class="panel quick" data-go="boost"><span>⚡</span><b>Boosts</b><small>Improve tap power</small></button>
+    <button class="panel quick" id="dailyBtn"><span>🎁</span><b>Daily</b><small id="dailyText">Claim reward</small></button>
+  </div>
+
+  <section class="ad-slot mid-ad">
+    <span>SPONSORED</span><b id="adMidTitle">Featured partner placement</b><small>Banner / campaign / link area</small>
+  </section>
+</section>
+
+<section class="boost-view view" data-view="boost">
+  <h2>Boosts</h2>
+  <p class="muted">Spend ALEK Points to improve your tapping power and energy.</p>
+  <div id="boostList"></div>
+</section>
+
+<section class="missions-view view" data-view="missions">
+  <h2>Missions</h2>
+  <p class="muted">Complete tasks to earn bonus points.</p>
+  <div id="missionList"></div>
+  <section class="ad-slot"><span>ADVERTISEMENT</span><b>Mission sponsor slot</b><small>Reserved campaign placement</small></section>
+</section>
+
+<section class="friends-view view" data-view="friends">
+  <h2>Friends</h2>
+  <div class="panel">
+    <div class="big-icon">👥</div>
+    <h3>Invite your friends</h3>
+    <p class="muted">Earn 5,000 ALEK Points for each verified referral.</p>
+    <button class="primary" id="inviteBtn">Invite Friend</button>
+  </div>
+  <div class="panel row"><span>Referrals</span><b id="refCount">0</b></div>
+</section>
+
+<section class="leader-view view" data-view="leader">
+  <h2>Leaderboard</h2>
+  <div id="leaderList"></div>
+</section>
+</main>
+
+<nav class="nav">
+<button class="nav-btn active" data-go="home"><span>⌂</span><small>Home</small></button>
+<button class="nav-btn" data-go="boost"><span>⚡</span><small>Boosts</small></button>
+<button class="nav-btn" data-go="missions"><span>◎</span><small>Missions</small></button>
+<button class="nav-btn" data-go="friends"><span>♟</span><small>Friends</small></button>
+<button class="nav-btn" data-go="leader"><span>🏆</span><small>Top</small></button>
+</nav>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="./app.js"></script>
 </body>
 </html>
