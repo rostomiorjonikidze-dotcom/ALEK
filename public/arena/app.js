@@ -3,6 +3,7 @@ const tg=window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#06101d');tg.setBackgroundColor('#06101d')}catch{}}
 const user=tg?.initDataUnsafe?.user||null;
 const key='alekTapGameV1';
+let combo=1,lastTapAt=0,comboTimer=null;
 let s=JSON.parse(localStorage.getItem(key)||'null')||{
  points:0,energy:1000,maxEnergy:1000,tapPower:1,recharge:3,level:1,referrals:0,lastDaily:0,
  boosts:{tap:1,energy:1,recharge:1},missions:{tap100:false,tap1000:false,boost:false,daily:false,invite:false}
@@ -13,7 +14,18 @@ const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clea
 const save=()=>localStorage.setItem(key,JSON.stringify(s));
 if(user) $('#playerName').textContent=user.first_name+(user.username?' · @'+user.username:'');
 
-setTimeout(()=>$('#splash').classList.add('hide'),1600);
+let loadPct=0;
+const loadingBar=$('#loadingBar'),loadingPct=$('#loadingPct');
+const loader=setInterval(()=>{
+  const step=loadPct<70?Math.floor(5+Math.random()*9):Math.floor(2+Math.random()*5);
+  loadPct=Math.min(100,loadPct+step);
+  if(loadingBar) loadingBar.style.width=loadPct+'%';
+  if(loadingPct) loadingPct.textContent=loadPct+'%';
+  if(loadPct>=100){
+    clearInterval(loader);
+    setTimeout(()=>$('#splash').classList.add('hide'),220);
+  }
+},110);
 
 function levelFor(p){return Math.max(1,Math.floor(Math.sqrt(p/2500))+1)}
 function leagueFor(l){return l<3?'Bronze League':l<6?'Silver League':l<10?'Gold League':l<15?'Diamond League':'ALEK Elite'}
@@ -34,11 +46,23 @@ function render(){
 }
 function tap(e){
  if(s.energy<1){toast('Energy depleted');return}
- const val=Math.min(s.tapPower,s.energy);s.points+=val;s.energy-=val;
+ const now=Date.now();
+ combo=(now-lastTapAt<650)?Math.min(10,combo+1):1;
+ lastTapAt=now;
+ const comboBonus=combo>=5?1:0;
+ const raw=s.tapPower+comboBonus;
+ const val=Math.min(raw,s.energy);
+ s.points+=val;s.energy-=val;
  s.missions.tap100=s.points>=100;s.missions.tap1000=s.points>=1000;
  const f=document.createElement('span');f.className='float';f.textContent='+'+val;
- const r=$('.coin-wrap').getBoundingClientRect();f.style.left=`${e.clientX-r.left-12}px`;f.style.top=`${e.clientY-r.top-10}px`;$('#floatLayer').appendChild(f);setTimeout(()=>f.remove(),800);
- try{tg?.HapticFeedback?.impactOccurred('light')}catch{}
+ const r=$('.coin-wrap').getBoundingClientRect();
+ f.style.left=`${e.clientX-r.left-12}px`;f.style.top=`${e.clientY-r.top-10}px`;
+ $('#floatLayer').appendChild(f);setTimeout(()=>f.remove(),800);
+ const cb=$('#comboBadge');
+ if(cb){cb.textContent=`COMBO x${combo}`;cb.classList.toggle('hot',combo>1)}
+ clearTimeout(comboTimer);
+ comboTimer=setTimeout(()=>{combo=1;if(cb){cb.textContent='COMBO x1';cb.classList.remove('hot')}},800);
+ try{tg?.HapticFeedback?.impactOccurred(combo>=5?'medium':'light')}catch{}
  render();
 }
 $('#tapCoin').addEventListener('pointerdown',tap);

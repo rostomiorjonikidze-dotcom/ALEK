@@ -10,13 +10,17 @@
 </head>
 <body>
 <div id="splash" class="splash">
-  <div class="splash-art">
-    <img src="./assets/alek-hero-art.png" alt="ALEK Tap Arena">
-    <div class="splash-overlay">
-      <div class="creator">Created by <b>Rostom Orjonikidze</b></div>
-      <div class="loading"><i></i></div>
+  <div class="splash-logo-only">
+    <div class="logo-orbit">
+      <img src="./assets/alek-hero-art.png" alt="ALEK logo" class="logo-only-img">
     </div>
+    <div class="brand splash-brand">ALEK</div>
+    <div class="splash-title">TAP ARENA</div>
+    <div class="creator">Created by <b>Rostom Orjonikidze</b></div>
+    <div class="loading-row"><span>LOADING</span><b id="loadingPct">0%</b></div>
+    <div class="loading loading-real"><i id="loadingBar"></i><em></em></div>
   </div>
+</div>
 </div>
 </div>
 
@@ -51,7 +55,7 @@
   </section>
 
   <section class="tap-stage panel-glass">
-    <div class="tap-head">
+    <div class="combo-badge" id="comboBadge">COMBO x1</div><div class="tap-head">
       <div><small>TAP POWER</small><b>+<span id="tapPower">1</span></b></div>
       <div><small>LEVEL</small><b id="level">1</b></div>
     </div>
