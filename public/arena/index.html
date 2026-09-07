@@ -10,13 +10,14 @@
 </head>
 <body>
 <div id="splash" class="splash">
-  <div class="splash-inner">
-    <img src="./assets/alek-logo.png" class="splash-logo" alt="ALEK logo">
-    <div class="brand">ALEK</div>
-    <div class="splash-title">TAP ARENA</div>
-    <div class="creator">Created by <b>Rostom Orjonikidze</b></div>
-    <div class="loading"><i></i></div>
+  <div class="splash-art">
+    <img src="./assets/alek-hero-art.png" alt="ALEK Tap Arena">
+    <div class="splash-overlay">
+      <div class="creator">Created by <b>Rostom Orjonikidze</b></div>
+      <div class="loading"><i></i></div>
+    </div>
   </div>
+</div>
 </div>
 
 <div class="app" id="app">
@@ -33,35 +34,67 @@
 
 <main>
 <section class="home-view view active" data-view="home">
-  <div class="balance-label">ALEK POINTS</div>
-  <div class="balance" id="points">0</div>
-  <div class="league" id="league">Bronze League</div>
-
-  <div class="coin-wrap">
-    <button class="coin" id="tapCoin" aria-label="Tap ALEK coin">
-      <span class="coin-glow"></span>
-      <img src="./assets/alek-logo.png" alt="">
-    </button>
-    <div id="floatLayer"></div>
-  </div>
-
-  <div class="energy-row">
-    <span>⚡ <b id="energy">1000</b>/<span id="maxEnergy">1000</span></span>
-    <span>+<b id="recharge">3</b>/sec</span>
-  </div>
-  <div class="energy-bar"><i id="energyFill"></i></div>
-
-  <div class="quick-grid">
-    <button class="panel quick" data-go="boost"><span>⚡</span><b>Boosts</b><small>Improve tap power</small></button>
-    <button class="panel quick" id="dailyBtn"><span>🎁</span><b>Daily</b><small id="dailyText">Claim reward</small></button>
-  </div>
-
-  <section class="ad-slot mid-ad">
-    <span>SPONSORED</span><b id="adMidTitle">Featured partner placement</b><small>Banner / campaign / link area</small>
+  <section class="cinematic-hero">
+    <img src="./assets/alek-hero-art.png" alt="ALEK Tap Arena artwork">
+    <div class="cinematic-shade"></div>
+    <div class="hero-topline">
+      <span class="live-dot"></span>
+      <span>ALEK TAP ARENA</span>
+      <span class="season-pill">SEASON 01</span>
+    </div>
+    <div class="hero-copy">
+      <div class="hero-kicker">PLAY • EARN • GROW • TOGETHER</div>
+      <div class="hero-score" id="points">0</div>
+      <div class="hero-score-label">ALEK POINTS</div>
+      <div class="league" id="league">Bronze League</div>
+    </div>
   </section>
+
+  <section class="tap-stage panel-glass">
+    <div class="tap-head">
+      <div><small>TAP POWER</small><b>+<span id="tapPower">1</span></b></div>
+      <div><small>LEVEL</small><b id="level">1</b></div>
+    </div>
+    <div class="coin-wrap">
+      <button class="coin premium-coin" id="tapCoin" aria-label="Tap ALEK coin">
+        <span class="coin-glow"></span>
+        <img src="./assets/alek-hero-art.png" alt="">
+      </button>
+      <div id="floatLayer"></div>
+    </div>
+
+    <div class="energy-row">
+      <span>⚡ <b id="energy">1000</b>/<span id="maxEnergy">1000</span></span>
+      <span>+<b id="recharge">3</b>/sec</span>
+    </div>
+    <div class="energy-bar"><i id="energyFill"></i></div>
+  </section>
+
+  <div class="quick-grid premium-actions">
+    <button class="panel quick premium-card" data-go="boost"><span>⚡</span><b>Boosts</b><small>Increase tap power</small></button>
+    <button class="panel quick premium-card" id="dailyBtn"><span>🎁</span><b>Daily Reward</b><small id="dailyText">Claim reward</small></button>
+  </div>
+
+  <section class="ad-slot premium-ad top-ad">
+    <span>ADVERTISEMENT</span>
+    <b id="adTopTitle">Premium sponsor placement</b>
+    <small>Reserved for partner campaign</small>
+  </section>
+
+  <section class="panel stats-panel">
+    <div><small>REFERRALS</small><b id="homeRefs">0</b></div>
+    <div><small>CRYSTALS</small><b>250</b></div>
+    <div><small>RANK</small><b>#—</b></div>
+  </section>
+
+  <section class="ad-slot premium-ad mid-ad">
+    <span>SPONSORED</span><b id="adMidTitle">Featured partner</b><small>Banner / campaign / tracked link</small>
+  </section>
+
+  <div class="creator-footer">Created by <b>Rostom Orjonikidze</b></div>
 </section>
 
-<section class="boost-view view" data-view="boost">
+<section class="boost-view view view" data-view="boost">
   <h2>Boosts</h2>
   <p class="muted">Spend ALEK Points to improve your tapping power and energy.</p>
   <div id="boostList"></div>

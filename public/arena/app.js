@@ -24,6 +24,8 @@ function render(){
  $('#maxEnergy').textContent=s.maxEnergy;
  $('#recharge').textContent=s.recharge;
  $('#level').textContent=s.level;
+ const tp=$('#tapPower'); if(tp) tp.textContent=s.tapPower;
+ const hr=$('#homeRefs'); if(hr) hr.textContent=s.referrals;
  $('#league').textContent=leagueFor(s.level);
  $('#energyFill').style.width=`${Math.max(0,Math.min(100,s.energy/s.maxEnergy*100))}%`;
  $('#refCount').textContent=s.referrals;
