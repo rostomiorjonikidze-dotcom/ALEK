@@ -1,6 +1,6 @@
 {
   "name": "alek-arena-api",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,6 +9,9 @@
   "dependencies": {
     "express": "^4.21.2",
     "better-sqlite3": "^11.8.1",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "stripe": "^17.7.0",
+    "helmet": "^8.0.0",
+    "express-rate-limit": "^7.5.0"
   }
 }

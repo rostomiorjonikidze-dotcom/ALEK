@@ -1,129 +1,32 @@
 
 import 'dotenv/config';
-import express from 'express';
-import crypto from 'crypto';
-import Database from 'better-sqlite3';
-
-const app = express();
-app.use(express.json());
-const db = new Database(process.env.DB_PATH || './arena.db');
-
-db.exec(`
-CREATE TABLE IF NOT EXISTS players(
-  telegram_id TEXT PRIMARY KEY,
-  username TEXT,
-  first_name TEXT,
-  level INTEGER DEFAULT 1,
-  xp INTEGER DEFAULT 0,
-  xp_max INTEGER DEFAULT 100,
-  energy INTEGER DEFAULT 20,
-  max_energy INTEGER DEFAULT 20,
-  points INTEGER DEFAULT 0,
-  crystals INTEGER DEFAULT 250,
-  wins INTEGER DEFAULT 0,
-  losses INTEGER DEFAULT 0,
-  referrals INTEGER DEFAULT 0,
-  streak INTEGER DEFAULT 1,
-  daily_claimed_date TEXT,
-  inventory TEXT DEFAULT '[]',
-  missions TEXT DEFAULT '{"login":true,"play3":false,"upgrade":false,"invite":false,"website":false}',
-  referrer_id TEXT,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-);
-`);
-
-function validateTelegram(initData){
-  const token = process.env.BOT_TOKEN;
-  if(!token || !initData) return null;
-  const params = new URLSearchParams(initData);
-  const hash = params.get('hash'); params.delete('hash');
-  const dataCheckString = [...params.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>`${k}=${v}`).join('\n');
-  const secret = crypto.createHmac('sha256','WebAppData').update(token).digest();
-  const calc = crypto.createHmac('sha256',secret).update(dataCheckString).digest('hex');
-  if(!crypto.timingSafeEqual(Buffer.from(calc,'hex'),Buffer.from(hash,'hex'))) return null;
-  try{return JSON.parse(params.get('user')||'null')}catch{return null}
-}
-function auth(req,res,next){
-  const user=validateTelegram(req.get('X-Telegram-Init-Data'));
-  if(!user) return res.status(401).send('Unauthorized Telegram Mini App request');
-  req.tgUser=user; next();
-}
-function getPlayer(id){
-  return db.prepare('SELECT * FROM players WHERE telegram_id=?').get(String(id));
-}
-function normalize(p){
-  if(!p)return null;
-  return {...p,inventory:JSON.parse(p.inventory||'[]'),missions:JSON.parse(p.missions||'{}'),dailyClaimed:p.daily_claimed_date===new Date().toISOString().slice(0,10)};
-}
-function ensurePlayer(user, referrer){
-  let p=getPlayer(user.id);
-  if(!p){
-    db.prepare(`INSERT INTO players(telegram_id,username,first_name,referrer_id) VALUES(?,?,?,?)`).run(String(user.id),user.username||'',user.first_name||'',referrer||null);
-    p=getPlayer(user.id);
-    if(referrer && String(referrer)!==String(user.id) && getPlayer(referrer)){
-      db.prepare('UPDATE players SET referrals=referrals+1, points=points+500 WHERE telegram_id=?').run(String(referrer));
-      const m=JSON.parse(p.missions||'{}');m.invite=true;
-    }
-  }else{
-    db.prepare('UPDATE players SET username=?, first_name=?, updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?').run(user.username||'',user.first_name||'',String(user.id));
-    p=getPlayer(user.id);
-  }
-  return p;
-}
-function writePlayer(id,p){
-  db.prepare(`UPDATE players SET level=?,xp=?,xp_max=?,energy=?,max_energy=?,points=?,crystals=?,wins=?,losses=?,referrals=?,streak=?,daily_claimed_date=?,inventory=?,missions=?,updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?`)
-  .run(p.level,p.xp,p.xp_max,p.energy,p.max_energy,p.points,p.crystals,p.wins,p.losses,p.referrals,p.streak,p.daily_claimed_date||null,JSON.stringify(p.inventory||[]),JSON.stringify(p.missions||{}),String(id));
-}
-function levelCheck(p){
-  while(p.xp>=p.xp_max){p.xp-=p.xp_max;p.level++;p.xp_max=Math.round(p.xp_max*1.25)}
-}
-function load(req){
-  return normalize(ensurePlayer(req.tgUser, req.query.ref || req.body?.referrer));
-}
-
-app.get('/health',(req,res)=>res.json({ok:true}));
-app.get('/me',auth,(req,res)=>{
-  const p=load(req);res.json({user:req.tgUser,player:p});
-});
-app.post('/daily',auth,(req,res)=>{
-  const p=load(req), today=new Date().toISOString().slice(0,10);
-  if(p.daily_claimed_date===today)return res.json({player:p,message:'Daily reward already claimed'});
-  p.daily_claimed_date=today;p.points+=100;p.energy=Math.min(p.max_energy,p.energy+5);p.streak=(p.streak||0)+1;writePlayer(req.tgUser.id,p);
-  res.json({player:normalize(getPlayer(req.tgUser.id)),message:'Daily reward claimed: +100 Points · +5 Energy'});
-});
-app.post('/battle',auth,(req,res)=>{
-  const p=load(req);if(p.energy<2)return res.status(400).send('Not enough energy');
-  p.energy-=2;const win=Math.random()<0.62;
-  if(win){p.wins++;p.points+=200;p.xp+=50}else{p.losses++;p.points+=60;p.xp+=20}
-  levelCheck(p);writePlayer(req.tgUser.id,p);res.json({player:normalize(getPlayer(req.tgUser.id)),message:win?'Victory! +200 Points · +50 XP':'Defeat · +60 Points · +20 XP'});
-});
-app.post('/upgrade',auth,(req,res)=>{
-  const p=load(req);if(p.points<150)return res.status(400).send('Need 150 Points');
-  p.points-=150;p.xp+=30;p.missions.upgrade=true;levelCheck(p);writePlayer(req.tgUser.id,p);
-  res.json({player:normalize(getPlayer(req.tgUser.id)),message:'Module upgraded · +30 XP'});
-});
-app.post('/mission',auth,(req,res)=>{
-  const rewards={website:200};const mission=req.body?.mission;if(!rewards[mission])return res.status(400).send('Unsupported mission');
-  const p=load(req);if(p.missions[mission])return res.json({player:p,message:'Mission already complete'});
-  p.missions[mission]=true;p.points+=rewards[mission];writePlayer(req.tgUser.id,p);
-  res.json({player:normalize(getPlayer(req.tgUser.id)),message:`Mission complete: +${rewards[mission]} Points`});
-});
-app.post('/box',auth,(req,res)=>{
-  const cfg={starter:80,cyber:180,elite:350,legend:600};const box=req.body?.box;const price=cfg[box];if(!price)return res.status(400).send('Unknown box');
-  const p=load(req);if(p.crystals<price)return res.status(400).send('Not enough crystals');
-  p.crystals-=price;
-  const rewards=['Energy +10','Points +250','Points +500','Cosmetic shard'];
-  const reward=rewards[Math.floor(Math.random()*rewards.length)];
-  if(reward.startsWith('Energy'))p.energy=Math.min(p.max_energy,p.energy+10);
-  else if(reward.startsWith('Points'))p.points+=Number(reward.split('+')[1]);
-  else p.inventory=[...(p.inventory||[]),`${box}: ${reward}`];
-  writePlayer(req.tgUser.id,p);res.json({player:normalize(getPlayer(req.tgUser.id)),message:`Box opened: ${reward}`});
-});
-app.get('/leaderboard',auth,(req,res)=>{
-  const rows=db.prepare('SELECT telegram_id,username,first_name,points FROM players ORDER BY points DESC LIMIT 50').all();
-  res.json({players:rows.map((r,i)=>({rank:i+1,name:r.username?`@${r.username}`:(r.first_name||'Player'),points:r.points}))});
-});
-
-const port=process.env.PORT||3000;
-app.listen(port,()=>console.log(`ALEK Arena API running on :${port}`));
+import express from 'express';import crypto from 'crypto';import Database from 'better-sqlite3';import Stripe from 'stripe';import helmet from 'helmet';import rateLimit from 'express-rate-limit';
+const app=express(),stripe=process.env.STRIPE_SECRET_KEY?new Stripe(process.env.STRIPE_SECRET_KEY):null,db=new Database(process.env.DB_PATH||'./arena.db');
+app.use(helmet({contentSecurityPolicy:false}));app.use(rateLimit({windowMs:60000,max:180,standardHeaders:true,legacyHeaders:false}));
+app.post('/api/stripe/webhook',express.raw({type:'application/json'}),(req,res)=>{if(!stripe||!process.env.STRIPE_WEBHOOK_SECRET)return res.status(503).send('Stripe not configured');let event;try{event=stripe.webhooks.constructEvent(req.body,req.headers['stripe-signature'],process.env.STRIPE_WEBHOOK_SECRET)}catch(e){return res.status(400).send(e.message)}if(event.type==='checkout.session.completed'){const s=event.data.object;if(s.metadata?.telegram_id&&s.metadata?.item)fulfillPurchase(s.metadata.telegram_id,s.metadata.item,s.id)}res.json({received:true})});app.use(express.json());
+db.exec(`CREATE TABLE IF NOT EXISTS players(telegram_id TEXT PRIMARY KEY,username TEXT,first_name TEXT,level INTEGER DEFAULT 1,xp INTEGER DEFAULT 0,xp_max INTEGER DEFAULT 100,energy INTEGER DEFAULT 20,max_energy INTEGER DEFAULT 20,points INTEGER DEFAULT 0,crystals INTEGER DEFAULT 250,wins INTEGER DEFAULT 0,losses INTEGER DEFAULT 0,referrals INTEGER DEFAULT 0,streak INTEGER DEFAULT 1,daily_claimed_date TEXT,premium INTEGER DEFAULT 0,selected_hero TEXT DEFAULT 'nova',unlocked_stage INTEGER DEFAULT 1,inventory TEXT DEFAULT '[]',missions TEXT DEFAULT '{"login":true,"play3":false,"upgrade":false,"invite":false,"website":false}',referrer_id TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP,updated_at TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS battles(id TEXT PRIMARY KEY,telegram_id TEXT,stage INTEGER,hero TEXT,state TEXT,status TEXT DEFAULT 'active',created_at TEXT DEFAULT CURRENT_TIMESTAMP,updated_at TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS purchases(id INTEGER PRIMARY KEY AUTOINCREMENT,stripe_session_id TEXT UNIQUE,telegram_id TEXT,item TEXT,status TEXT DEFAULT 'fulfilled',created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
+const HEROES={nova:{name:'Nova',maxHp:120,attack:[15,22],power:[28,38],heal:[16,24],crit:.16,img:'./game/assets/hero-nova.svg'},kael:{name:'Kael',maxHp:138,attack:[13,20],power:[25,34],heal:[13,20],crit:.12,img:'./game/assets/hero-kael.svg'},nyx:{name:'Nyx',maxHp:105,attack:[17,24],power:[31,42],heal:[12,18],crit:.23,img:'./game/assets/hero-nyx.svg'}};
+const STAGES=[{stage:1,name:'Sector 01',enemy:'Void Drone',img:'./game/assets/enemy-drone.svg',hp:78,attack:[8,14],reward:{points:120,xp:30}},{stage:2,name:'Sector 02',enemy:'Cyber Raider',img:'./game/assets/enemy-raider.svg',hp:96,attack:[10,16],reward:{points:160,xp:38}},{stage:3,name:'Sector 03',enemy:'Neon Warden',img:'./game/assets/enemy-warden.svg',hp:122,attack:[12,19],reward:{points:220,xp:46}},{stage:4,name:'BOSS',enemy:'Abyss Titan',img:'./game/assets/boss-titan.svg',hp:175,attack:[14,23],reward:{points:420,xp:80,boss:true}}];
+const rand=([a,b])=>Math.floor(a+Math.random()*(b-a+1));
+function validateTelegram(initData){const token=process.env.BOT_TOKEN;if(!token||!initData)return null;const params=new URLSearchParams(initData),hash=params.get('hash');if(!hash)return null;params.delete('hash');const authDate=Number(params.get('auth_date')||0);if(!authDate||Date.now()/1000-authDate>86400)return null;const check=[...params.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>`${k}=${v}`).join('\n'),secret=crypto.createHmac('sha256','WebAppData').update(token).digest(),calc=crypto.createHmac('sha256',secret).update(check).digest('hex');try{if(!crypto.timingSafeEqual(Buffer.from(calc,'hex'),Buffer.from(hash,'hex')))return null}catch{return null}try{return JSON.parse(params.get('user')||'null')}catch{return null}}
+function auth(req,res,next){const u=validateTelegram(req.get('X-Telegram-Init-Data'));if(!u)return res.status(401).send('Unauthorized');req.tgUser=u;next()}
+function getPlayer(id){return db.prepare('SELECT * FROM players WHERE telegram_id=?').get(String(id))}
+function normalize(p){if(!p)return null;return {...p,premium:!!p.premium,selectedHero:p.selected_hero,unlockedStage:p.unlocked_stage,xpMax:p.xp_max,maxEnergy:p.max_energy,dailyClaimed:p.daily_claimed_date===new Date().toISOString().slice(0,10),inventory:JSON.parse(p.inventory||'[]'),missions:JSON.parse(p.missions||'{}'),season:'Origin'}}
+function ensurePlayer(user,referrer){let p=getPlayer(user.id);if(!p){db.prepare('INSERT INTO players(telegram_id,username,first_name,referrer_id) VALUES(?,?,?,?)').run(String(user.id),user.username||'',user.first_name||'',referrer||null);p=getPlayer(user.id);if(referrer&&String(referrer)!==String(user.id)&&getPlayer(referrer))db.prepare('UPDATE players SET referrals=referrals+1,points=points+500 WHERE telegram_id=?').run(String(referrer))}return p}
+function writePlayer(id,p){db.prepare(`UPDATE players SET level=?,xp=?,xp_max=?,energy=?,max_energy=?,points=?,crystals=?,wins=?,losses=?,referrals=?,streak=?,daily_claimed_date=?,premium=?,selected_hero=?,unlocked_stage=?,inventory=?,missions=?,updated_at=CURRENT_TIMESTAMP WHERE telegram_id=?`).run(p.level,p.xp,p.xp_max,p.energy,p.max_energy,p.points,p.crystals,p.wins,p.losses,p.referrals,p.streak,p.daily_claimed_date||null,p.premium?1:0,p.selectedHero||p.selected_hero||'nova',p.unlockedStage||p.unlocked_stage||1,JSON.stringify(p.inventory||[]),JSON.stringify(p.missions||{}),String(id))}
+function levelCheck(p){while(p.xp>=p.xpMax){p.xp-=p.xpMax;p.level++;p.xpMax=Math.round(p.xpMax*1.25)}}
+function battlePublic(s){return {...s,id:s.id}}
+app.get('/api/health',(q,s)=>s.json({ok:true,version:'3.0'}));app.get('/api/me',auth,(q,s)=>s.json({user:q.tgUser,player:normalize(ensurePlayer(q.tgUser,q.query.ref))}));
+app.post('/api/battle/start',auth,(req,res)=>{const p=normalize(ensurePlayer(req.tgUser));const stageNum=Number(req.body?.stage||1),heroId=req.body?.hero||p.selectedHero||'nova';if(stageNum>p.unlockedStage||stageNum<1||stageNum>4)return res.status(400).send('Stage locked');if(p.energy<2)return res.status(400).send('Not enough energy');const h=HEROES[heroId]||HEROES.nova,st=STAGES[stageNum-1],id=crypto.randomUUID(),state={id,hero:{...h,id:heroId,hp:h.maxHp,shield:0,powerCd:0,healCd:0},enemy:{...st,hp:st.hp,maxHp:st.hp},stage:stageNum,round:1,status:'active',log:`${h.name} enters ${st.name}.`};db.prepare('INSERT INTO battles(id,telegram_id,stage,hero,state) VALUES(?,?,?,?,?)').run(id,String(req.tgUser.id),stageNum,heroId,JSON.stringify(state));res.json({battle:state})});
+app.post('/api/battle/action',auth,(req,res)=>{const row=db.prepare('SELECT * FROM battles WHERE id=? AND telegram_id=?').get(req.body?.battleId,String(req.tgUser.id));if(!row)return res.status(404).send('Battle not found');let b=JSON.parse(row.state);if(b.status!=='active')return res.json({battle:b,player:normalize(getPlayer(req.tgUser.id))});const a=req.body?.action,h=b.hero,e=b.enemy;let log='';if(a==='attack'){let d=rand(h.attack);if(Math.random()<h.crit){d=Math.round(d*1.75);log='Critical! '}e.hp=Math.max(0,e.hp-d);log+=`${h.name} deals ${d}.`}else if(a==='power'){if(h.powerCd>0)return res.status(400).send('Power cooling down');const d=rand(h.power);e.hp=Math.max(0,e.hp-d);h.powerCd=2;log=`Power Strike ${d}!`}else if(a==='heal'){if(h.healCd>0)return res.status(400).send('Heal cooling down');const heal=rand(h.heal);h.hp=Math.min(h.maxHp,h.hp+heal);h.healCd=3;log=`Recovered ${heal} HP.`}else if(a==='shield'){h.shield=12;log='Shield activated.'}else return res.status(400).send('Unknown action');if(e.hp<=0){b.status='won';b.log=`${log} ${e.enemy} defeated!`;const p=normalize(getPlayer(req.tgUser.id));p.energy=Math.max(0,p.energy-2);p.wins++;p.points+=e.reward.points;p.xp+=e.reward.xp;p.selectedHero=h.id;p.unlockedStage=Math.max(p.unlockedStage,Math.min(4,b.stage+1));levelCheck(p);writePlayer(req.tgUser.id,p);db.prepare("UPDATE battles SET state=?,status='won',updated_at=CURRENT_TIMESTAMP WHERE id=?").run(JSON.stringify(b),b.id);return res.json({battle:b,player:normalize(getPlayer(req.tgUser.id))})}let ed=rand(e.attack),blocked=Math.min(h.shield||0,ed);ed-=blocked;h.shield=Math.max(0,(h.shield||0)-blocked);h.hp=Math.max(0,h.hp-ed);h.powerCd=Math.max(0,h.powerCd-1);h.healCd=Math.max(0,h.healCd-1);b.round++;b.log=`${log} ${e.enemy} hits for ${ed}${blocked?` (${blocked} blocked)`:''}.`;if(h.hp<=0){b.status='lost';const p=normalize(getPlayer(req.tgUser.id));p.energy=Math.max(0,p.energy-2);p.losses++;writePlayer(req.tgUser.id,p)}db.prepare('UPDATE battles SET state=?,status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').run(JSON.stringify(b),b.status,b.id);res.json({battle:b,player:normalize(getPlayer(req.tgUser.id))})});
+app.post('/api/daily',auth,(req,res)=>{const p=normalize(ensurePlayer(req.tgUser)),today=new Date().toISOString().slice(0,10);if(p.daily_claimed_date===today)return res.json({player:p,message:'Already claimed'});p.daily_claimed_date=today;p.points+=100;p.energy=Math.min(p.maxEnergy,p.energy+5);p.streak=(p.streak||0)+1;writePlayer(req.tgUser.id,p);res.json({player:normalize(getPlayer(req.tgUser.id)),message:'Daily reward claimed'})});
+app.post('/api/upgrade',auth,(req,res)=>{const p=normalize(getPlayer(req.tgUser.id));if(p.points<150)return res.status(400).send('Need 150 Points');p.points-=150;p.xp+=30;p.missions.upgrade=true;levelCheck(p);writePlayer(req.tgUser.id,p);res.json({player:normalize(getPlayer(req.tgUser.id)),message:'Module upgraded'})});
+app.post('/api/mission',auth,(req,res)=>{const rewards={website:200},m=req.body?.mission;if(!rewards[m])return res.status(400).send('Unsupported');const p=normalize(getPlayer(req.tgUser.id));if(p.missions[m])return res.json({player:p,message:'Already complete'});p.missions[m]=true;p.points+=rewards[m];writePlayer(req.tgUser.id,p);res.json({player:normalize(getPlayer(req.tgUser.id)),message:'Mission complete'})});
+app.post('/api/box',auth,(req,res)=>{const cfg={starter:80,cyber:180,elite:350,legend:600},box=req.body?.box,price=cfg[box];if(!price)return res.status(400).send('Unknown');const p=normalize(getPlayer(req.tgUser.id));if(p.crystals<price)return res.status(400).send('Not enough crystals');p.crystals-=price;const rewards=['Energy +10','Points +250','Points +500','Cosmetic shard'],reward=rewards[Math.floor(Math.random()*rewards.length)];if(reward.startsWith('Energy'))p.energy=Math.min(p.maxEnergy,p.energy+10);else if(reward.startsWith('Points'))p.points+=Number(reward.split('+')[1]);else p.inventory=[...p.inventory,`${box}: ${reward}`];writePlayer(req.tgUser.id,p);res.json({player:normalize(getPlayer(req.tgUser.id)),message:`Box opened: ${reward}`})});
+app.get('/api/leaderboard',auth,(req,res)=>{const rows=db.prepare('SELECT telegram_id,username,first_name,points FROM players ORDER BY points DESC LIMIT 50').all();res.json({players:rows.map((r,i)=>({rank:i+1,name:r.username?`@${r.username}`:(r.first_name||'Player'),points:r.points}))})});
+const shop={crystals500:{name:'500 ALEK Arena Crystals',unit_amount:299,currency:'eur',grant:{crystals:500}},crystals1200:{name:'1,200 ALEK Arena Crystals',unit_amount:599,currency:'eur',grant:{crystals:1200}},premium:{name:'ALEK Arena Season Premium Pass',unit_amount:799,currency:'eur',grant:{premium:true}}};
+function fulfillPurchase(id,item,sid){if(!shop[item]||!getPlayer(id)||db.prepare('SELECT 1 FROM purchases WHERE stripe_session_id=?').get(sid))return;const p=normalize(getPlayer(id)),g=shop[item].grant;if(g.crystals)p.crystals+=g.crystals;if(g.premium)p.premium=true;p.inventory=[...p.inventory,`Purchase: ${shop[item].name}`];writePlayer(id,p);db.prepare('INSERT INTO purchases(stripe_session_id,telegram_id,item) VALUES(?,?,?)').run(sid,String(id),item)}
+app.post('/api/shop/checkout',auth,async(req,res)=>{if(!stripe)return res.status(503).send('Payments not configured');const item=req.body?.item,cfg=shop[item];if(!cfg)return res.status(400).send('Unknown');ensurePlayer(req.tgUser);const base=process.env.PUBLIC_BASE_URL||'https://alek.best',session=await stripe.checkout.sessions.create({mode:'payment',line_items:[{price_data:{currency:cfg.currency,product_data:{name:cfg.name},unit_amount:cfg.unit_amount},quantity:1}],success_url:`${base}/arena/?payment=success`,cancel_url:`${base}/arena/?payment=cancelled`,metadata:{telegram_id:String(req.tgUser.id),item}});res.json({url:session.url})});
+const port=process.env.PORT||3000;app.listen(port,()=>console.log(`ALEK Arena API :${port}`));

@@ -1,0 +1,19 @@
+ALEK ARENA COMPLETE MVP — NEXT STEPS
+
+1. Replace current public/arena with this package's public/arena.
+2. Upload server and docs at repository root.
+3. Commit and wait for GitHub Actions.
+4. Test https://alek.best/arena/
+5. Verify 3 heroes appear.
+6. Enter Arena and test all 4 actions.
+7. Clear Sector 1 and confirm Sector 2 unlocks.
+8. Confirm Shop and Missions still work.
+9. Set BotFather Web App URL to https://alek.best/arena/
+10. Deploy server/ to Node hosting.
+11. Add BOT_TOKEN.
+12. Point /api to backend or change API_BASE.
+13. Test with 2 Telegram accounts.
+14. Add Stripe keys in backend hosting only.
+15. Test fixed-value payments in Stripe test mode before live mode.
+
+Do not put any secret key in GitHub frontend files.
