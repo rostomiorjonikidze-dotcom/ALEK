@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: alek-arena-api
+    env: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_ORIGIN
+        value: https://alek.best
+      - key: DB_PATH
+        value: /var/data/alek.sqlite
+      - key: BOT_TOKEN
+        sync: false
+      - key: PUBLIC_BACKEND_URL
+        sync: false
+      - key: ADMIN_SECRET
+        generateValue: true
+    disk:
+      name: alek-data
+      mountPath: /var/data
+      sizeGB: 1
