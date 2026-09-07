@@ -1,193 +1,45 @@
 
-const tg = window.Telegram?.WebApp;
-if (tg) {
-  tg.ready();
-  tg.expand();
-  try { tg.setHeaderColor('#07111f'); tg.setBackgroundColor('#07111f'); } catch {}
-}
-
-const API_BASE = '/api';
-const BOT_USERNAME = 'ALEKArenaBot'; // change if your real bot username differs
-
-const demoState = {
-  route:'home', level:1, xp:0, xpMax:100, energy:20, maxEnergy:20,
-  points:0, crystals:250, wins:0, losses:0, referrals:0,
-  streak:1, dailyClaimed:false,
-  missions:{login:true,play3:false,upgrade:false,invite:false,website:false},
-  inventory:[]
-};
-
-let state = {...demoState};
-let serverMode = false;
-let me = null;
-
-const app = document.querySelector('#app');
-const toastEl = document.querySelector('#toast');
-const energyTop = document.querySelector('#energyTop');
-
-function fmt(n){return new Intl.NumberFormat().format(n)}
-function toast(msg){toastEl.textContent=msg;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),1800)}
-function haptic(type='light'){try{tg?.HapticFeedback?.impactOccurred(type)}catch{}}
-function nav(route){state.route=route;render();document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.route===route));window.scrollTo({top:0,behavior:'smooth'})}
+import {HEROES,STAGES,createLocalBattle,localAction} from './game/game.js';
+const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#07111f');tg.setBackgroundColor('#07111f')}catch{}}
+const API_BASE='/api',BOT_USERNAME='ALEKArenaBot',ALK_CONTRACT='0x6B6Ecc1B213aF556E240290E677A09D565D085c4',UNISWAP_URL='https://app.uniswap.org/';
+const demoState={route:'home',level:1,xp:0,xpMax:100,energy:20,maxEnergy:20,points:0,crystals:250,wins:0,losses:0,referrals:0,streak:1,dailyClaimed:false,season:'Origin',premium:false,selectedHero:'nova',unlockedStage:1,missions:{login:true,play3:false,upgrade:false,invite:false,website:false},inventory:[]};
+let state={...demoState},serverMode=false,me=null,battle=null;
+const app=document.querySelector('#app'),toastEl=document.querySelector('#toast'),energyTop=document.querySelector('#energyTop');
+function fmt(n){return new Intl.NumberFormat().format(n)}function toast(m){toastEl.textContent=m;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),2000)}function haptic(t='light'){try{tg?.HapticFeedback?.impactOccurred(t)}catch{}}
+function nav(r){state.route=r;render();document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.route===r));window.scrollTo({top:0,behavior:'smooth'})}
 document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.route)));
-
-async function api(path, opts={}){
-  const headers = {'Content-Type':'application/json', ...(opts.headers||{})};
-  if (tg?.initData) headers['X-Telegram-Init-Data'] = tg.initData;
-  const r = await fetch(API_BASE+path,{...opts,headers});
-  if(!r.ok) throw new Error(await r.text());
-  return r.json();
-}
-
-async function boot(){
-  try{
-    const res = await api('/me');
-    state = {...state,...res.player,route:'home'};
-    me = res.user;
-    serverMode = true;
-  }catch(e){
-    const saved = localStorage.getItem('alekArenaDemo');
-    if(saved){try{state={...state,...JSON.parse(saved)}}catch{}}
-    serverMode=false;
-  }
-  render();
-}
-
-function saveDemo(){if(!serverMode)localStorage.setItem('alekArenaDemo',JSON.stringify(state));energyTop.textContent=state.energy}
-function identity(){return me?.first_name || me?.username || 'ALEK Player'}
-
-function home(){
-  const pct=Math.min(100,(state.xp/state.xpMax)*100);
-  return `
-  <section class="hero">
-    <div class="eyebrow">SEASON 01 · ORIGIN</div><h2>Build. Compete. Grow.</h2>
-    <p>Develop your ALEK base, complete missions, climb the Arena leaderboard and unlock rewards.</p>
-    <button class="primary" id="quickBattle">⚔ Quick Battle</button>
-  </section>
-  <div class="grid2">
-    <div class="card stat"><b>${fmt(state.points)}</b><span>ALEK Points</span></div>
-    <div class="card stat"><b>${state.level}</b><span>Player Level</span></div>
-  </div>
-  <div class="section-title"><h3>${identity()}</h3><span>${serverMode?'SYNCED':'DEMO MODE'}</span></div>
-  <div class="card profile-head"><div class="avatar">A</div><div><div class="title">Level ${state.level}</div><div class="sub">${state.xp}/${state.xpMax} XP</div></div></div>
-  <div class="card"><div class="progress"><i style="width:${pct}%"></i></div></div>
-  <div class="section-title"><h3>Daily Reward</h3><span>${state.streak} day streak</span></div>
-  <div class="card row"><div><div class="title">${state.dailyClaimed?'Claimed today':'Daily login bonus'}</div><div class="sub reward">+100 Points · +5 Energy</div></div><button class="secondary" id="dailyBtn" ${state.dailyClaimed?'disabled':''}>${state.dailyClaimed?'DONE':'CLAIM'}</button></div>
-  <div class="section-title"><h3>Base Modules</h3><span>3 active</span></div>
-  ${moduleCard('🏛️','Command Center','Lv. 1','+5% mission XP')}
-  ${moduleCard('⛏️','Mine','Lv. 1','Generates Points')}
-  ${moduleCard('🔬','Research Lab','Lv. 1','Unlocks boosts')}
-  <div class="notice">${serverMode?'Progress is synced to the server.':'Preview mode: open from Telegram after backend deployment to sync progress.'}</div>`;
-}
-function moduleCard(icon,name,level,sub){return `<div class="card row"><div class="row-left"><div class="icon">${icon}</div><div><div class="title">${name}</div><div class="sub">${level} · ${sub}</div></div></div><button class="secondary upgrade-btn">Upgrade</button></div>`}
-
-const missionDefs=[
- ['login','✅','Login to the game',100],['play3','⚔️','Play 3 Arena matches',300],
- ['upgrade','🏗️','Upgrade a building',250],['invite','👥','Invite a friend',500],
- ['website','🌐','Visit ALEK website',200]
-];
-function missionsPage(){return `<div class="section-title"><h3>Missions</h3><span>Daily</span></div>
-<div class="pillbar"><button class="pill active">Daily</button><button class="pill">Weekly</button><button class="pill">Special</button></div>
-${missionDefs.map(([id,ic,name,reward])=>`<div class="card row"><div class="row-left"><div class="icon">${ic}</div><div><div class="title">${name}</div><div class="sub reward">+${reward} Points</div></div></div>${state.missions[id]?'<span class="tag">DONE</span>':`<button class="secondary mission-btn" data-mission="${id}">Go</button>`}</div>`).join('')}
-<div class="card sponsor"><div class="eyebrow">SPONSORED MISSION</div><div class="title" style="margin-top:8px">Advertiser slot</div><div class="sub">Future paid partners can run clearly labeled missions here.</div></div>`}
-
-function arenaPage(){return `<div class="section-title"><h3>Arena</h3><span>Ranked</span></div>
-<div class="card center"><div class="muted">YOUR POWER</div><div class="big">${1000+state.level*70}</div><div style="margin:16px 0;font-size:34px">⚡ VS ⚔️</div><div class="muted">Energy cost: 2</div><button class="primary" id="battleBtn" style="width:100%;margin-top:14px">BATTLE</button></div>
-<div class="grid2"><div class="card stat"><b>${state.wins}</b><span>Wins</span></div><div class="card stat"><b>${state.losses}</b><span>Losses</span></div></div>
-<div class="section-title"><h3>Leaderboard</h3><span>Top players</span></div><div class="card" id="leaderboardCard"><div class="muted">Loading...</div></div>`}
-
-function friendsPage(){
- const link=`https://t.me/${BOT_USERNAME}?start=${encodeURIComponent(me?.id||'alek')}`;
- return `<div class="section-title"><h3>Friends & Referrals</h3><span>Grow together</span></div>
- <div class="card center"><div class="big">${state.referrals}</div><div class="muted">Active referrals</div><button class="primary" id="inviteBtn" style="width:100%;margin-top:14px">Invite Friends</button><div class="sub" style="margin-top:10px;word-break:break-all">${link}</div></div>
- ${refCard('Invite 5 friends',500,state.referrals,5)}${refCard('Invite 25 friends',2500,state.referrals,25)}${refCard('Invite 100 friends',10000,state.referrals,100)}
- <div class="notice">Referral rewards are granted when invited users actually open ALEK Arena.</div>`}
-function refCard(title,reward,current,target){return `<div class="card"><div class="row"><div><div class="title">${title}</div><div class="sub reward">+${fmt(reward)} Points</div></div><span>${Math.min(current,target)}/${target}</span></div><div style="height:10px"></div><div class="progress"><i style="width:${Math.min(100,current/target*100)}%"></i></div></div>`}
-
-const boxes=[
-{id:'starter',name:'Starter Box',icon:'📦',price:80,rarity:'Common+'},
-{id:'cyber',name:'Cyber Box',icon:'🧰',price:180,rarity:'Rare+'},
-{id:'elite',name:'Elite Box',icon:'🎁',price:350,rarity:'Epic+'},
-{id:'legend',name:'Legend Box',icon:'🛸',price:600,rarity:'Legendary chance'}];
-function shopPage(){return `<div class="section-title"><h3>Shop & Boxes</h3><span>${fmt(state.crystals)} crystals</span></div>
-<div class="notice" style="margin-bottom:12px">Current boxes use in-game crystals only. Real-money/ALK purchases should be added only after secure payments, published odds and compliance review.</div>
-<div class="box-grid">${boxes.map(b=>`<div class="card box-card"><div class="box-art">${b.icon}</div><div class="title">${b.name}</div><div class="sub">${b.rarity}</div><div class="price">💎 ${b.price}</div><button class="primary box-btn" data-box="${b.id}" style="width:100%">OPEN</button></div>`).join('')}</div>
-<div class="section-title"><h3>Inventory</h3><span>${state.inventory?.length||0} items</span></div>
-<div class="card">${state.inventory?.length?state.inventory.map(x=>`<div class="leader"><span>${x}</span></div>`).join(''):'<div class="muted">No items yet.</div>'}</div>`}
-
-function render(){
- energyTop.textContent=state.energy;
- const pages={home,missions:missionsPage,arena:arenaPage,friends:friendsPage,shop:shopPage};
- app.innerHTML=(pages[state.route]||home)();
- bind();
- if(state.route==='arena')loadLeaderboard();
-}
-
-function bind(){
- document.querySelector('#quickBattle')?.addEventListener('click',()=>nav('arena'));
- document.querySelector('#battleBtn')?.addEventListener('click',battle);
- document.querySelector('#dailyBtn')?.addEventListener('click',claimDaily);
- document.querySelectorAll('.upgrade-btn').forEach(b=>b.addEventListener('click',upgrade));
- document.querySelectorAll('.mission-btn').forEach(b=>b.addEventListener('click',mission));
- document.querySelectorAll('.box-btn').forEach(b=>b.addEventListener('click',openBox));
- document.querySelector('#inviteBtn')?.addEventListener('click',invite);
-}
-
-async function claimDaily(){
- try{
-  if(serverMode){const r=await api('/daily',{method:'POST'});state={...state,...r.player};toast(r.message)}
-  else{if(state.dailyClaimed)return;state.dailyClaimed=true;state.points+=100;state.energy=Math.min(state.maxEnergy,state.energy+5);toast('Daily reward claimed')}
-  haptic();saveDemo();render();
- }catch(e){toast('Could not claim reward')}
-}
-async function battle(){
- if(state.energy<2){toast('Not enough energy');return}
- try{
-  if(serverMode){const r=await api('/battle',{method:'POST'});state={...state,...r.player};toast(r.message)}
-  else{state.energy-=2;const win=Math.random()<.62;if(win){state.wins++;state.points+=200;state.xp+=50;toast('Victory! +200 Points')}else{state.losses++;state.points+=60;state.xp+=20;toast('Defeat · +60 Points')}levelCheck()}
-  haptic('medium');saveDemo();render();
- }catch(e){toast('Battle failed')}
-}
+async function api(path,opts={}){const headers={'Content-Type':'application/json',...(opts.headers||{})};if(tg?.initData)headers['X-Telegram-Init-Data']=tg.initData;const r=await fetch(API_BASE+path,{...opts,headers});if(!r.ok)throw new Error(await r.text());return r.json()}
+async function boot(){try{const r=await api('/me');state={...state,...r.player,route:'home'};me=r.user;serverMode=true}catch{const saved=localStorage.getItem('alekArenaComplete');if(saved){try{state={...state,...JSON.parse(saved)}}catch{}}serverMode=false}render()}
+function saveDemo(){if(!serverMode)localStorage.setItem('alekArenaComplete',JSON.stringify(state));energyTop.textContent=state.energy}function identity(){return me?.first_name||me?.username||'ALEK Player'}
+function home(){const pct=Math.min(100,state.xp/state.xpMax*100);return `<section class="hero"><div class="eyebrow">SEASON 01 · ${String(state.season).toUpperCase()}</div><h2>Build. Compete. Grow.</h2><p>Choose a hero, clear sectors, defeat bosses and build your ALEK rank.</p><button class="primary" id="quickBattle">⚔ Enter Arena</button></section>
+<div class="grid2"><div class="card stat"><b>${fmt(state.points)}</b><span>ALEK Points</span></div><div class="card stat"><b>${state.level}</b><span>Player Level</span></div></div>
+${state.premium?'<div class="banner"><b>★ Premium Pass Active</b><div class="sub">Season badge and future premium perks enabled.</div></div>':''}
+<div class="section-title"><h3>${identity()}</h3><span>${serverMode?'SYNCED':'DEMO MODE'}</span></div><div class="card profile-head"><div class="avatar">A</div><div style="flex:1"><div class="title">Level ${state.level}</div><div class="sub">${state.xp}/${state.xpMax} XP</div><div class="progress" style="margin-top:8px"><i style="width:${pct}%"></i></div></div></div>
+<div class="section-title"><h3>Choose Hero</h3><span>3 available</span></div><div class="hero-select">${Object.values(HEROES).map(h=>`<button class="hero-chip ${state.selectedHero===h.id?'active':''}" data-hero="${h.id}"><img src="${h.img}"/><b>${h.name}</b></button>`).join('')}</div>
+<div class="section-title"><h3>Daily Reward</h3><span>${state.streak} day streak</span></div><div class="card row"><div><div class="title">${state.dailyClaimed?'Claimed today':'Daily login bonus'}</div><div class="sub reward">+100 Points · +5 Energy</div></div><button class="secondary" id="dailyBtn" ${state.dailyClaimed?'disabled':''}>${state.dailyClaimed?'DONE':'CLAIM'}</button></div>
+<div class="section-title"><h3>Base Modules</h3><span>3 active</span></div>${moduleCard('🏛️','Command Center','Lv. 1','+5% mission XP')}${moduleCard('⛏️','Mine','Lv. 1','Generates Points')}${moduleCard('🔬','Research Lab','Lv. 1','Unlocks boosts')}
+<div class="section-title"><h3>ALK</h3><span>Ethereum Mainnet</span></div><div class="card"><div class="row"><div><div class="title">Official ALK Contract</div><div class="sub">${ALK_CONTRACT.slice(0,10)}...${ALK_CONTRACT.slice(-8)}</div></div><button class="secondary smallbtn" id="uniswapBtn">Uniswap</button></div></div>`}
+function moduleCard(i,n,l,s){return `<div class="card row"><div class="row-left"><div class="icon">${i}</div><div><div class="title">${n}</div><div class="sub">${l} · ${s}</div></div></div><button class="secondary upgrade-btn">Upgrade</button></div>`}
+const missionDefs=[['login','✅','Login to the game',100],['play3','⚔️','Play 3 Arena matches',300],['upgrade','🏗️','Upgrade a building',250],['invite','👥','Invite a friend',500],['website','🌐','Visit ALEK website',200]];
+function missionsPage(){return `<div class="section-title"><h3>Missions</h3><span>Daily</span></div><div class="pillbar"><button class="pill active">Daily</button><button class="pill">Weekly</button><button class="pill">Special</button></div>${missionDefs.map(([id,ic,n,r])=>`<div class="card row"><div class="row-left"><div class="icon">${ic}</div><div><div class="title">${n}</div><div class="sub reward">+${r} Points</div></div></div>${state.missions[id]?'<span class="tag">DONE</span>':`<button class="secondary mission-btn" data-mission="${id}">Go</button>`}</div>`).join('')}<div class="card sponsor"><div class="eyebrow">SPONSORED MISSION</div><div class="title" style="margin-top:8px">Advertiser slot</div><div class="sub">Paid partners can run clearly labeled missions here.</div></div>`}
+function arenaPage(){return `<div class="section-title"><h3>Arena Campaign</h3><span>Stage ${state.unlockedStage}/4</span></div><div class="stage-map">${STAGES.map((s,i)=>`<button class="stage-node ${i+1<state.unlockedStage?'done':''} ${i+1>state.unlockedStage?'locked':''} ${s.reward.boss?'boss':''}" data-stage="${i+1}" ${i+1>state.unlockedStage?'disabled':''}><b>${s.name}</b><div class="sub">${s.enemy}</div></button>`).join('')}</div><div style="height:12px"></div><div id="gameRoot"></div><div class="section-title"><h3>Leaderboard</h3><span>Top players</span></div><div class="card" id="leaderboardCard"><div class="muted">Loading...</div></div>`}
+function friendsPage(){const link=`https://t.me/${BOT_USERNAME}?start=${encodeURIComponent(me?.id||'alek')}`;return `<div class="section-title"><h3>Friends & Referrals</h3><span>Grow together</span></div><div class="card center"><div class="big">${state.referrals}</div><div class="muted">Active referrals</div><button class="primary" id="inviteBtn" style="width:100%;margin-top:14px">Invite Friends</button><div class="sub" style="margin-top:10px;word-break:break-all">${link}</div></div>${refCard('Invite 5 friends',500,state.referrals,5)}${refCard('Invite 25 friends',2500,state.referrals,25)}${refCard('Invite 100 friends',10000,state.referrals,100)}`}
+function refCard(t,r,c,target){return `<div class="card"><div class="row"><div><div class="title">${t}</div><div class="sub reward">+${fmt(r)} Points</div></div><span>${Math.min(c,target)}/${target}</span></div><div style="height:10px"></div><div class="progress"><i style="width:${Math.min(100,c/target*100)}%"></i></div></div>`}
+const boxes=[{id:'starter',name:'Starter Box',icon:'📦',price:80,rarity:'Common+'},{id:'cyber',name:'Cyber Box',icon:'🧰',price:180,rarity:'Rare+'},{id:'elite',name:'Elite Box',icon:'🎁',price:350,rarity:'Epic+'},{id:'legend',name:'Legend Box',icon:'🛸',price:600,rarity:'Legendary chance'}];const cashItems=[{id:'crystals500',name:'500 Crystals',icon:'💎',price:'€2.99',desc:'Fixed 500-crystal pack'},{id:'crystals1200',name:'1,200 Crystals',icon:'💠',price:'€5.99',desc:'Fixed 1,200-crystal pack'},{id:'premium',name:'Season Premium Pass',icon:'★',price:'€7.99',desc:'Premium season access + badge'}];
+function shopPage(){return `<div class="section-title"><h3>Shop & Boxes</h3><span>${fmt(state.crystals)} crystals</span></div><div class="notice" style="margin-bottom:12px">Random boxes use in-game crystals. Real-money items below are fixed-value purchases.</div><div class="box-grid">${boxes.map(b=>`<div class="card box-card"><div class="box-art">${b.icon}</div><div class="title">${b.name}</div><div class="sub">${b.rarity}</div><div class="price">💎 ${b.price}</div><button class="primary box-btn" data-box="${b.id}" style="width:100%">OPEN</button></div>`).join('')}</div><div class="section-title"><h3>Real-money Store</h3><span>Secure checkout</span></div>${cashItems.map(i=>`<div class="card buy-card row"><div class="row-left"><div class="icon">${i.icon}</div><div><div class="title">${i.name}</div><div class="sub">${i.desc}</div><div class="money">${i.price}</div></div></div><button class="primary cash-btn" data-item="${i.id}">BUY</button></div>`).join('')}<div class="section-title"><h3>Inventory</h3><span>${state.inventory?.length||0} items</span></div><div class="card">${state.inventory?.length?state.inventory.map(x=>`<div class="leader"><span>${x}</span></div>`).join(''):'<div class="muted">No items yet.</div>'}</div>`}
+function render(){energyTop.textContent=state.energy;const pages={home,missions:missionsPage,arena:arenaPage,friends:friendsPage,shop:shopPage};app.innerHTML=(pages[state.route]||home)();bind();if(state.route==='arena'){startStage(state.unlockedStage);loadLeaderboard()}}
+function bind(){document.querySelector('#quickBattle')?.addEventListener('click',()=>nav('arena'));document.querySelector('#dailyBtn')?.addEventListener('click',claimDaily);document.querySelectorAll('.upgrade-btn').forEach(b=>b.addEventListener('click',upgrade));document.querySelectorAll('.mission-btn').forEach(b=>b.addEventListener('click',mission));document.querySelectorAll('.box-btn').forEach(b=>b.addEventListener('click',openBox));document.querySelectorAll('.cash-btn').forEach(b=>b.addEventListener('click',cashPurchase));document.querySelector('#inviteBtn')?.addEventListener('click',invite);document.querySelector('#uniswapBtn')?.addEventListener('click',()=>window.open(UNISWAP_URL,'_blank'));document.querySelectorAll('.hero-chip').forEach(b=>b.addEventListener('click',()=>{state.selectedHero=b.dataset.hero;saveDemo();render()}));document.querySelectorAll('.stage-node').forEach(b=>b.addEventListener('click',()=>startStage(+b.dataset.stage)))}
+async function startStage(stageNum){if(state.energy<2){renderGameMessage('Not enough energy','You need 2 energy to enter a sector.');return}try{if(serverMode){const r=await api('/battle/start',{method:'POST',body:JSON.stringify({hero:state.selectedHero,stage:stageNum})});battle=r.battle}else battle=createLocalBattle(state.selectedHero,stageNum);renderBattle()}catch{battle=createLocalBattle(state.selectedHero,stageNum);renderBattle()}}
+function renderGameMessage(title,msg){const root=document.querySelector('#gameRoot');if(root)root.innerHTML=`<div class="card center"><div class="big">${title}</div><div class="muted">${msg}</div></div>`}
+function renderBattle(){const root=document.querySelector('#gameRoot');if(!root||!battle)return;const h=battle.hero,e=battle.enemy;const hp=Math.max(0,h.hp/h.maxHp*100),ehp=Math.max(0,e.hp/e.maxHp*100);root.innerHTML=`<div class="game-wrap"><div class="game-sky"></div><div class="game-city"></div><div class="battle-head"><div><div class="fighter-name">${h.name}</div><div class="hp-track"><div class="hp-fill" style="width:${hp}%"></div></div></div><div class="round-pill">R${battle.round}</div><div><div class="fighter-name enemy">${e.enemy}</div><div class="hp-track"><div class="hp-fill enemy" style="width:${ehp}%"></div></div></div></div><div class="battle-stage"><div class="fighter player"><img src="${h.img}"/></div><div class="fighter enemy"><img src="${e.img}"/></div><div class="fx"><div class="slash" id="slashFx"></div><div class="damage-pop" id="damageFx" style="right:25%;top:35%"></div></div></div><div class="battle-log">${battle.log}</div><div class="skill-grid"><button class="skill" data-action="attack"><b>⚔ Attack</b><small>Fast basic strike</small></button><button class="skill power" data-action="power"><b>✦ Power Strike</b><small>${h.powerCd?'Cooldown '+h.powerCd:'Heavy damage'}</small></button><button class="skill shield" data-action="shield"><b>⬡ Shield</b><small>Block next damage</small></button><button class="skill heal" data-action="heal"><b>✚ Heal</b><small>${h.healCd?'Cooldown '+h.healCd:'Recover HP'}</small></button></div><div class="game-overlay ${battle.status==='active'?'hidden':''}"><div class="overlay-card"><h3>${battle.status==='won'?'VICTORY':'DEFEAT'}</h3><div class="muted">${battle.status==='won'?`Sector cleared.`:'Upgrade and try again.'}</div>${battle.status==='won'?`<div class="reward-line">+${e.reward?.points||120} Points · +${e.reward?.xp||30} XP</div>`:''}<button class="primary" id="battleNext">${battle.status==='won'?'Continue':'Retry'}</button></div></div></div>`;document.querySelectorAll('.skill').forEach(b=>b.addEventListener('click',()=>doBattleAction(b.dataset.action)));document.querySelector('#battleNext')?.addEventListener('click',()=>{if(battle.status==='won'&&state.unlockedStage<4)state.unlockedStage=Math.max(state.unlockedStage,battle.stage+1);saveDemo();render()})}
+async function doBattleAction(action){if(!battle||battle.status!=='active')return;try{if(serverMode){const r=await api('/battle/action',{method:'POST',body:JSON.stringify({battleId:battle.id,action})});battle=r.battle;if(r.player)state={...state,...r.player}}else{battle=localAction(battle,action);if(battle.status==='won'){state.energy=Math.max(0,state.energy-2);state.wins++;state.points+=battle.enemy.reward.points;state.xp+=battle.enemy.reward.xp;levelCheck()}if(battle.status==='lost'){state.energy=Math.max(0,state.energy-2);state.losses++}}haptic('medium');saveDemo();renderBattle()}catch{toast('Battle action failed')}}
+async function claimDaily(){try{if(serverMode){const r=await api('/daily',{method:'POST'});state={...state,...r.player};toast(r.message)}else{if(state.dailyClaimed)return;state.dailyClaimed=true;state.points+=100;state.energy=Math.min(state.maxEnergy,state.energy+5);toast('Daily reward claimed')}saveDemo();render()}catch{toast('Could not claim reward')}}
 function levelCheck(){while(state.xp>=state.xpMax){state.xp-=state.xpMax;state.level++;state.xpMax=Math.round(state.xpMax*1.25)}}
-async function upgrade(){
- try{
-  if(serverMode){const r=await api('/upgrade',{method:'POST'});state={...state,...r.player};toast(r.message)}
-  else{if(state.points<150){toast('Need 150 Points');return}state.points-=150;state.xp+=30;state.missions.upgrade=true;levelCheck();toast('Module upgraded')}
-  saveDemo();render();
- }catch(e){toast('Upgrade failed')}
-}
-function mission(e){
- const id=e.currentTarget.dataset.mission;
- if(id==='website'){window.open('https://alek.best','_blank');completeMission(id)}
- else if(id==='play3')nav('arena');else if(id==='invite')nav('friends');else if(id==='upgrade')nav('home');
-}
-async function completeMission(id){
- try{
-  if(serverMode){const r=await api('/mission',{method:'POST',body:JSON.stringify({mission:id})});state={...state,...r.player};toast(r.message)}
-  else{const m=missionDefs.find(x=>x[0]===id);if(!m||state.missions[id])return;state.missions[id]=true;state.points+=m[3]}
-  saveDemo();render();
- }catch(e){toast('Mission update failed')}
-}
-async function openBox(e){
- const box=e.currentTarget.dataset.box;
- try{
-  if(serverMode){const r=await api('/box',{method:'POST',body:JSON.stringify({box})});state={...state,...r.player};toast(r.message)}
-  else{const b=boxes.find(x=>x.id===box);if(state.crystals<b.price){toast('Not enough crystals');return}state.crystals-=b.price;state.points+=100;state.inventory=[...(state.inventory||[]),`${b.name}: Demo reward`];toast(`${b.name} opened`)}
-  saveDemo();render();
- }catch(e){toast('Box could not be opened')}
-}
-function invite(){
- const start=me?.id||'alek';
- const url=`https://t.me/${BOT_USERNAME}?start=${start}`;
- const share=`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent('Join me in ALEK Arena ⚔️')}`;
- try{tg?.openTelegramLink(share)}catch{navigator.clipboard?.writeText(url);toast('Invite link copied')}
-}
-async function loadLeaderboard(){
- const el=document.querySelector('#leaderboardCard');if(!el)return;
- try{
-  const r=serverMode?await api('/leaderboard'):{players:[{rank:1,name:'ShadowKing',points:25430},{rank:2,name:'CryptoGirl',points:22190},{rank:3,name:'AlekMaster',points:18760},{rank:247,name:'You',points:state.points}]};
-  el.innerHTML=r.players.map(p=>`<div class="leader"><span class="rank">#${p.rank}</span><span style="flex:1">${p.name}</span><b>${fmt(p.points)}</b></div>`).join('');
- }catch{el.innerHTML='<div class="muted">Leaderboard unavailable</div>'}
-}
-
+async function upgrade(){try{if(serverMode){const r=await api('/upgrade',{method:'POST'});state={...state,...r.player};toast(r.message)}else{if(state.points<150){toast('Need 150 Points');return}state.points-=150;state.xp+=30;state.missions.upgrade=true;levelCheck();toast('Module upgraded')}saveDemo();render()}catch{toast('Upgrade failed')}}
+function mission(e){const id=e.currentTarget.dataset.mission;if(id==='website'){window.open('https://alek.best','_blank');completeMission(id)}else if(id==='play3')nav('arena');else if(id==='invite')nav('friends');else if(id==='upgrade')nav('home')}
+async function completeMission(id){try{if(serverMode){const r=await api('/mission',{method:'POST',body:JSON.stringify({mission:id})});state={...state,...r.player};toast(r.message)}else{const m=missionDefs.find(x=>x[0]===id);if(!m||state.missions[id])return;state.missions[id]=true;state.points+=m[3]}saveDemo();render()}catch{toast('Mission failed')}}
+async function openBox(e){const box=e.currentTarget.dataset.box;try{if(serverMode){const r=await api('/box',{method:'POST',body:JSON.stringify({box})});state={...state,...r.player};toast(r.message)}else{const b=boxes.find(x=>x.id===box);if(state.crystals<b.price){toast('Not enough crystals');return}state.crystals-=b.price;state.inventory=[...(state.inventory||[]),`${b.name}: Cosmetic shard`];toast(`${b.name} opened`)}saveDemo();render()}catch{toast('Box failed')}}
+async function cashPurchase(e){const item=e.currentTarget.dataset.item;if(!serverMode){toast('Payments activate after backend + Stripe deployment');return}try{const r=await api('/shop/checkout',{method:'POST',body:JSON.stringify({item})});if(r.url)window.location.href=r.url}catch{toast('Checkout failed')}}
+function invite(){const start=me?.id||'alek',url=`https://t.me/${BOT_USERNAME}?start=${start}`,share=`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent('Join me in ALEK Arena ⚔️')}`;try{tg?.openTelegramLink(share)}catch{navigator.clipboard?.writeText(url);toast('Invite link copied')}}
+async function loadLeaderboard(){const el=document.querySelector('#leaderboardCard');if(!el)return;try{const r=serverMode?await api('/leaderboard'):{players:[{rank:1,name:'ShadowKing',points:25430},{rank:2,name:'CryptoGirl',points:22190},{rank:3,name:'AlekMaster',points:18760},{rank:247,name:'You',points:state.points}]};el.innerHTML=r.players.map(p=>`<div class="leader"><span class="rank">#${p.rank}</span><span style="flex:1">${p.name}</span><b>${fmt(p.points)}</b></div>`).join('')}catch{el.innerHTML='<div class="muted">Leaderboard unavailable</div>'}}
 saveDemo();boot();

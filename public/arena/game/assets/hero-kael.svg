@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 420">
+<defs>
+  <linearGradient id="g" x1="0" x2="1"><stop stop-color="#46e6aa"/><stop offset="1" stop-color="#2aa7ff"/></linearGradient>
+  <filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="320" height="420" rx="36" fill="#081221"/>
+<circle cx="160" cy="120" r="74" fill="url(#g)" opacity=".18"/>
+<path d="M112 107c0-46 26-77 48-77s48 31 48 77c0 39-22 67-48 67s-48-28-48-67Z" fill="#15243a"/>
+<path d="M129 112l31 18 31-18-8 39h-46Z" fill="url(#g)" filter="url(#glow)"/>
+<circle cx="145" cy="118" r="5" fill="#dffaff"/><circle cx="175" cy="118" r="5" fill="#dffaff"/>
+<path d="M75 362c7-102 39-166 85-166s78 64 85 166Z" fill="#101d30" stroke="#46e6aa" stroke-width="4"/>
+<path d="M93 258l67 40 67-40-18 107H111Z" fill="url(#g)" opacity=".8"/>
+<path d="M52 330l53-102M268 330l-53-102" stroke="#2aa7ff" stroke-width="12" stroke-linecap="round" filter="url(#glow)"/>
+<text x="160" y="395" text-anchor="middle" fill="#eef7ff" font-family="Arial" font-weight="700" font-size="22">KAEL</text>
+<text x="160" y="418" text-anchor="middle" fill="#9fb5d1" font-family="Arial" font-size="13">Pulse Spear</text>
+</svg>
