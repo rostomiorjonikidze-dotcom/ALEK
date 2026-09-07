@@ -24,3 +24,201 @@ $('#clanBtn')?.addEventListener('click',()=>{if(s.clan)return toast('Squad alrea
 $$('[data-vault]').forEach(b=>b.onclick=()=>{const now=Date.now(),day=86400000;if(now-s.lastVault<day)return toast('Vault already opened');const rs=[750,1250,2000],r=rs[(+b.dataset.vault+Math.floor(now/day))%3];s.lastVault=now;s.points+=r;b.innerHTML=`✨<b>+${r}</b>`;toast('Vault opened');render()});
 setInterval(()=>{const rate=s.recharge*(eventActive()?2:1);if(s.energy<s.maxEnergy)s.energy=Math.min(s.maxEnergy,s.energy+rate);if(fever>0)fever=Math.max(0,fever-1);render()},1000);
 setInterval(()=>{if(!$('#eventTimer'))return;const r=7200000-Date.now()%7200000,h=String(Math.floor(r/3600000)).padStart(2,'0'),m=String(Math.floor(r%3600000/60000)).padStart(2,'0'),sec=String(Math.floor(r%60000/1000)).padStart(2,'0');$('#eventTimer').textContent=`${h}:${m}:${sec}`},1000);render();
+
+/* ===== ALEK ULTIMATE FINAL: MARKET + TON CONNECT + STARS PAYMENT READY ===== */
+const ALEK_API_BASE = window.ALEK_CONFIG?.API_BASE || '';
+
+const ALEK_PRODUCTS = {
+  energy_pack:   { title:'Energy Pack', stars:75 },
+  boost_pack:    { title:'Boost Pack', stars:149 },
+  founder_skin:  { title:'Founder Skin', stars:249 },
+  gift_pack:     { title:'Gift Pack', stars:199 },
+  genesis_pass:  { title:'Genesis Pass', stars:499 }
+};
+
+let tonConnectUI = null;
+
+async function initTonConnect(){
+  const mount = document.getElementById('tonConnectButton');
+  if(!mount || !window.TON_CONNECT_UI) return;
+  try{
+    tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: 'https://alek.best/arena/tonconnect-manifest.json',
+      buttonRootId: 'tonConnectButton'
+    });
+    tonConnectUI.uiOptions = { language: 'en' };
+
+    const updateWallet = wallet => {
+      const st = document.getElementById('walletStatus');
+      const addr = document.getElementById('walletAddress');
+      if(!st || !addr) return;
+      if(wallet?.account?.address){
+        const a = wallet.account.address;
+        st.textContent = 'Wallet connected';
+        addr.textContent = a.slice(0,10)+'…'+a.slice(-8);
+        try{ tg?.HapticFeedback?.notificationOccurred('success'); }catch{}
+      }else{
+        st.textContent = 'Wallet not connected';
+        addr.textContent = 'Connect a TON wallet to prepare your player profile for future on-chain rewards.';
+      }
+    };
+    updateWallet(tonConnectUI.wallet);
+    tonConnectUI.onStatusChange(updateWallet);
+  }catch(err){
+    console.warn('TON Connect init failed', err);
+    const st = document.getElementById('walletStatus');
+    if(st) st.textContent = 'Wallet connection unavailable';
+  }
+}
+
+async function buyWithStars(productId, button){
+  const product = ALEK_PRODUCTS[productId];
+  if(!product) return toast('Product unavailable');
+
+  if(!tg){
+    toast('Open ALEK inside Telegram to purchase');
+    return;
+  }
+
+  if(!ALEK_API_BASE){
+    toast('Market is ready — payments activate with backend');
+    return;
+  }
+
+  button?.classList.add('loading');
+  try{
+    const response = await fetch(ALEK_API_BASE + '/api/stars/create-invoice', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'X-Telegram-Init-Data': tg.initData || ''
+      },
+      body:JSON.stringify({ productId })
+    });
+    if(!response.ok) throw new Error('invoice');
+    const data = await response.json();
+    if(!data.invoiceLink) throw new Error('missing invoice link');
+
+    tg.openInvoice(data.invoiceLink, status => {
+      button?.classList.remove('loading');
+      if(status === 'paid'){
+        toast('⭐ Purchase successful');
+        try{ tg.HapticFeedback?.notificationOccurred('success'); }catch{}
+      }else if(status === 'cancelled'){
+        toast('Purchase cancelled');
+      }else if(status === 'failed'){
+        toast('Payment failed');
+      }
+    });
+  }catch(err){
+    button?.classList.remove('loading');
+    toast('Payment service unavailable');
+  }
+}
+
+document.querySelectorAll('.star-buy').forEach(btn=>{
+  btn.addEventListener('click',()=>buyWithStars(btn.dataset.product, btn));
+});
+
+document.getElementById('sponsorInfoBtn')?.addEventListener('click',()=>{
+  toast('Sponsor campaign system activates with backend analytics');
+});
+
+document.addEventListener('DOMContentLoaded', initTonConnect);
+if(document.readyState !== 'loading') initTonConnect();
+
+
+/* ===== BACKEND SYNC LAYER ===== */
+async function alekApi(path, options={}){
+  if(!ALEK_API_BASE || !tg?.initData) return null;
+  const res = await fetch(ALEK_API_BASE.replace(/\/$/,'') + path, {
+    ...options,
+    headers:{
+      'Content-Type':'application/json',
+      'X-Telegram-Init-Data':tg.initData,
+      ...(options.headers||{})
+    }
+  });
+  if(!res.ok) throw new Error('API '+res.status);
+  return res.json();
+}
+
+function applyServerUser(u){
+  if(!u) return;
+  s.points=u.points ?? s.points;
+  s.energy=u.energy ?? s.energy;
+  s.maxEnergy=u.maxEnergy ?? s.maxEnergy;
+  s.tapPower=u.tapPower ?? s.tapPower;
+  s.recharge=u.recharge ?? s.recharge;
+  s.referrals=u.referrals ?? s.referrals;
+  s.totalTaps=u.totalTaps ?? s.totalTaps;
+  render();
+}
+
+async function startServerSession(){
+  if(!ALEK_API_BASE || !tg?.initData) return;
+  try{
+    const data=await alekApi('/api/session',{method:'POST',body:'{}'});
+    applyServerUser(data?.user);
+    if(data?.boss){
+      s.bossHp=data.boss.hp;
+      s.bossMax=data.boss.max_hp;
+      render();
+    }
+    await loadRealLeaderboard();
+  }catch(e){ console.warn('ALEK backend offline',e); }
+}
+
+async function loadRealLeaderboard(){
+  if(!ALEK_API_BASE || !tg?.initData) return;
+  try{
+    const data=await alekApi('/api/leaderboard');
+    const box=document.getElementById('leaderList');
+    if(box && data?.players?.length){
+      box.innerHTML=data.players.map(p=>`<div class="panel leader-item"><div class="iconbox">${p.rank}</div><div class="grow"><b>${escapeHtml(p.firstName||p.username||'Player')}</b><small>${p.username?'@'+escapeHtml(p.username):'ALEK Player'}</small></div><b>${Number(p.points||0).toLocaleString()}</b></div>`).join('');
+    }
+  }catch(e){}
+}
+function escapeHtml(v){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+
+let pendingServerTaps=0, tapBatchStarted=Date.now();
+document.getElementById('tapCoin')?.addEventListener('pointerdown',()=>{ if(ALEK_API_BASE&&tg?.initData) pendingServerTaps++; }, {capture:true});
+setInterval(async()=>{
+  if(!ALEK_API_BASE || !tg?.initData || pendingServerTaps<1) return;
+  const taps=pendingServerTaps;pendingServerTaps=0;
+  const elapsedMs=Date.now()-tapBatchStarted;tapBatchStarted=Date.now();
+  try{
+    const data=await alekApi('/api/taps',{method:'POST',body:JSON.stringify({taps,elapsedMs})});
+    applyServerUser(data?.user);
+  }catch(e){ pendingServerTaps+=taps; }
+},2000);
+
+const originalBossButton=document.getElementById('bossHitBtn');
+if(originalBossButton){
+  originalBossButton.addEventListener('click',async ev=>{
+    if(!ALEK_API_BASE||!tg?.initData) return;
+    ev.stopImmediatePropagation();
+    try{
+      const data=await alekApi('/api/boss/attack',{method:'POST',body:JSON.stringify({hits:1})});
+      if(data?.boss){s.bossHp=data.boss.hp;s.bossMax=data.boss.max_hp}
+      applyServerUser(data?.user);toast('Boss attacked');
+    }catch(e){toast('Boss attack failed')}
+  }, true);
+}
+
+if(tonConnectUI){
+  // status listener is attached in initTonConnect below
+}
+const oldInitTonConnect = initTonConnect;
+initTonConnect = async function(){
+  await oldInitTonConnect();
+  if(tonConnectUI){
+    tonConnectUI.onStatusChange(async wallet=>{
+      if(wallet?.account?.address && ALEK_API_BASE && tg?.initData){
+        try{await alekApi('/api/wallet',{method:'POST',body:JSON.stringify({address:wallet.account.address})})}catch(e){}
+      }
+    });
+  }
+};
+
+startServerSession();
