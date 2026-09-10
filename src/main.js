@@ -362,14 +362,17 @@ async function sellALK() {
     setTimeout(() => balances(from), 2000)
 
   } catch (e) {
-    console.error(e)
-    setMarketMessage(
-      e?.shortMessage ||
-      e?.reason ||
-      e?.message ||
-      'Sell transaction failed'
-    )
-  }
+  console.error(e)
+
+  const msg =
+    e?.shortMessage ||
+    e?.reason ||
+    e?.message ||
+    'Buy transaction failed'
+
+  setMarketMessage(msg)
+  alert(msg)
+}
 }
 
 $('buyAlkBtn')?.addEventListener('click', buyALK)
