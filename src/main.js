@@ -2,18 +2,30 @@ import { createAppKit } from '@reown/appkit'
 import { EthersAdapter } from '@reown/appkit-adapter-ethers'
 import { mainnet } from '@reown/appkit/networks'
 import { BrowserProvider, Contract, parseEther } from 'ethers'
+
 const PROJECT_ID = '15a319297e48913a316f8f756c08db92'
+
 const ALK_CONTRACT = '0x6b6ecc1b213af556e240290e677a09d565d085c4'
+const SUSHI_ROUTER = '0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f'
+const WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+
 const MAINNET_RPCS = [
   'https://ethereum-rpc.publicnode.com',
   'https://eth.llamarpc.com',
   'https://rpc.ankr.com/eth'
-  ]
-  const SUSHI_ROUTER = '0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f'
+]
 
-const WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+const ROUTER_ABI = [
+  'function getAmountsOut(uint256 amountIn, address[] path) view returns (uint256[] amounts)',
+  'function swapExactETHForTokens(uint256 amountOutMin, address[] path, address to, uint256 deadline) payable returns (uint256[] amounts)',
+  'function swapExactTokensForETH(uint256 amountIn, uint256 amountOutMin, address[] path, address to, uint256 deadline) returns (uint256[] amounts)'
+]
 
-const $ = id => document.getElementById(id)
+const ERC20_ABI = [
+  'function balanceOf(address account) view returns (uint256)',
+  'function allowance(address owner, address spender) view returns (uint256)',
+  'function approve(address spender, uint256 amount) returns (bool)'
+]
 
 const modal = createAppKit({
   adapters: [new EthersAdapter()],
@@ -26,15 +38,26 @@ const modal = createAppKit({
     url: 'https://alek.best',
     icons: ['https://alek.best/alek-logo.png']
   },
-  features: { analytics: false, email: false, socials: [], onramp: false, swaps: false }
+  features: {
+    analytics: false,
+    email: false,
+    socials: [],
+    onramp: false,
+    swaps: false
+  }
 })
 
-const short = a => a ? `${a.slice(0,6)}…${a.slice(-4)}` : ''
-const sleep = ms => new Promise(r => setTimeout(r, ms))
+const $ = id => document.getElementById(id)
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+const short = address => address ? `${address.slice(0, 6)}â¦${address.slice(-4)}` : ''
 
 function setText(id, value) {
   const el = $(id)
   if (el) el.textContent = value
+}
+
+function setMarketMessage(text) {
+  setText('marketMessage', text)
 }
 
 function disconnected() {
@@ -43,164 +66,146 @@ function disconnected() {
   setText('heroWallet', 'Not connected')
   setText('status', 'Ready')
   setText('chain', 'Ethereum Mainnet balances')
-  setText('ethBalance', '—')
-  setText('alkBalance', '—')
+  setText('ethBalance', 'â')
+  setText('alkBalance', 'â')
+
   const d = $('disconnectBtn')
   if (d) d.hidden = true
+
+  document.querySelectorAll('.connectBtn').forEach(btn => {
+    btn.textContent = 'Connect Wallet'
+  })
 }
 
-function format18(hex, places=5) {
-  const n = BigInt(hex || '0x0')
+function format18(hexOrBigInt, places = 5) {
+  const n = typeof hexOrBigInt === 'bigint'
+    ? hexOrBigInt
+    : BigInt(hexOrBigInt || '0x0')
+
   const base = 10n ** 18n
   const whole = n / base
-  let frac = (n % base).toString().padStart(18,'0').slice(0,places).replace(/0+$/,'')
+  let frac = (n % base).toString().padStart(18, '0').slice(0, places)
+  frac = frac.replace(/0+$/, '')
   return frac ? `${whole}.${frac}` : `${whole}`
 }
 
 async function rpc(method, params) {
   let lastError
+
   for (const url of MAINNET_RPCS) {
     try {
       const r = await fetch(url, {
-        method:'POST',
-        headers:{'content-type':'application/json'},
-        body:JSON.stringify({jsonrpc:'2.0', id:1, method, params})
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
       })
+
       if (!r.ok) throw new Error(`RPC HTTP ${r.status}`)
+
       const j = await r.json()
-      if (j.error) throw new Error(j.error.message)
+      if (j.error) throw new Error(j.error.message || 'Ethereum RPC error')
       return j.result
     } catch (e) {
       lastError = e
     }
   }
+
   throw lastError || new Error('Ethereum Mainnet RPC unavailable')
 }
 
 async function balances(address) {
-  setText('alkBalance', 'Loading…')
-  setText('ethBalance', 'Loading…')
+  if (!address) return
 
-  const padded = address.toLowerCase().replace(/^0x/,'').padStart(64,'0')
-  const data = '0x70a08231' + padded
+  setText('alkBalance', 'Loadingâ¦')
+  setText('ethBalance', 'Loadingâ¦')
 
-  const eth = await rpc('eth_getBalance', [address, 'latest'])
-  setText('ethBalance', `${format18(eth)} ETH`)
+  try {
+    const eth = await rpc('eth_getBalance', [address, 'latest'])
+    setText('ethBalance', `${format18(eth)} ETH`)
 
-  const alk = await rpc('eth_call', [{to: ALK_CONTRACT, data}, 'latest'])
-  const alkFormatted = format18(alk, 4)
-  setText('alkBalance', `${alkFormatted} ALK`)
+    const padded = address.toLowerCase().replace(/^0x/, '').padStart(64, '0')
+    const data = '0x70a08231' + padded
+    const alk = await rpc('eth_call', [{ to: ALK_CONTRACT, data }, 'latest'])
 
-  const hint = $('alkHint')
-  if (hint) {
-    hint.textContent = BigInt(alk || '0x0') === 0n
-      ? 'This connected Ethereum Mainnet address currently returns 0 ALK from the ALEK token contract.'
-      : `Verified on-chain balance for ${short(address)}`
-  }
-}
-
-async function connected(address) {
-  setText('walletTitle', 'ALEK Wallet Connected ✓')
-  setText('walletAddress', address)
-  setText('heroWallet', `Connected: ${short(address)}`)
-  setText('status', 'ALEK Wallet Connected ✓')
-  setText('chain', 'Ethereum Mainnet · ALK')
-  const d = $('disconnectBtn')
-  if (d) d.hidden = false
-  try { await balances(address) }
-  catch (e) {
+    const alkFormatted = format18(alk, 4)
+    setText('alkBalance', `${alkFormatted} ALK`)
+  } catch (e) {
     console.error(e)
     setText('ethBalance', 'Unavailable')
     setText('alkBalance', 'Unavailable')
   }
 }
 
+async function connected(address) {
+  setText('walletTitle', 'ALEK Wallet Connected â')
+  setText('walletAddress', address)
+  setText('heroWallet', `Connected: ${short(address)}`)
+  setText('status', 'ALEK Wallet Connected â')
+  setText('chain', 'Ethereum Mainnet Â· ALK')
+
+  const d = $('disconnectBtn')
+  if (d) d.hidden = false
+
+  document.querySelectorAll('.connectBtn').forEach(btn => {
+    btn.textContent = short(address)
+  })
+
+  await balances(address)
+}
+
 function extractAccountAddress(state = {}) {
   return state?.accountState?.address || state?.address || null
 }
 
-async function applyConnectedAddress(address) {
-  if (!address) return false
-  await connected(address)
-  document.querySelectorAll('.connectBtn').forEach(btn => {
-    btn.textContent = short(address)
-  })
-  return true
+async function getWalletProvider() {
+  const direct = modal.getWalletProvider?.()
+  if (direct?.request) return direct
+
+  const providers = modal.getProviders?.()
+  const eip155 = providers?.eip155
+
+  if (eip155?.request) return eip155
+
+  if (eip155 && typeof eip155 === 'object') {
+    const nested = Object.values(eip155).find(p => p?.request)
+    if (nested) return nested
+  }
+
+  if (window.ethereum?.request) return window.ethereum
+
+  return null
+}
+
+async function currentAddress() {
+  const appKitAddress = modal.getAddress?.()
+  if (appKitAddress) return appKitAddress
+
+  const walletProvider = await getWalletProvider()
+  if (!walletProvider?.request) return null
+
+  try {
+    const accounts = await walletProvider.request({ method: 'eth_accounts' })
+    return accounts?.[0] || null
+  } catch {
+    return null
+  }
 }
 
 async function syncFromAppKit() {
-  const address = modal.getAddress?.()
-  if (address) return applyConnectedAddress(address)
-
-  const providers = modal.getProviders?.()
-  const provider = providers?.eip155 || modal.getWalletProvider?.()
-  if (provider?.request) {
-    try {
-      const accounts = await provider.request({ method: 'eth_accounts' })
-      if (accounts?.[0]) return applyConnectedAddress(accounts[0])
-    } catch (e) {
-      console.debug('ALEK eth_accounts restore:', e)
-    }
-  }
-  return false
+  const address = await currentAddress()
+  if (!address) return false
+  await connected(address)
+  return true
 }
 
-modal.subscribeAccount?.(state => {
-  const address = extractAccountAddress(state)
-  if (address) {
-    applyConnectedAddress(address)
-  } else if (state?.accountState?.isConnected === false || state?.isConnected === false) {
-    disconnected()
-  }
-})
-
-modal.subscribeProvider?.(state => {
-  if (state?.address) applyConnectedAddress(state.address)
-  else if (state?.isConnected === false) disconnected()
-})
-
-modal.subscribeProviders?.(providers => {
-  const provider = providers?.eip155
-  if (!provider?.request) return
-  provider.request({ method: 'eth_accounts' })
-    .then(accounts => accounts?.[0] && applyConnectedAddress(accounts[0]))
-    .catch(() => {})
-})
-
-document.querySelectorAll('.connectBtn').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    try {
-      await modal.open()
-    } catch (e) {
-      console.error(e)
-      setText('status', 'Connection error')
-    }
-  })
-})
-
-$('disconnectBtn')?.addEventListener('click', async ()=> {
-try {
-  await modal.disconnect ()
-  } finally {
-  disconnecdet ()
-  document.querySelectorAll('.connectBtn').forEach(btn=> {
-  btn.textContent = 'Connect'
-  })
-  }
-  })  
-function setMarketMessage(text) {
-  setText('marketMessage', text)
-}
-
-async function getWalletProvider() {
-  const providers = modal.getProviders?.()
-  return providers?.eip155 || modal.getWalletProvider?.()
+function normalizeDecimal(value) {
+  return String(value ?? '').trim().replace(/\s+/g, '').replace(',', '.')
 }
 
 function findInputNearButton(buttonId) {
   let el = $(buttonId)
 
-  for (let i = 0; i < 6 && el; i++) {
+  for (let i = 0; i < 8 && el; i++) {
     const input = el.querySelector?.('input')
     if (input) return input
     el = el.parentElement
@@ -209,67 +214,61 @@ function findInputNearButton(buttonId) {
   throw new Error('Amount input not found')
 }
 
-const ROUTER_ABI = [
-  'function getAmountsOut(uint amountIn, address[] path) view returns (uint[] amounts)',
-  'function swapExactETHForTokens(uint amountOutMin, address[] path, address to, uint deadline) payable returns (uint[] amounts)',
-  'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline) returns (uint[] amounts)'
-]
+async function ensureMainnet(walletProvider) {
+  const chainId = await walletProvider.request({ method: 'eth_chainId' })
+  if (String(chainId).toLowerCase() === '0x1') return
 
-const ERC20_ABI = [
-  'function approve(address spender, uint256 amount) returns (bool)'
-]
+  try {
+    await walletProvider.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x1' }]
+    })
+  } catch {
+    throw new Error('Please switch your wallet to Ethereum Mainnet')
+  }
+}
 
 async function getTradeSigner() {
-  const walletProvider = await getWalletProvider()
+  let walletProvider = await getWalletProvider()
 
   if (!walletProvider?.request) {
     await modal.open()
-    return null
+    await sleep(500)
+    walletProvider = await getWalletProvider()
   }
+
+  if (!walletProvider?.request) {
+    throw new Error('Wallet provider not available. Please reconnect your wallet.')
+  }
+
+  await ensureMainnet(walletProvider)
 
   const provider = new BrowserProvider(walletProvider)
-  const network = await provider.getNetwork()
-
-  if (network.chainId !== 1n) {
-    throw new Error('Please switch wallet to Ethereum Mainnet')
-  }
-
   return provider.getSigner()
 }
 
 async function buyALK() {
   try {
-    const signer = await getTradeSigner()
-    if (!signer) return
-
     const input = findInputNearButton('buyAlkBtn')
-    const valueText = String(input.value || '').trim()
+    const valueText = normalizeDecimal(input.value)
 
-    if (!valueText || Number(valueText) <= 0) {
-      throw new Error('Enter ETH amount')
+    if (!/^\d+(\.\d{0,18})?$/.test(valueText) || Number(valueText) <= 0) {
+      throw new Error('Enter a valid ETH amount')
     }
 
-    const value = parseEther(valueText)
+    const signer = await getTradeSigner()
     const from = await signer.getAddress()
+    const value = parseEther(valueText)
 
-    const router = new Contract(
-      SUSHI_ROUTER,
-      ROUTER_ABI,
-      signer
-    )
+    const router = new Contract(SUSHI_ROUTER, ROUTER_ABI, signer)
 
-    setMarketMessage('Getting SushiSwap quote...')
+    setMarketMessage('Getting SushiSwap quoteâ¦')
 
-    const amounts = await router.getAmountsOut(
-      value,
-      [WETH, ALK_CONTRACT]
-    )
-
-    // 5% slippage protection
+    const amounts = await router.getAmountsOut(value, [WETH, ALK_CONTRACT])
     const amountOutMin = amounts[1] * 95n / 100n
     const deadline = Math.floor(Date.now() / 1000) + 1200
 
-    setMarketMessage('Confirm Buy ALK transaction in your wallet...')
+    setMarketMessage('Confirm Buy ALK transaction in your walletâ¦')
 
     const tx = await router.swapExactETHForTokens(
       amountOutMin,
@@ -280,72 +279,49 @@ async function buyALK() {
     )
 
     setMarketMessage(`Buy submitted: ${tx.hash}`)
-
     await tx.wait()
 
     setMarketMessage('Buy ALK completed successfully.')
-
-    setTimeout(() => balances(from), 2000)
-
+    await balances(from)
   } catch (e) {
     console.error(e)
-    setMarketMessage(
-      e?.shortMessage ||
-      e?.reason ||
-      e?.message ||
-      'Buy transaction failed'
-    )
+    const msg = e?.shortMessage || e?.reason || e?.info?.error?.message || e?.message || 'Buy transaction failed'
+    setMarketMessage(msg)
+    alert(msg)
   }
 }
 
 async function sellALK() {
   try {
-    const signer = await getTradeSigner()
-    if (!signer) return
-
     const input = findInputNearButton('sellAlkBtn')
-    const valueText = String(input.value || '').trim()
+    const valueText = normalizeDecimal(input.value)
 
-    if (!valueText || Number(valueText) <= 0) {
-      throw new Error('Enter ALK amount')
+    if (!/^\d+(\.\d{0,18})?$/.test(valueText) || Number(valueText) <= 0) {
+      throw new Error('Enter a valid ALK amount')
     }
 
-    const amountIn = parseEther(valueText)
+    const signer = await getTradeSigner()
     const from = await signer.getAddress()
+    const amountIn = parseEther(valueText)
 
-    const router = new Contract(
-      SUSHI_ROUTER,
-      ROUTER_ABI,
-      signer
-    )
+    const router = new Contract(SUSHI_ROUTER, ROUTER_ABI, signer)
+    const alk = new Contract(ALK_CONTRACT, ERC20_ABI, signer)
 
-    const alk = new Contract(
-      ALK_CONTRACT,
-      ERC20_ABI,
-      signer
-    )
+    const allowance = await alk.allowance(from, SUSHI_ROUTER)
 
-    setMarketMessage('Approve ALK for SushiSwap...')
+    if (allowance < amountIn) {
+      setMarketMessage('Confirm ALK approval in your walletâ¦')
+      const approvalTx = await alk.approve(SUSHI_ROUTER, amountIn)
+      await approvalTx.wait()
+    }
 
-    const approvalTx = await alk.approve(
-      SUSHI_ROUTER,
-      amountIn
-    )
+    setMarketMessage('Getting SushiSwap quoteâ¦')
 
-    await approvalTx.wait()
-
-    setMarketMessage('Getting SushiSwap quote...')
-
-    const amounts = await router.getAmountsOut(
-      amountIn,
-      [ALK_CONTRACT, WETH]
-    )
-
-    // 5% slippage protection
+    const amounts = await router.getAmountsOut(amountIn, [ALK_CONTRACT, WETH])
     const amountOutMin = amounts[1] * 95n / 100n
     const deadline = Math.floor(Date.now() / 1000) + 1200
 
-    setMarketMessage('Confirm Sell ALK transaction in your wallet...')
+    setMarketMessage('Confirm Sell ALK transaction in your walletâ¦')
 
     const tx = await router.swapExactTokensForETH(
       amountIn,
@@ -356,40 +332,74 @@ async function sellALK() {
     )
 
     setMarketMessage(`Sell submitted: ${tx.hash}`)
-
     await tx.wait()
 
     setMarketMessage('Sell ALK completed successfully.')
-
-    setTimeout(() => balances(from), 2000)
-
+    await balances(from)
   } catch (e) {
-  console.error(e)
-
-  const msg =
-    e?.shortMessage ||
-    e?.reason ||
-    e?.message ||
-    'Buy transaction failed'
-
-  setMarketMessage(msg)
-  alert(msg)
-}
+    console.error(e)
+    const msg = e?.shortMessage || e?.reason || e?.info?.error?.message || e?.message || 'Sell transaction failed'
+    setMarketMessage(msg)
+    alert(msg)
+  }
 }
 
-$('buyAlkBtn')?.addEventListener('click', buyALK)
-$('sellAlkBtn')?.addEventListener('click', sellALK)
+function bindUI() {
+  document.querySelectorAll('.connectBtn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try {
+        await modal.open()
+      } catch (e) {
+        console.error(e)
+        setText('status', 'Connection error')
+      }
+    })
+  })
 
-setMarketMessage('Trading is live through SushiSwap V2 on Ethereum Mainnet.')
+  $('disconnectBtn')?.addEventListener('click', async () => {
+    try {
+      await modal.disconnect()
+    } finally {
+      disconnected()
+    }
+  })
+
+  $('buyAlkBtn')?.addEventListener('click', buyALK)
+  $('sellAlkBtn')?.addEventListener('click', sellALK)
+
+  setMarketMessage('Trading is live through SushiSwap V2 on Ethereum Mainnet.')
+}
+
+modal.subscribeAccount?.(state => {
+  const address = extractAccountAddress(state)
+  if (address) connected(address)
+  else if (state?.accountState?.isConnected === false || state?.isConnected === false) disconnected()
+})
+
+modal.subscribeProvider?.(state => {
+  if (state?.address) connected(state.address)
+  else if (state?.isConnected === false) disconnected()
+})
+
 async function restore() {
   for (const delay of [0, 150, 300, 600, 1000, 1800, 3000, 5000]) {
     if (delay) await sleep(delay)
     if (await syncFromAppKit()) return
   }
 }
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    bindUI()
+    restore()
+  }, { once: true })
+} else {
+  bindUI()
+  restore()
+}
+
 window.addEventListener('pageshow', restore)
 window.addEventListener('focus', restore)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') restore()
 })
-restore()
