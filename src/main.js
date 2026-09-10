@@ -8,9 +8,11 @@ const MAINNET_RPCS = [
   'https://ethereum-rpc.publicnode.com',
   'https://eth.llamarpc.com',
   'https://rpc.ankr.com/eth'
-]
-const SUSHI_ROUTER = '0xd9e1cE17f2641F24aE83637aB66a2cca9C378B9F'
-const WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+  ]
+  const SUSHI_ROUTER = '0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f'
+
+const WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+
 const $ = id => document.getElementById(id)
 
 const modal = createAppKit({
