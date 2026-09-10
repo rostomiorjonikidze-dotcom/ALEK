@@ -372,9 +372,7 @@ async function sellALK() {
   }
 }
 
-$('buyAlkBtn')?.addEventListener('click', () => {
-  alert('BUY BUTTON WORKS')
-})
+$('buyAlkBtn')?.addEventListener('click', buyALK)
 $('sellAlkBtn')?.addEventListener('click', sellALK)
 
 setMarketMessage('Trading is live through SushiSwap V2 on Ethereum Mainnet.')
