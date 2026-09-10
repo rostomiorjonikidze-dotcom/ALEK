@@ -9,7 +9,8 @@ const MAINNET_RPCS = [
   'https://eth.llamarpc.com',
   'https://rpc.ankr.com/eth'
 ]
-const MARKET_CONTRACT = '' // Fill after deploying contracts/ALEKMarket.sol
+const SUSHI_ROUTER = '0xd9e1cE17f2641F24aE83637aB66a2cca9C378B9F'
+const WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 const $ = id => document.getElementById(id)
 
 const modal = createAppKit({
