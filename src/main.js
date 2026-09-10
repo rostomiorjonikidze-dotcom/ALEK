@@ -3,7 +3,7 @@ import { EthersAdapter } from '@reown/appkit-adapter-ethers'
 import { mainnet } from '@reown/appkit/networks'
 import { BrowserProvider, Contract, parseEther } from 'ethers'
 const PROJECT_ID = '15a319297e48913a316f8f756c08db92'
-const ALK_CONTRACT = '0x6B6Ecc1B213aF556E240290E677A09D565D085c4'
+const ALK_CONTRACT = '0x6b6ecc1b213af556e240290e677a09d565d085c4'
 const MAINNET_RPCS = [
   'https://ethereum-rpc.publicnode.com',
   'https://eth.llamarpc.com',
