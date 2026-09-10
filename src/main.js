@@ -179,10 +179,10 @@ document.querySelectorAll('.connectBtn').forEach(btn => {
 $('disconnectBtn')?.addEventListener('click', async () => {
   try { await modal.disconnect() } finally {
     disconnected()
-    document.querySelectorAll('.connectBtn').forEach(btn => { btn.textContent = 'Connect
+    document.querySelectorAll('.connectBtn').forEach(btn => { btn.textContent = 'Connect' })
 function setMarketMessage(text) {
   setText('marketMessage', text)
-})
+}
 
 async function getWalletProvider() {
   const providers = modal.getProviders?.()
