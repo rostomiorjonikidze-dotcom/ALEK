@@ -1,7 +1,7 @@
 import { createAppKit } from '@reown/appkit'
 import { EthersAdapter } from '@reown/appkit-adapter-ethers'
 import { mainnet } from '@reown/appkit/networks'
-
+import { BrowserProvider, Contract, parseEther } from 'ethers'
 const PROJECT_ID = '15a319297e48913a316f8f756c08db92'
 const ALK_CONTRACT = '0x6B6Ecc1B213aF556E240290E677A09D565D085c4'
 const MAINNET_RPCS = [
@@ -179,78 +179,197 @@ document.querySelectorAll('.connectBtn').forEach(btn => {
 $('disconnectBtn')?.addEventListener('click', async () => {
   try { await modal.disconnect() } finally {
     disconnected()
-    document.querySelectorAll('.connectBtn').forEach(btn => { btn.textContent = 'Connect Wallet' })
-  }
-})
-
-
-function marketReady() {
-  return /^0x[a-fA-F0-9]{40}$/.test(MARKET_CONTRACT)
-}
-
+    document.querySelectorAll('.connectBtn').forEach(btn => { btn.textContent = 'Connect
 function setMarketMessage(text) {
   setText('marketMessage', text)
 }
 
-function hexQuantityFromEthInput(value) {
-  const s = String(value || '').trim()
-  if (!/^\d+(\.\d{0,18})?$/.test(s)) throw new Error('Enter a valid ETH amount')
-  const [whole, frac=''] = s.split('.')
-  const wei = BigInt(whole) * 10n**18n + BigInt((frac + '0'.repeat(18)).slice(0,18))
-  if (wei <= 0n) throw new Error('Amount must be greater than 0')
-  return '0x' + wei.toString(16)
-}
-
-function uint256Word(value) {
-  return BigInt(value).toString(16).padStart(64, '0')
-}
-
 async function getWalletProvider() {
   const providers = modal.getProviders?.()
-  return providers?.eip155 || modal.getWalletProvider?.() || null
+  return providers?.eip155 || modal.getWalletProvider?.()
+}
+
+function findInputNearButton(buttonId) {
+  let el = $(buttonId)
+
+  for (let i = 0; i < 6 && el; i++) {
+    const input = el.querySelector?.('input')
+    if (input) return input
+    el = el.parentElement
+  }
+
+  throw new Error('Amount input not found')
+}
+
+const ROUTER_ABI = [
+  'function getAmountsOut(uint amountIn, address[] path) view returns (uint[] amounts)',
+  'function swapExactETHForTokens(uint amountOutMin, address[] path, address to, uint deadline) payable returns (uint[] amounts)',
+  'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline) returns (uint[] amounts)'
+]
+
+const ERC20_ABI = [
+  'function approve(address spender, uint256 amount) returns (bool)'
+]
+
+async function getTradeSigner() {
+  const walletProvider = await getWalletProvider()
+
+  if (!walletProvider?.request) {
+    await modal.open()
+    return null
+  }
+
+  const provider = new BrowserProvider(walletProvider)
+  const network = await provider.getNetwork()
+
+  if (network.chainId !== 1n) {
+    throw new Error('Please switch wallet to Ethereum Mainnet')
+  }
+
+  return provider.getSigner()
 }
 
 async function buyALK() {
-  if (!marketReady()) {
-    setMarketMessage('ALK Market contract is not deployed yet. Deploy contracts/ALEKMarket.sol first.')
-    return
-  }
-  const provider = await getWalletProvider()
-  const from = modal.getAddress?.()
-  if (!provider?.request || !from) {
-    await modal.open()
-    return
-  }
   try {
-    setMarketMessage('Confirm the Buy ALK transaction in your wallet…')
-    const value = hexQuantityFromEthInput($('buyEth')?.value)
-    const tx = await provider.request({
-      method: 'eth_sendTransaction',
-      params: [{ from, to: MARKET_CONTRACT, value, data: '0xa6f2ae3a' }]
-    })
-    setMarketMessage(`Buy submitted: ${tx}`)
-    setTimeout(() => balances(from), 5000)
+    const signer = await getTradeSigner()
+    if (!signer) return
+
+    const input = findInputNearButton('buyAlkBtn')
+    const valueText = String(input.value || '').trim()
+
+    if (!valueText || Number(valueText) <= 0) {
+      throw new Error('Enter ETH amount')
+    }
+
+    const value = parseEther(valueText)
+    const from = await signer.getAddress()
+
+    const router = new Contract(
+      SUSHI_ROUTER,
+      ROUTER_ABI,
+      signer
+    )
+
+    setMarketMessage('Getting SushiSwap quote...')
+
+    const amounts = await router.getAmountsOut(
+      value,
+      [WETH, ALK_CONTRACT]
+    )
+
+    // 5% slippage protection
+    const amountOutMin = amounts[1] * 95n / 100n
+    const deadline = Math.floor(Date.now() / 1000) + 1200
+
+    setMarketMessage('Confirm Buy ALK transaction in your wallet...')
+
+    const tx = await router.swapExactETHForTokens(
+      amountOutMin,
+      [WETH, ALK_CONTRACT],
+      from,
+      deadline,
+      { value }
+    )
+
+    setMarketMessage(`Buy submitted: ${tx.hash}`)
+
+    await tx.wait()
+
+    setMarketMessage('Buy ALK completed successfully.')
+
+    setTimeout(() => balances(from), 2000)
+
   } catch (e) {
     console.error(e)
-    setMarketMessage(e?.message || 'Buy transaction failed')
+    setMarketMessage(
+      e?.shortMessage ||
+      e?.reason ||
+      e?.message ||
+      'Buy transaction failed'
+    )
   }
 }
 
 async function sellALK() {
-  if (!marketReady()) {
-    setMarketMessage('ALK Market contract is not deployed yet. Deploy contracts/ALEKMarket.sol first.')
-    return
+  try {
+    const signer = await getTradeSigner()
+    if (!signer) return
+
+    const input = findInputNearButton('sellAlkBtn')
+    const valueText = String(input.value || '').trim()
+
+    if (!valueText || Number(valueText) <= 0) {
+      throw new Error('Enter ALK amount')
+    }
+
+    const amountIn = parseEther(valueText)
+    const from = await signer.getAddress()
+
+    const router = new Contract(
+      SUSHI_ROUTER,
+      ROUTER_ABI,
+      signer
+    )
+
+    const alk = new Contract(
+      ALK_CONTRACT,
+      ERC20_ABI,
+      signer
+    )
+
+    setMarketMessage('Approve ALK for SushiSwap...')
+
+    const approvalTx = await alk.approve(
+      SUSHI_ROUTER,
+      amountIn
+    )
+
+    await approvalTx.wait()
+
+    setMarketMessage('Getting SushiSwap quote...')
+
+    const amounts = await router.getAmountsOut(
+      amountIn,
+      [ALK_CONTRACT, WETH]
+    )
+
+    // 5% slippage protection
+    const amountOutMin = amounts[1] * 95n / 100n
+    const deadline = Math.floor(Date.now() / 1000) + 1200
+
+    setMarketMessage('Confirm Sell ALK transaction in your wallet...')
+
+    const tx = await router.swapExactTokensForETH(
+      amountIn,
+      amountOutMin,
+      [ALK_CONTRACT, WETH],
+      from,
+      deadline
+    )
+
+    setMarketMessage(`Sell submitted: ${tx.hash}`)
+
+    await tx.wait()
+
+    setMarketMessage('Sell ALK completed successfully.')
+
+    setTimeout(() => balances(from), 2000)
+
+  } catch (e) {
+    console.error(e)
+    setMarketMessage(
+      e?.shortMessage ||
+      e?.reason ||
+      e?.message ||
+      'Sell transaction failed'
+    )
   }
-  setMarketMessage('Sell requires ALK approval to the market contract first. The market deployment step will enable this safely.')
 }
 
 $('buyAlkBtn')?.addEventListener('click', buyALK)
 $('sellAlkBtn')?.addEventListener('click', sellALK)
 
-if (!marketReady()) {
-  setMarketMessage('Trading UI is ready. The on-chain ALK Market contract still needs to be deployed and funded on Ethereum Mainnet.')
-}
-
+setMarketMessage('Trading is live through SushiSwap V2 on Ethereum Mainnet.')
 async function restore() {
   for (const delay of [0, 150, 300, 600, 1000, 1800, 3000, 5000]) {
     if (delay) await sleep(delay)
