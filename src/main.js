@@ -182,7 +182,7 @@ $('disconnectBtn')?.addEventListener('click', async () => {
     document.querySelectorAll('.connectBtn').forEach(btn => { btn.textContent = 'Connect
 function setMarketMessage(text) {
   setText('marketMessage', text)
-}
+})
 
 async function getWalletProvider() {
   const providers = modal.getProviders?.()
