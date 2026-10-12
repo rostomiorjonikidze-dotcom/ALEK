@@ -1,0 +1,1 @@
+ALEK VIDEO STUDIO V4 — self-hostable software source. See docs/CONNECTIONS_KA.md and .env.example. GPU, Stripe, Supabase, ChatGPT app approval are not activated.
