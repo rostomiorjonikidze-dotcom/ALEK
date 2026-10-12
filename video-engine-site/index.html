@@ -13,7 +13,7 @@ main{max-width:1180px;margin:auto;padding:42px 18px 70px}.eyebrow{color:var(--bl
 <div class="group"><div class="groupTitle"><span class="number">01</span><div><b>Votre mannequin et votre robe</b><small>Préservez votre modèle et la forme du produit</small></div></div>
 <div class="split"><div><label class="field">Photo du mannequin<label class="drop"><span>▧</span><strong>Choisir le mannequin</strong><small>JPG / PNG / WebP · max 12 Mo</small><input type="file" accept="image/jpeg,image/png,image/webp" id="person"></label></label><div id="personName" class="selectedFile"></div></div>
 <div><label class="field">Photo de la robe (facultatif)<label class="drop"><span>✧</span><strong>Choisir la robe</strong><small>Essayage virtuel sur le GPU</small><input type="file" accept="image/jpeg,image/png,image/webp" id="garment"></label></label><div id="garmentName" class="selectedFile"></div></div></div>
-<div class="split"><label class="field">Marque<input id="brand" value="ALEK SHOP" maxlength="45"></label><label class="field">Site internet<input id="website" value="shop.alek.best" maxlength="60"></label></div></div>
+<label class="field">Format de la photo du mannequin<select id="sheetMode"><option value="single">Une seule photo (portrait ou plein pied)</option><option value="two-panel-right">Planche 2 vues : visage à gauche, corps entier à droite</option></select></label><div class="split"><label class="field">Marque<input id="brand" value="ALEK SHOP" maxlength="45"></label><label class="field">Site internet<input id="website" value="shop.alek.best" maxlength="60"></label></div></div>
 <div id="realForm" class="mode active"><div class="line"></div><div class="group"><div class="groupTitle"><span class="number">02</span><div><b>Connexion à votre moteur vidéo</b><small>Votre GPU, vos modèles, vos créations</small></div></div>
 <div id="gpuStatus" class="pill">● GPU non connecté</div><p class="hint">L’IA vidéo ne tourne pas sur Vercel : vous devez indiquer l’adresse sécurisée de votre serveur NVIDIA et sa clé privée. La clé n’est pas enregistrée sur ce site.</p>
 <div class="split"><label class="field">Adresse du GPU (HTTPS)<input id="gpuUrl" type="url" placeholder="https://gpu.alek.best" autocomplete="url"></label><label class="field">Clé d’accès privée<input id="gpuKey" type="password" placeholder="Clé privée de votre GPU" autocomplete="off"></label></div>
@@ -127,7 +127,7 @@ $('renderReal').addEventListener('click',async()=>{
   fd.append('prompt',value('prompt'));fd.append('narration',value('speech'));
   fd.append('seconds',value('duration'));fd.append('brand',value('brand'));fd.append('website',value('website'));
   fd.append('category',value('category'));fd.append('garment_photo_type',value('garmentType'));
-  fd.append('speech_mode',voice);fd.append('consent','true');
+  fd.append('speech_mode',voice);fd.append('sheet_mode',value('sheetMode'));fd.append('consent','true');
   if(voice==='uploaded')fd.append('narration_audio',$('audio').files[0]);
   rendering=true;$('renderReal').disabled=true;
   note('Envoi sécurisé des images au GPU privé…');
