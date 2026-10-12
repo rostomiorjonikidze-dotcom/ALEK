@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#071526">
+<title>ALEK VIDEO ENGINE — Studio IA indépendant</title><meta name="description" content="Studio vidéo réaliste avec essayage virtuel, voix française et GPU privé.">
+<style>
+:root{--bg:#081422;--panel:#132842;--line:#2d4865;--text:#ecf5ff;--muted:#91aac2;--blue:#66b5ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 70% 40% at 70% -15%,#18446e,#081422 100%);color:var(--text);font:14px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{height:76px;display:flex;align-items:center;justify-content:space-between;padding:12px max(20px,calc((100vw - 1150px)/2));border-bottom:1px solid #24405a;background:#081422e8}.logo{font-size:23px;font-weight:900;letter-spacing:1px}.logo b{color:var(--blue)}.logo small{font-size:9px;display:block;letter-spacing:2.2px;font-weight:600;color:#7498b9}.topBadge{color:#a0e8bf;background:#173529;border:1px solid #366348;padding:9px 13px;border-radius:22px;font-weight:700;font-size:11px}
+main{max-width:1180px;margin:auto;padding:42px 18px 70px}.eyebrow{color:var(--blue);font-size:11px;letter-spacing:2px;font-weight:800}h1{font-size:clamp(32px,4.7vw,55px);letter-spacing:-1.7px;line-height:1.12;margin:12px 0}h1 span{color:var(--blue)}p.intro{color:#a0b5ca;line-height:1.7;max-width:750px;margin-bottom:30px}.tabs{display:flex;gap:10px;margin:22px 0}.tabs button{background:#132c46;border:1px solid #365574;border-radius:11px;padding:13px 21px;color:#9ebad1;font-weight:800;cursor:pointer}.tabs button.active{color:white;background:#265786;border-color:var(--blue)}.layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.8fr);gap:23px}.card{background:linear-gradient(145deg,#142a43,#0e1c2f);border:1px solid var(--line);border-radius:20px;overflow:hidden}.cardHead{padding:24px 26px;border-bottom:1px solid #ffffff13}.cardHead b{font-size:19px}.cardHead p{color:#9eb3ca;margin:6px 0 0;font-size:11px}.inside{padding:24px 26px}.group{padding:0 0 22px}.groupTitle{display:flex;align-items:center;gap:12px;margin-bottom:17px}.number{border:1px solid #356799;color:#8accff;background:#1c4265;font-size:10px;border-radius:8px;padding:8px 10px;font-weight:850}.groupTitle b{font-size:15px}.groupTitle small{display:block;font-size:11px;color:#8fa7bf;margin-top:3px}.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:block;font-size:12px;color:#c9d8e7;font-weight:650;margin-bottom:14px}.field>input,.field>select,.field>textarea{margin-top:8px;display:block;width:100%;background:#0b192c;border:1px solid #31516d;color:#f7fbff;border-radius:9px;padding:12px 13px;outline:none;font:13px system-ui}.field>input:focus,.field>textarea:focus,.field>select:focus{border-color:var(--blue)}textarea{min-height:105px;line-height:1.5;resize:vertical}.drop{position:relative;min-height:110px;border:1px dashed #426b8b;border-radius:12px;background:#0e273d;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:6px;cursor:pointer;text-align:center;color:var(--blue)}.drop strong{font-size:12px;color:white}.drop small{font-size:10px;color:#96b0c7}.drop input{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}.selectedFile{min-height:20px;font-size:11px;color:#97d9ff;padding-top:7px;overflow-wrap:anywhere}.line{height:1px;background:#ffffff14;margin:5px 0 25px}.hint{font-size:11px;color:#a4b8cc;line-height:1.65;margin:7px 0 17px}.options{display:flex;gap:8px;margin:13px 0 16px;flex-wrap:wrap}.options button{border:1px solid #366188;background:#10243c;padding:10px 13px;border-radius:8px;color:#a7c2db;cursor:pointer;font-size:11px}.options button.active{border-color:#65b3ff;background:#1e4874;color:white}.consent{display:flex;gap:11px;align-items:flex-start;color:#b9cfe0;font-size:11px;line-height:1.5;margin:10px 0 22px}.consent input{accent-color:#59acff;margin-top:3px}.primary{border:0;border-radius:11px;padding:16px 12px;background:linear-gradient(105deg,#1874e9,#5baeff);font-weight:850;font-size:14px;color:white;cursor:pointer;width:100%;box-shadow:0 15px 40px #14549d44}.primary:disabled{opacity:.55;cursor:not-allowed}.secondary{background:#16395a;border:1px solid #3f6990;border-radius:9px;color:#d4eaff;padding:11px 13px;font-weight:750;cursor:pointer}.state{display:flex;align-items:center;gap:9px;margin:15px 0 6px;font-size:11px;color:#b7c8db}.pill{display:inline-block;font-size:10px;padding:7px 10px;border-radius:12px;color:#f4c5a0;background:#362c25;border:1px solid #755941}.pill.yes{color:#aaf2c8;background:#163728;border-color:#35694d}.notice{background:#302b21;border:1px solid #775a3c;color:#f3d0a5;border-radius:11px;padding:13px 14px;line-height:1.65;font-size:11px;margin:18px 0 0}.error{display:none;color:#ffc5c5;background:#412433;border:1px solid #8b3c54;border-radius:10px;padding:12px;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:13px}.progress{height:5px;margin:14px 0 0;background:#1a3753;border-radius:9px;overflow:hidden}.progress span{display:block;height:100%;background:#65b6ff;width:0;transition:width .2s}.right{align-self:start;padding:24px;position:sticky;top:15px}.previewTitle{display:flex;justify-content:space-between;align-items:center;font-weight:800}.previewTitle small{background:#163828;color:#b1f1c8;border:1px solid #356347;border-radius:12px;padding:8px;font-size:10px}.phone{width:min(100%,240px);aspect-ratio:9/16;background:radial-gradient(circle at 30% 20%,#28436c,#101c2f);border:6px solid #070d18;border-radius:18px;overflow:hidden;position:relative;margin:22px auto;box-shadow:0 15px 35px #0007}.phone canvas,.phone video{width:100%;height:100%;object-fit:cover;display:block}.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:11px}.empty i{font-style:normal;color:#67b7ff;font-size:32px}.empty b{font-size:18px}.empty small{font-size:11px;color:#9cb2c9}.footerText{padding-top:18px;border-top:1px solid #ffffff17;font-size:11px;line-height:1.75;color:#99adc5}.footerText strong{color:#e7f1ff}footer{border-top:1px solid #2b415b;color:#8096b2;padding:21px;text-align:center;font-size:11px}.mode{display:none}.mode.active{display:block}button:focus-visible,input:focus-visible{outline:2px solid #6cbcff;outline-offset:2px}@media(max-width:800px){header{padding:12px 16px}.topBadge{display:none}main{padding:28px 13px 50px}.layout{display:flex;flex-direction:column}.right{order:-1;position:static;padding:18px}.phone{width:150px;margin:12px auto}.footerText{display:none}.split{display:block}.inside,.cardHead{padding:19px}.tabs button{flex:1;padding:12px 6px;font-size:12px}h1{font-size:34px}}
+</style></head><body><header><div class="logo">◈ ALEK <b>VIDEO</b><small>CREATOR ENGINE · PRODUCTION V3</small></div><span class="topBadge">✓ IA sur GPU privé · Zéro crédit API</span></header>
+<main><div class="eyebrow">✦ VOTRE STUDIO DE CRÉATION INDÉPENDANT</div><h1>Votre mannequin.<br><span>Votre collection. Votre vidéo.</span></h1><p class="intro">Importez le portrait de votre modèle et, si besoin, la robe à lui faire porter. Votre serveur GPU privé réalise l’essayage, anime les mouvements et prépare la vidéo avec voix française. Le montage photo reste disponible sans GPU.</p>
+<div class="tabs"><button class="active" data-mode="real">✦ Vidéo réaliste avec IA</button><button data-mode="photo">▧ Montage photo</button></div>
+<div class="layout"><section class="card"><div class="cardHead"><b id="panelTitle">✦ Studio vidéo réaliste</b><p id="panelDescription">Essayage FASHN + vidéo LTX-2.3 + voix française locale.</p></div><div class="inside">
+<div class="group"><div class="groupTitle"><span class="number">01</span><div><b>Votre mannequin et votre robe</b><small>Préservez votre modèle et la forme du produit</small></div></div>
+<div class="split"><div><label class="field">Photo du mannequin<label class="drop"><span>▧</span><strong>Choisir le mannequin</strong><small>JPG / PNG / WebP · max 12 Mo</small><input type="file" accept="image/jpeg,image/png,image/webp" id="person"></label></label><div id="personName" class="selectedFile"></div></div>
+<div><label class="field">Photo de la robe (facultatif)<label class="drop"><span>✧</span><strong>Choisir la robe</strong><small>Essayage virtuel sur le GPU</small><input type="file" accept="image/jpeg,image/png,image/webp" id="garment"></label></label><div id="garmentName" class="selectedFile"></div></div></div>
+<div class="split"><label class="field">Marque<input id="brand" value="ALEK SHOP" maxlength="45"></label><label class="field">Site internet<input id="website" value="shop.alek.best" maxlength="60"></label></div></div>
+<div id="realForm" class="mode active"><div class="line"></div><div class="group"><div class="groupTitle"><span class="number">02</span><div><b>Connexion à votre moteur vidéo</b><small>Votre GPU, vos modèles, vos créations</small></div></div>
+<div id="gpuStatus" class="pill">● GPU non connecté</div><p class="hint">L’IA vidéo ne tourne pas sur Vercel : vous devez indiquer l’adresse sécurisée de votre serveur NVIDIA et sa clé privée. La clé n’est pas enregistrée sur ce site.</p>
+<div class="split"><label class="field">Adresse du GPU (HTTPS)<input id="gpuUrl" type="url" placeholder="https://gpu.alek.best" autocomplete="url"></label><label class="field">Clé d’accès privée<input id="gpuKey" type="password" placeholder="Clé privée de votre GPU" autocomplete="off"></label></div>
+<button class="secondary" id="check">↻ Vérifier le serveur GPU</button><p class="hint" id="caps">Essayage · vidéo 9:16 · voix française : en attente de connexion.</p></div>
+<div class="line"></div><div class="group"><div class="groupTitle"><span class="number">03</span><div><b>Réalisation et voix française</b><small>Une vraie séquence animée, pas un zoom de photo</small></div></div>
+<label class="field">Scène et actions<textarea id="prompt" maxlength="1300">A photorealistic French fashion creator in a stylish sunlit apartment looks directly at the smartphone camera. She smiles naturally, takes two steps, elegantly turns to display the exact cream-beige halter-neck dress with dotted texture and a bow belt, then looks back at the camera. Realistic fabric physics, authentic skin texture, stable facial identity, accurate anatomy and soft ambient daylight. Natural influencer advertising performance.</textarea></label>
+<label class="field">Texte prononcé en français<textarea id="speech" maxlength="500">Les filles, regardez cette magnifique robe ! Elle est élégante, légère et parfaite pour les beaux jours. Découvrez les nouveautés sur ALEK SHOP. Rendez-vous sur shop.alek.best !</textarea></label>
+<div class="split"><label class="field">Durée<select id="duration"><option value="5">5 secondes</option><option value="10">10 secondes</option><option value="15" selected>15 secondes</option></select></label><label class="field">Type de vêtement<select id="category"><option value="one-pieces">Robe / combinaison</option><option value="tops">Haut / veste</option><option value="bottoms">Bas / pantalon</option></select></label></div>
+<div class="split"><label class="field">Type de photo du produit<select id="garmentType"><option value="model">Porté par un mannequin</option><option value="flat-lay">À plat, sur fond simple</option></select></label><label class="field">Voix<select id="voiceMode"><option value="piper" selected>Voix française locale · texte exact</option><option value="native">Voix générée par LTX · approximative</option><option value="uploaded">Mon enregistrement · audio exact</option></select></label></div>
+<div id="audioBox" style="display:none"><label class="field">Votre fichier audio français (MP3/WAV/M4A)<input type="file" id="audio" accept="audio/*"></label><p class="hint" id="audioFileName"></p></div>
+<label class="consent"><input type="checkbox" id="consent"><span>Je confirme posséder les droits ou l’autorisation d’utiliser ce visage, ces photos, le vêtement et la voix pour créer une publicité.</span></label>
+<button class="primary" disabled id="renderReal">▶ Générer la publicité réaliste</button>
+<div class="notice">Avant connexion du GPU, le bouton IA reste désactivé. Le moteur peut produire de vrais mouvements, mais aucune IA ne garantit un visage, une robe ou une synchronisation labiale parfaitement identiques à 100 %.</div></div></div>
+<div id="photoForm" class="mode"><div class="line"></div><div class="group"><div class="groupTitle"><span class="number">02</span><div><b>Montage photo sans GPU</b><small>Vidéo avec mouvement de caméra, pas d’animation humaine</small></div></div><label class="field">Accroche<input id="headline" maxlength="90" value="La robe qui fait la différence."></label><label class="field">Durée<select id="photoDuration"><option value="8">8 secondes</option><option value="12" selected>12 secondes</option><option value="15">15 secondes</option></select></label><button id="renderPhoto" class="primary">▧ Exporter le montage photo</button><p class="hint">Encodage dans le navigateur au format MP4 ou WebM selon l’appareil. Aucun téléchargement de vos photos vers le serveur.</p></div></div>
+<div class="error" role="alert" id="error"></div><div class="progress"><span id="progress"></span></div><p id="message" class="state" role="status">Prêt à créer.</p>
+<a id="downloadAgain" style="display:none;color:#75c6ff;font-weight:700" download="ALEK_VIDEO.mp4">⬇ Télécharger la dernière vidéo</a></div></section>
+<aside class="card right"><div class="previewTitle">Aperçu du studio <small>● LIVE</small></div><div class="phone"><canvas id="preview" width="540" height="960"></canvas><div id="empty" class="empty"><i>▧</i><b>Votre création<br>commence ici</b><small>Ajoutez votre mannequin.</small></div></div>
+<div class="footerText"><strong>MODE RÉALISTE</strong> — FASHN VTON 1.5 pour l’essayage et LTX-2.3 pour la vidéo. Voix locale Piper ou narration enregistrée. GPU NVIDIA externe requis.<br><br><strong>MODE PHOTO</strong> — Encodage dans le navigateur, sans API d’intelligence artificielle. Uniquement du mouvement de caméra.<br><br><strong>SÉCURITÉ</strong> — Studio privé avec clé d’accès, sans service de génération payant.</div></aside></div></main>
+<footer>© 2026 ALEK VIDEO ENGINE · Studio indépendant pour ALEK SHOP · Les rendus IA doivent être vérifiés avant diffusion.</footer>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+let mode='real',personFile=null,garmentFile=null,photo=null,personURL=null,gpuReady=false,health=null,rendering=false,downloadURL=null;
+const error=msg=>{$('error').textContent=msg;$('error').style.display=msg?'block':'none'};
+const note=msg=>{$('message').textContent=msg};
+const bar=p=>{$('progress').style.width=Math.max(0,Math.min(100,p))+'%'};
+const value=id=>$(id).value.trim();
+const endpoint=()=>{
+ let base=value('gpuUrl').replace(/\/+$/,'');
+ if(!/^https:\/\/[^\/]+$/i.test(base)&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(base))throw Error('Utilisez une URL HTTPS pour le GPU (sauf localhost).');
+ return base;
+};
+const key=()=>{let k=value('gpuKey');if(k.length<24)throw Error('La clé privée GPU doit contenir au moins 24 caractères.');return k;};
+function imageRef(f,name){
+ if(!f)return null;
+ if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>12*1024*1024)throw Error('Format de '+name+' non reconnu ou fichier supérieur à 12 Mo.');
+ return f;
+}
+$('person').addEventListener('change',()=>{
+ try{const f=imageRef($('person').files[0],'mannequin');if(!f)return;
+ personFile=f;$('personName').textContent='✓ '+f.name;if(personURL)URL.revokeObjectURL(personURL);
+ personURL=URL.createObjectURL(f);
+ const img=new Image();img.onload=()=>{photo=img;$('empty').style.display='none';draw(0);};img.src=personURL;
+ error('');}catch(e){personFile=null;error(e.message);}
+});
+$('garment').addEventListener('change',()=>{try{const f=$('garment').files[0];garmentFile=f?imageRef(f,'vêtement'):null;$('garmentName').textContent=garmentFile?'✓ '+garmentFile.name:'';error('');}catch(e){garmentFile=null;error(e.message)}});
+document.querySelectorAll('[data-mode]').forEach(btn=>btn.addEventListener('click',()=>{
+ mode=btn.dataset.mode;document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===btn));
+ $('realForm').classList.toggle('active',mode==='real');$('photoForm').classList.toggle('active',mode==='photo');
+ $('panelTitle').textContent=mode==='real'?'✦ Studio vidéo réaliste':'▧ Studio de montage photo';
+ $('panelDescription').textContent=mode==='real'?'Essayage FASHN + vidéo LTX-2.3 + voix française locale.':'Animation photo et export dans votre navigateur, sans GPU.';
+ error('');draw(0);
+}));
+function draw(t){
+ let c=$('preview'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.fillStyle='#122b46';ctx.fillRect(0,0,w,h);if(!photo)return;
+ const z=1.04+Math.min(t,16)*.009,scale=Math.max(w/photo.naturalWidth,h/photo.naturalHeight)*z;
+ const ww=photo.naturalWidth*scale,hh=photo.naturalHeight*scale;
+ ctx.drawImage(photo,(w-ww)/2+Math.sin(t*.33)*10,(h-hh)/2,ww,hh);
+ const grad=ctx.createLinearGradient(0,0,0,h);grad.addColorStop(0,'#0008');grad.addColorStop(.3,'transparent');grad.addColorStop(.57,'transparent');grad.addColorStop(1,'#000e');
+ ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);
+ ctx.fillStyle='#fff';ctx.font='800 30px system-ui';ctx.fillText(value('brand')||'ALEK SHOP',35,69,w-70);
+ ctx.fillStyle='#65b5ff';ctx.fillRect(35,82,80,4);
+ ctx.fillStyle='#fff';ctx.font='800 36px system-ui';
+ let text=mode==='photo'?(value('headline')||'Découvrez ALEK SHOP'):'Votre style. Votre histoire.';
+ let lines=[],line='';text.split(/\s+/).forEach(word=>{let next=line?line+' '+word:word;if(ctx.measureText(next).width>460&&line){lines.push(line);line=word}else line=next;});if(line)lines.push(line);
+ lines.slice(0,2).forEach((line,i)=>ctx.fillText(line,35,h-165+i*46,470));
+ ctx.fillStyle='#67b5ff';ctx.font='700 28px system-ui';ctx.fillText(value('website')||'shop.alek.best',35,h-53,w-70);
+}
+['brand','website','headline'].forEach(id=>$(id).addEventListener('input',()=>draw(0)));
+$('voiceMode').addEventListener('change',()=>{
+ $('audioBox').style.display=value('voiceMode')==='uploaded'?'block':'none';
+ refreshCapability();
+});
+$('audio').addEventListener('change',()=>{$('audioFileName').textContent=$('audio').files[0]?.name||'';});
+function refreshCapability(){
+ let c=health&&health.capabilities||{},voice=value('voiceMode'),needed=voice==='piper'?'generated_french_voice':voice==='uploaded'?'prerecorded_french_audio':'image_to_video';
+ let works=gpuReady&&!!c[needed]&&(!garmentFile||!!c.garment_tryon);
+ $('renderReal').disabled=!works||rendering;
+ return works;
+}
+$('garment').addEventListener('change',refreshCapability);
+$('check').addEventListener('click',async()=>{
+ error('');bar(0);gpuReady=false;health=null;refreshCapability();note('Connexion au GPU…');
+ try{
+   endpoint();key();
+   const res=await fetch(endpoint()+'/api/real/health',{signal:AbortSignal.timeout(20000)});
+   if(!res.ok)throw Error('Le serveur GPU ne répond pas ('+res.status+').');
+   const state=await res.json();health=state;
+   gpuReady=!!state.ready;
+   $('gpuStatus').textContent=gpuReady?'● GPU connecté et modèles prêts':'● GPU indisponible / modèle manquant';
+   $('gpuStatus').classList.toggle('yes',gpuReady);
+   let cap=state.capabilities||{};
+   $('caps').textContent='Vidéo : '+(cap.image_to_video?'prête':'non prête')+
+      ' · Essayage : '+(cap.garment_tryon?'prêt':'non prêt')+
+      ' · Voix exacte : '+(cap.generated_french_voice?'prête':'non prête');
+   if(!gpuReady)error((state.reason||[]).join('\n')||'Modèles manquants sur le GPU.');
+   refreshCapability();note(gpuReady?'GPU prêt. Choisissez le mode voix et créez votre publicité.':'Connexion GPU incomplète.');
+ }catch(e){error(e.message||String(e));note('Le GPU ne peut pas être vérifié.');}
+});
+$('renderReal').addEventListener('click',async()=>{
+ if(rendering)return;error('');bar(0);
+ try{
+  if(!personFile)throw Error('Choisissez la photo du mannequin.');
+  if(!$('consent').checked)throw Error('Confirmez les droits sur les photos et la voix.');
+  if(!refreshCapability())throw Error('Le GPU et les fonctions requises doivent être connectés.');
+  const u=endpoint(),token=key(),voice=value('voiceMode');
+  if(voice==='uploaded'&&!$('audio').files[0])throw Error('Choisissez votre enregistrement audio.');
+  const fd=new FormData();
+  fd.append('image',personFile);if(garmentFile)fd.append('garment',garmentFile);
+  fd.append('prompt',value('prompt'));fd.append('narration',value('speech'));
+  fd.append('seconds',value('duration'));fd.append('brand',value('brand'));fd.append('website',value('website'));
+  fd.append('category',value('category'));fd.append('garment_photo_type',value('garmentType'));
+  fd.append('speech_mode',voice);fd.append('consent','true');
+  if(voice==='uploaded')fd.append('narration_audio',$('audio').files[0]);
+  rendering=true;$('renderReal').disabled=true;
+  note('Envoi sécurisé des images au GPU privé…');
+  const heads={'X-ALEK-KEY':token};
+  const res=await fetch(u+'/api/real/jobs',{method:'POST',headers:heads,body:fd});
+  let data=await res.json().catch(()=>({}));
+  if(!res.ok){
+    let msg=typeof data.detail==='string'?data.detail:(data.detail?.missing||[]).join('\n');
+    throw Error(msg||'Impossible de démarrer la génération IA.');
+  }
+  for(let n=0;n<720;n++){
+    if(data.status==='finished'){
+      const mp=await fetch(u+data.download_url,{headers:heads});
+      if(!mp.ok)throw Error('La vidéo MP4 est introuvable.');
+      const result=await mp.blob();
+      if(downloadURL)URL.revokeObjectURL(downloadURL);
+      downloadURL=URL.createObjectURL(result);
+      const a=$('downloadAgain');a.href=downloadURL;a.style.display='block';a.download='ALEK_VIDEO_REAL.mp4';
+      a.click();note('Vidéo réaliste MP4 prête. Vérifiez visage, robe et voix.');bar(100);return;
+    }
+    if(data.status==='failed')throw Error(data.error||'Échec de génération sur le GPU.');
+    note(data.progress||'Calcul des mouvements et de la voix…');bar(Math.min(90,8+n*.13));
+    await new Promise(r=>setTimeout(r,5000));
+    const stat=await fetch(u+'/api/real/jobs/'+encodeURIComponent(data.id),{headers:heads});
+    if(!stat.ok)throw Error('Impossible de suivre le travail sur le GPU.');
+    data=await stat.json();
+  }
+  throw Error('Génération plus longue que prévu ; vérifiez l’état du GPU.');
+ }catch(e){error(e.message||String(e));note('Génération non terminée.');}
+ finally{rendering=false;refreshCapability();}
+});
+$('renderPhoto').addEventListener('click',async()=>{
+ if(rendering)return;error('');
+ if(!photo){error('Importez d’abord une photo.');return;}
+ const can=$('preview');
+ if(!window.MediaRecorder||!can.captureStream){error('Ce navigateur ne supporte pas l’export vidéo depuis canvas. Essayez Chrome/Edge sur ordinateur.');return;}
+ try{
+  const mime=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
+  if(!mime)throw Error('Format vidéo non pris en charge.');
+  rendering=true;$('renderPhoto').disabled=true;bar(0);
+  const stream=can.captureStream(24),duration=Number(value('photoDuration')),chunks=[];
+  const recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:3000000});
+  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  const complete=new Promise((resolve,reject)=>{recorder.onstop=()=>resolve(new Blob(chunks,{type:mime}));recorder.onerror=()=>reject(Error('L’encodage a échoué.'))});
+  recorder.start(500);const start=performance.now();
+  await new Promise(resolve=>{
+   const animate=now=>{
+    let seconds=(now-start)/1000;draw(Math.min(duration,seconds));bar(Math.min(100,seconds/duration*100));
+    note('Encodage du montage : '+Math.floor(seconds)+' / '+duration+' s');
+    if(seconds<duration)requestAnimationFrame(animate);else resolve();
+   };requestAnimationFrame(animate);
+  });recorder.stop();const blob=await complete;
+  stream.getTracks().forEach(x=>x.stop());
+  if(downloadURL)URL.revokeObjectURL(downloadURL);downloadURL=URL.createObjectURL(blob);
+  const a=$('downloadAgain');a.href=downloadURL;a.download='ALEK_VIDEO_MONTAGE.'+(mime.includes('mp4')?'mp4':'webm');a.style.display='block';a.click();
+  note('Montage photo exporté.');bar(100);
+ }catch(e){error(e.message||String(e));note('Échec du montage photo.');}
+ finally{rendering=false;$('renderPhoto').disabled=false;}
+});
+draw(0);
+})();
+</script></body></html>
