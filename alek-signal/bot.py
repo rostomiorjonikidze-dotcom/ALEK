@@ -38,6 +38,14 @@ def main():
     if missing:
         raise RuntimeError('Missing GitHub Actions secrets: '+', '.join(missing))
     print('ALEK Signal scan started',datetime.datetime.now(datetime.timezone.utc).isoformat(),flush=True)
+    if os.getenv('TELEGRAM_TEST')=='true':
+        payload=json.dumps({'chat_id':os.environ['CHAT_ID'],'text':'✅ ALEK SIGNAL VIP — Telegram კავშირის ტესტი წარმატებით შესრულდა. ეს არ არის სავაჭრო სიგნალი.'}).encode()
+        req=urllib.request.Request('https://api.telegram.org/bot'+os.environ['BOT_TOKEN']+'/sendMessage',data=payload,headers={'Content-Type':'application/json'})
+        with urllib.request.urlopen(req,timeout=20) as response:
+            data=json.load(response)
+        if not data.get('ok'):raise RuntimeError('Telegram rejected test message')
+        print('Telegram test message confirmed',flush=True)
+        return
     failures=[]
     signals=0
     for symbol in ('BTCUSDT','ETHUSDT'):
