@@ -78,7 +78,7 @@ def main():
         latest=closed[-1]
         stamp=datetime.datetime.fromtimestamp(int(latest[6])/1000,datetime.timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
         sample=dict(symbol='BTCUSDT',interval='5m',direction='MARKET',close_time=int(latest[6]))
-        test_msg=f'📊 ALEK SIGNAL VIP — რეალური Binance Futures გრაფიკის ტესტი\\nBTCUSDT | 5m\\nბოლო დახურული სანთელი: {float(latest[4]):,.2f} USDT\\nდრო: {stamp}\\n\\n⚠️ ეს არის რეალური ბაზრის მონაცემების ტექნიკური ტესტი, არა LONG/SHORT სავაჭრო სიგნალი.'
+        test_msg=f'📊 ALEK SIGNAL VIP — რეალური Binance Futures გრაფიკის ტესტი\nBTCUSDT | 5m\nბოლო დახურული სანთელი: {float(latest[4]):,.2f} USDT\nდრო: {stamp}\n\n⚠️ ეს არის რეალური ბაზრის მონაცემების ტექნიკური ტესტი, არა LONG/SHORT სავაჭრო სიგნალი.'
         if not send_chart(sample,test_msg,test=True):raise RuntimeError('Telegram rejected real-market chart')
         print('Real Binance chart test confirmed',flush=True)
     state_path=pathlib.Path('alek-signal/signal-state.json')
