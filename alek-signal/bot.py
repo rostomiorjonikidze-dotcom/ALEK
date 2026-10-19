@@ -150,7 +150,7 @@ def main():
                     state_path.write_text(json.dumps(state,sort_keys=True))
                     signals+=1
                 else:
-                    print('No qualified signal',symbol,interval,flush=True)
+                    print('No qualified signal',symbol,interval,'— awaiting a confirmed futures setup',flush=True)
             except Exception as exc:
                 failures.append((symbol,interval,type(exc).__name__,str(exc)[:160]))
                 print('Error',symbol,interval,type(exc).__name__,str(exc)[:160])
