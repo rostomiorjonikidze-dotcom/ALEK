@@ -5,9 +5,6 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-concurrency:
-  group: alek-signals
-  cancel-in-progress: false
 jobs:
   scan:
     runs-on: ubuntu-latest
