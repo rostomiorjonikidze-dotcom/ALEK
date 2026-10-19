@@ -38,7 +38,7 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-          TELEGRAM_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.telegram_test == true }}
+          TELEGRAM_TEST: ${{ (github.event_name == 'push' && contains(github.event.head_commit.message, '[telegram-test]')) || (github.event_name == 'workflow_dispatch' && inputs.telegram_test == true) }}
       - name: Save sent-signal state
         if: always()
         uses: actions/cache/save@v4
