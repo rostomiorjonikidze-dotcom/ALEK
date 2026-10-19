@@ -34,16 +34,26 @@ def send(s):
     req=urllib.request.Request('https://api.telegram.org/bot'+os.environ['BOT_TOKEN']+'/sendMessage',data=payload,headers={'Content-Type':'application/json'})
     with urllib.request.urlopen(req,timeout=20) as r:return json.load(r)['ok']
 def main():
+    missing=[key for key in ('BOT_TOKEN','CHAT_ID') if not os.getenv(key)]
+    if missing:
+        raise RuntimeError('Missing GitHub Actions secrets: '+', '.join(missing))
+    print('ALEK Signal scan started',datetime.datetime.now(datetime.timezone.utc).isoformat(),flush=True)
     failures=[]
+    signals=0
     for symbol in ('BTCUSDT','ETHUSDT'):
         for interval in ('5m','15m'):
             try:
                 s=candidate(symbol,interval)
                 if s:
-                    print('Sending',symbol,interval,s['close_time']);send(s)
+                    print('Sending',symbol,interval,s['close_time'],flush=True)
+                    if not send(s): raise RuntimeError('Telegram did not confirm send')
+                    signals+=1
+                else:
+                    print('No qualified signal',symbol,interval,flush=True)
             except Exception as exc:
                 failures.append((symbol,interval,type(exc).__name__,str(exc)[:160]))
                 print('Error',symbol,interval,type(exc).__name__,str(exc)[:160])
+    print('Scan completed; sent',signals,'signals; failures',len(failures),flush=True)
     if failures:
         raise RuntimeError('Signal scan failures: '+repr(failures))
 if __name__=='__main__':main()
