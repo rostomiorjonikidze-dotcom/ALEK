@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
+    inputs:
+      telegram_test:
+        description: 'Send Telegram connectivity test (not a trading signal)'
+        type: boolean
+        default: true
 permissions:
   contents: read
 jobs:
@@ -18,3 +23,4 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
+          TELEGRAM_TEST: ${{ inputs.telegram_test || 'false' }}
