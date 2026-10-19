@@ -1,6 +1,25 @@
 import os, json, urllib.request, urllib.parse, datetime, math, pathlib
 def get(url):
     with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'ALEKSignal/1.0'}),timeout=15) as r: return json.load(r)
+def market_klines(symbol,interval,limit=200):
+    # Public Bybit USDT perpetual market data. Never label it Binance execution data.
+    minutes=int(interval.rstrip('m'))
+    url='https://api.bybit.com/v5/market/kline?'+urllib.parse.urlencode(dict(category='linear',symbol=symbol,interval=str(minutes),limit=limit))
+    payload=get(url)
+    if payload.get('retCode')!=0:
+        raise RuntimeError('Bybit market data: '+str(payload.get('retMsg','unknown error')))
+    raw=payload.get('result',{}).get('list',[])
+    if not isinstance(raw,list) or len(raw)<min(limit,50):
+        raise RuntimeError('Bybit returned insufficient candle data')
+    rows=[]
+    for candle in reversed(raw):
+        start=int(candle[0])
+        # Normalize to Binance-style OHLC row with a calculated closing timestamp.
+        rows.append([start,candle[1],candle[2],candle[3],candle[4],candle[5],start+minutes*60000-1])
+    if any(int(rows[i][0])>=int(rows[i+1][0]) for i in range(len(rows)-1)):
+        raise RuntimeError('Non-monotonic Bybit candle timestamps')
+    return rows
+
 def ema(a,n):
     x=a[0];out=[]
     for v in a:
@@ -11,7 +30,7 @@ def rsi(a,n=14):
     for v in d[n:]:g=(g*(n-1)+max(v,0))/n;l=(l*(n-1)+max(-v,0))/n
     return 50 if g==l==0 else 100 if l==0 else 100-100/(1+g/l)
 def candidate(symbol,interval):
-    rows=get('https://fapi.binance.com/fapi/v1/klines?'+urllib.parse.urlencode(dict(symbol=symbol,interval=interval,limit=200)))
+    rows=market_klines(symbol,interval,200)
     now=int(datetime.datetime.now(datetime.timezone.utc).timestamp()*1000)
     rows=[r for r in rows if int(r[6])<now]
     if len(rows)<100 or now-int(rows[-1][6])>(10*60*1000 if interval=='5m' else 30*60*1000):return None
@@ -34,7 +53,7 @@ def send_chart(s, caption, test=False):
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from matplotlib.patches import Rectangle
-    rows=get('https://fapi.binance.com/fapi/v1/klines?'+urllib.parse.urlencode(dict(symbol=s['symbol'],interval=s['interval'],limit=80)))
+    rows=market_klines(s['symbol'],s['interval'],80)
     candles=[tuple(float(r[k]) for k in (1,2,3,4)) for r in rows if int(r[6])<=s['close_time']][-45:]
     if not candles: raise RuntimeError('Chart has no candles')
     fig,ax=plt.subplots(figsize=(10,6),dpi=140)
@@ -62,7 +81,7 @@ def send(s):
     title='🟢 LONG' if s['direction']=='LONG' else '🔴 SHORT'
     timestamp=datetime.datetime.fromtimestamp(s['close_time']/1000,datetime.timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
     direction='⬆️ მოსალოდნელი მიმართულება: ზემოთ' if s['direction']=='LONG' else '⬇️ მოსალოდნელი მიმართულება: ქვემოთ'
-    msg=(f"💎 ALEK SIGNAL VIP\n\n{title} | {s['symbol']} | {s['interval']}\n{direction}\n\n📍 ENTRY: {s['entry']:,.2f}\n🎯 TP1: {s['tp1']:,.2f}\n🎯 TP2: {s['tp2']:,.2f}\n🛑 STOP LOSS: {s['sl']:,.2f}\n⏰ სანთლის დახურვა: {timestamp}\n\n⚠️ ექსპერიმენტული სიგნალი. Entry არის სანთლის დახურვის ფასი და არა გარანტირებული შესვლის ფასი. მოგება გარანტირებული არ არის.")
+    msg=(f"💎 ALEK SIGNAL VIP | Bybit USDT Perpetual\n\n{title} | {s['symbol']} | {s['interval']}\n{direction}\n\n📍 ENTRY: {s['entry']:,.2f}\n🎯 TP1: {s['tp1']:,.2f}\n🎯 TP2: {s['tp2']:,.2f}\n🛑 STOP LOSS: {s['sl']:,.2f}\n⏰ სანთლის დახურვა: {timestamp}\n\n⚠️ ექსპერიმენტული სიგნალი. Entry არის სანთლის დახურვის ფასი და არა გარანტირებული შესვლის ფასი. მოგება გარანტირებული არ არის.")
     return send_chart(s,msg)
 
 def main():
@@ -71,16 +90,16 @@ def main():
         raise RuntimeError('Missing GitHub Actions secrets: '+', '.join(missing))
     print('ALEK Signal scan started',datetime.datetime.now(datetime.timezone.utc).isoformat(),flush=True)
     if os.getenv('TELEGRAM_TEST')=='true':
-        rows=get('https://fapi.binance.com/fapi/v1/klines?'+urllib.parse.urlencode(dict(symbol='BTCUSDT',interval='5m',limit=80)))
+        rows=market_klines('BTCUSDT','5m',80)
         now=int(datetime.datetime.now(datetime.timezone.utc).timestamp()*1000)
         closed=[r for r in rows if int(r[6])<now]
-        if len(closed)<45:raise RuntimeError('Not enough live Binance candles')
+        if len(closed)<45:raise RuntimeError('Not enough live Bybit candles')
         latest=closed[-1]
         stamp=datetime.datetime.fromtimestamp(int(latest[6])/1000,datetime.timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
         sample=dict(symbol='BTCUSDT',interval='5m',direction='MARKET',close_time=int(latest[6]))
-        test_msg=f'📊 ALEK SIGNAL VIP — რეალური Binance Futures გრაფიკის ტესტი\nBTCUSDT | 5m\nბოლო დახურული სანთელი: {float(latest[4]):,.2f} USDT\nდრო: {stamp}\n\n⚠️ ეს არის რეალური ბაზრის მონაცემების ტექნიკური ტესტი, არა LONG/SHORT სავაჭრო სიგნალი.'
+        test_msg=f'📊 ALEK SIGNAL VIP — რეალური Bybit Futures გრაფიკის ტესტი\nBTCUSDT | 5m\nბოლო დახურული სანთელი: {float(latest[4]):,.2f} USDT\nდრო: {stamp}\n\n⚠️ ეს არის რეალური ბაზრის მონაცემების ტექნიკური ტესტი, არა LONG/SHORT სავაჭრო სიგნალი.'
         if not send_chart(sample,test_msg,test=True):raise RuntimeError('Telegram rejected real-market chart')
-        print('Real Binance chart test confirmed',flush=True)
+        print('Real Bybit chart test confirmed',flush=True)
     state_path=pathlib.Path('alek-signal/signal-state.json')
     try: state=json.loads(state_path.read_text()) if state_path.exists() else {}
     except (ValueError,OSError): state={}
