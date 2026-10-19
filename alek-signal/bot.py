@@ -14,7 +14,7 @@ def candidate(symbol,interval):
     rows=get('https://fapi.binance.com/fapi/v1/klines?'+urllib.parse.urlencode(dict(symbol=symbol,interval=interval,limit=200)))
     now=int(datetime.datetime.now(datetime.timezone.utc).timestamp()*1000)
     rows=[r for r in rows if int(r[6])<now]
-    if len(rows)<100 or now-int(rows[-1][6])>(5*60*1000 if interval=='5m' else 15*60*1000):return None
+    if len(rows)<100 or now-int(rows[-1][6])>(10*60*1000 if interval=='5m' else 30*60*1000):return None
     close=[float(r[4]) for r in rows];a=ema(close,9);b=ema(close,21);t=ema(close,50);momentum=rsi(close)
     up=a[-2]<=b[-2] and a[-1]>b[-1] and close[-1]>t[-1] and momentum>50
     down=a[-2]>=b[-2] and a[-1]<b[-1] and close[-1]<t[-1] and momentum<50
@@ -29,7 +29,9 @@ def candidate(symbol,interval):
     return dict(symbol=symbol,interval=interval,direction='LONG' if up else 'SHORT',entry=price,tp1=price+direction*atr,tp2=price+direction*2*atr,sl=price-direction*1.5*atr,close_time=int(rows[-1][6]))
 def send(s):
     title='🟢 LONG' if s['direction']=='LONG' else '🔴 SHORT'
-    msg=(f"💎 ALEK SIGNAL VIP\n\n{title} | {s['symbol']} | {s['interval']}\n\n📍 ENTRY: {s['entry']:,.2f}\n🎯 TP1: {s['tp1']:,.2f}\n🎯 TP2: {s['tp2']:,.2f}\n🛑 STOP LOSS: {s['sl']:,.2f}\n\n⚠️ ექსპერიმენტული სიგნალი. მოგება გარანტირებული არ არის.")
+    timestamp=datetime.datetime.fromtimestamp(s['close_time']/1000,datetime.timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+    direction='⬆️ მოსალოდნელი მიმართულება: ზემოთ' if s['direction']=='LONG' else '⬇️ მოსალოდნელი მიმართულება: ქვემოთ'
+    msg=(f"💎 ALEK SIGNAL VIP\n\n{title} | {s['symbol']} | {s['interval']}\n{direction}\n\n📍 ENTRY: {s['entry']:,.2f}\n🎯 TP1: {s['tp1']:,.2f}\n🎯 TP2: {s['tp2']:,.2f}\n🛑 STOP LOSS: {s['sl']:,.2f}\n⏰ სანთლის დახურვა: {timestamp}\n\n⚠️ ექსპერიმენტული სიგნალი. Entry არის სანთლის დახურვის ფასი და არა გარანტირებული შესვლის ფასი. მოგება გარანტირებული არ არის.")
     payload=json.dumps(dict(chat_id=os.environ['CHAT_ID'],text=msg)).encode()
     req=urllib.request.Request('https://api.telegram.org/bot'+os.environ['BOT_TOKEN']+'/sendMessage',data=payload,headers={'Content-Type':'application/json'})
     with urllib.request.urlopen(req,timeout=20) as r:return json.load(r)['ok']
