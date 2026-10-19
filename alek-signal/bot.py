@@ -134,7 +134,13 @@ def main():
     except (ValueError,OSError): state={}
     failures=[]
     signals=0
-    for symbol in ('BTCUSDT','ETHUSDT'):
+    selected=os.getenv('SIGNAL_ASSET','').strip().upper()
+    supported=('BTCUSDT','ETHUSDT','SOLUSDT')
+    if selected and selected not in supported:
+        print('No verified perpetual futures data adapter for',selected,'— no synthetic/spot signals sent',flush=True)
+        return
+    symbols=(selected,) if selected else supported
+    for symbol in symbols:
         for interval in ('5m','15m'):
             try:
                 s=candidate(symbol,interval)
