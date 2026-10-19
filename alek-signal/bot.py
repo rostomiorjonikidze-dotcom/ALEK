@@ -41,7 +41,8 @@ def main():
         raise RuntimeError('Missing GitHub Actions secrets: '+', '.join(missing))
     print('ALEK Signal scan started',datetime.datetime.now(datetime.timezone.utc).isoformat(),flush=True)
     if os.getenv('TELEGRAM_TEST')=='true':
-        payload=json.dumps({'chat_id':os.environ['CHAT_ID'],'text':'✅ ALEK SIGNAL VIP — Telegram კავშირის ტესტი წარმატებით შესრულდა. ეს არ არის სავაჭრო სიგნალი.'}).encode()
+        test_msg=('🧪 ALEK SIGNAL VIP — სატესტო სიგნალი (სიმულაცია)\n\n🟢 LONG | BTCUSDT | 5m\n📍 ENTRY: 100,000.00 (მაგალითი)\n🎯 TP1: 100,500.00\n🎯 TP2: 101,000.00\n🛑 STOP LOSS: 99,250.00\n⬆️ სცენარი: ფასის ზრდა\n\n⚠️ ეს არის გამოგონილი მონაცემებით გაგზავნის ტესტი და არა რეალური სავაჭრო რეკომენდაცია.')
+        payload=json.dumps({'chat_id':os.environ['CHAT_ID'],'text':test_msg}).encode()
         req=urllib.request.Request('https://api.telegram.org/bot'+os.environ['BOT_TOKEN']+'/sendMessage',data=payload,headers={'Content-Type':'application/json'})
         with urllib.request.urlopen(req,timeout=20) as response:
             data=json.load(response)
