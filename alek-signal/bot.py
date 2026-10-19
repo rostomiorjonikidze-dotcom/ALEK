@@ -103,8 +103,8 @@ def send_chart(s, caption, test=False):
 def send(s):
     title='🟢 LONG' if s['direction']=='LONG' else '🔴 SHORT'
     timestamp=datetime.datetime.fromtimestamp(s['close_time']/1000,datetime.timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
-    direction='⬆️ მოსალოდნელი მიმართულება: ზემოთ' if s['direction']=='LONG' else '⬇️ მოსალოდნელი მიმართულება: ქვემოთ'
-    msg=(f"💎 ALEK SIGNAL VIP | USDT Perpetual Futures\n\n{title} | {s['symbol']} | {s['interval']}\n{direction}\n\n📍 ENTRY: {s['entry']:,.2f}\n🎯 TP1: {s['tp1']:,.2f}\n🎯 TP2: {s['tp2']:,.2f}\n🛑 STOP LOSS: {s['sl']:,.2f}\n⏰ სანთლის დახურვა: {timestamp}\n📡 ფიუჩერსების წყარო: {s['source']} (ბირჟებს შორის ფასი შეიძლება განსხვავდებოდეს)\n\n⚠️ ექსპერიმენტული სიგნალი. Entry არის სანთლის დახურვის ფასი და არა გარანტირებული შესვლის ფასი. მოგება გარანტირებული არ არის.")
+    direction='⬆️ Expected direction: UP' if s['direction']=='LONG' else '⬇️ Expected direction: DOWN'
+    msg=(f"💎 ALEK SIGNAL VIP | USDT Perpetual Futures\n\n{title} | {s['symbol']} | {s['interval']}\n{direction}\n\n📍 ENTRY: {s['entry']:,.2f}\n🎯 TP1: {s['tp1']:,.2f}\n🎯 TP2: {s['tp2']:,.2f}\n🛑 STOP LOSS: {s['sl']:,.2f}\n⏰ Candle closed: {timestamp}\n📡 Futures data: {s['source']} (prices may vary across exchanges)\n\n⚠️ Experimental signal. Entry is the candle closing price, not a guaranteed execution price. Profits are not guaranteed.")
     return send_chart(s,msg)
 
 def main():
@@ -126,7 +126,7 @@ def main():
             latest=closed[-1]
             stamp=datetime.datetime.fromtimestamp(int(latest[6])/1000,datetime.timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
             sample=dict(symbol='BTCUSDT',interval='5m',direction='MARKET',close_time=int(latest[6]),candles=rows,source=source)
-            test_msg=f'📊 ALEK SIGNAL VIP — რეალური USDT Perpetual Futures გრაფიკის ტესტი\nBTCUSDT perpetual | 5m | {source}\nბოლო დახურული სანთელი: {float(latest[4]):,.2f} USDT\nდრო: {stamp}\n\n⚠️ ეს არის რეალური ბაზრის მონაცემების ტექნიკური ტესტი, არა LONG/SHORT სავაჭრო სიგნალი.'
+            test_msg=f'📊 ALEK SIGNAL VIP — LIVE FUTURES CHART TEST\nBTCUSDT Perpetual | 5m | {source}\nLast closed candle: {float(latest[4]):,.2f} USDT\nTime: {stamp}\n\n⚠️ Live futures market data connectivity test only. NOT a LONG/SHORT trading signal.'
             if not send_chart(sample,test_msg,test=True):raise RuntimeError('Telegram rejected real-market chart')
             print('Real perpetual futures chart test confirmed',flush=True)
     state_path=pathlib.Path('alek-signal/signal-state.json')
