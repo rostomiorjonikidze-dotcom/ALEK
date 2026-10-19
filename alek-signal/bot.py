@@ -34,7 +34,9 @@ def market_klines(symbol,interval,limit=200):
             if now-int(rows[-1][6])>minutes*60000*3:raise ValueError('Stale futures candles')
             return rows[-limit:],provider+' USDT perpetual'
         except Exception as exc:
-            errors.append(provider+': '+type(exc).__name__+' '+str(exc)[:110])
+            detail=provider+': '+type(exc).__name__+' '+str(exc)[:180]
+            errors.append(detail)
+            print('Futures provider failed',symbol,interval,detail,flush=True)
     raise RuntimeError('All perpetual futures data providers failed; no spot fallback: '+'; '.join(errors))
 
 def ema(a,n):
@@ -109,7 +111,11 @@ def main():
         raise RuntimeError('Missing GitHub Actions secrets: '+', '.join(missing))
     print('ALEK Signal scan started',datetime.datetime.now(datetime.timezone.utc).isoformat(),flush=True)
     if os.getenv('TELEGRAM_TEST')=='true':
-        rows,source=market_klines('BTCUSDT','5m',80)
+        try:
+            rows,source=market_klines('BTCUSDT','5m',80)
+        except Exception as exc:
+            print('Futures chart diagnostic failed:',str(exc),flush=True)
+            raise
         now=int(datetime.datetime.now(datetime.timezone.utc).timestamp()*1000)
         closed=[r for r in rows if int(r[6])<now]
         if len(closed)<45:raise RuntimeError('Not enough live futures candles')
