@@ -31,6 +31,8 @@ jobs:
           key: alek-signal-state-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             alek-signal-state-
+      - name: Install chart dependency
+        run: python3 -m pip install --disable-pip-version-check matplotlib==3.10.7
       - name: Check Telegram connection or scan markets
         run: python3 alek-signal/bot.py
         env:
