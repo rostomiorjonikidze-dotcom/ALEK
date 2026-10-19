@@ -1,5 +1,9 @@
 name: ALEK Signals
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/alek-signals.yml'
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
@@ -12,15 +16,15 @@ permissions:
   contents: read
 jobs:
   scan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: python alek-signal/bot.py
+      - name: Check Python
+        run: python3 --version
+      - name: Check Telegram connection or scan markets
+        run: python3 alek-signal/bot.py
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-          TELEGRAM_TEST: ${{ inputs.telegram_test || 'false' }}
+          TELEGRAM_TEST: ${{ github.event_name == 'push' || inputs.telegram_test == true }}
