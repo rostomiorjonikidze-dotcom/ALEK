@@ -34,12 +34,8 @@ def send_chart(s, caption, test=False):
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from matplotlib.patches import Rectangle
-    if test:
-        prices=[100000+100*math.sin(i/3)+i*8 for i in range(36)]
-        candles=[(p,p+65,p-65,p+40*math.sin(i)) for i,p in enumerate(prices)]
-    else:
-        rows=get('https://fapi.binance.com/fapi/v1/klines?'+urllib.parse.urlencode(dict(symbol=s['symbol'],interval=s['interval'],limit=80)))
-        candles=[tuple(float(r[k]) for k in (1,2,3,4)) for r in rows if int(r[6])<=s['close_time']][-45:]
+    rows=get('https://fapi.binance.com/fapi/v1/klines?'+urllib.parse.urlencode(dict(symbol=s['symbol'],interval=s['interval'],limit=80)))
+    candles=[tuple(float(r[k]) for k in (1,2,3,4)) for r in rows if int(r[6])<=s['close_time']][-45:]
     if not candles: raise RuntimeError('Chart has no candles')
     fig,ax=plt.subplots(figsize=(10,6),dpi=140)
     fig.patch.set_facecolor('#101827');ax.set_facecolor('#101827')
@@ -47,12 +43,13 @@ def send_chart(s, caption, test=False):
         color='#20d5a1' if cl>=o else '#ff637a'
         ax.vlines(i,l,h,color=color)
         ax.add_patch(Rectangle((i-.3,min(o,cl)),.6,max(abs(cl-o),.01),color=color))
-    for key,color in [('entry','#f4cf65'),('tp1','#20d5a1'),('tp2','#20d5a1'),('sl','#ff637a')]:
-        ax.axhline(s[key],color=color,linestyle='--')
-        ax.text(len(candles)-1,s[key],f"{key.upper()} {s[key]:,.2f}",color=color,ha='right',va='bottom',bbox={'facecolor':'#101827','edgecolor':'none'})
+    if not test:
+        for key,color in [('entry','#f4cf65'),('tp1','#20d5a1'),('tp2','#20d5a1'),('sl','#ff637a')]:
+            ax.axhline(s[key],color=color,linestyle='--')
+            ax.text(len(candles)-1,s[key],f"{key.upper()} {s[key]:,.2f}",color=color,ha='right',va='bottom',bbox={'facecolor':'#101827','edgecolor':'none'})
     ax.set_xlim(-1,len(candles)+1)
     ax.tick_params(colors='white');ax.grid(alpha=.1)
-    ax.set_title('ALEK SIGNAL VIP | '+s['symbol']+' | '+s['direction']+(' | SIMULATION' if test else ''),color='white')
+    ax.set_title('ALEK SIGNAL VIP | '+s['symbol']+' | '+s['direction']+(' | LIVE DATA TEST' if test else ''),color='white')
     fig.tight_layout();buffer=io.BytesIO();fig.savefig(buffer,format='png',facecolor=fig.get_facecolor());plt.close(fig)
     boundary='alek'+uuid.uuid4().hex
     def field(name,value):
@@ -74,11 +71,16 @@ def main():
         raise RuntimeError('Missing GitHub Actions secrets: '+', '.join(missing))
     print('ALEK Signal scan started',datetime.datetime.now(datetime.timezone.utc).isoformat(),flush=True)
     if os.getenv('TELEGRAM_TEST')=='true':
-        test_msg=('🧪 ALEK SIGNAL VIP — სატესტო სიგნალი (სიმულაცია)\n\n🟢 LONG | BTCUSDT | 5m\n📍 ENTRY: 100,000.00 (მაგალითი)\n🎯 TP1: 100,500.00\n🎯 TP2: 101,000.00\n🛑 STOP LOSS: 99,250.00\n⬆️ სცენარი: ფასის ზრდა\n\n⚠️ ეს არის გამოგონილი მონაცემებით გაგზავნის ტესტი და არა რეალური სავაჭრო რეკომენდაცია.')
-        sample=dict(symbol='BTCUSDT',interval='5m',direction='LONG',entry=100000.0,tp1=100500.0,tp2=101000.0,sl=99250.0)
-        if not send_chart(sample,test_msg,test=True):raise RuntimeError('Telegram rejected test chart')
-        print('Telegram test message confirmed',flush=True)
-        return
+        rows=get('https://fapi.binance.com/fapi/v1/klines?'+urllib.parse.urlencode(dict(symbol='BTCUSDT',interval='5m',limit=80)))
+        now=int(datetime.datetime.now(datetime.timezone.utc).timestamp()*1000)
+        closed=[r for r in rows if int(r[6])<now]
+        if len(closed)<45:raise RuntimeError('Not enough live Binance candles')
+        latest=closed[-1]
+        stamp=datetime.datetime.fromtimestamp(int(latest[6])/1000,datetime.timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+        sample=dict(symbol='BTCUSDT',interval='5m',direction='MARKET',close_time=int(latest[6]))
+        test_msg=f'📊 ALEK SIGNAL VIP — რეალური Binance Futures გრაფიკის ტესტი\\nBTCUSDT | 5m\\nბოლო დახურული სანთელი: {float(latest[4]):,.2f} USDT\\nდრო: {stamp}\\n\\n⚠️ ეს არის რეალური ბაზრის მონაცემების ტექნიკური ტესტი, არა LONG/SHORT სავაჭრო სიგნალი.'
+        if not send_chart(sample,test_msg,test=True):raise RuntimeError('Telegram rejected real-market chart')
+        print('Real Binance chart test confirmed',flush=True)
     state_path=pathlib.Path('alek-signal/signal-state.json')
     try: state=json.loads(state_path.read_text()) if state_path.exists() else {}
     except (ValueError,OSError): state={}
