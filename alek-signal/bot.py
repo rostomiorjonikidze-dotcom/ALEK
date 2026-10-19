@@ -14,7 +14,7 @@ def candidate(symbol,interval):
     rows=get('https://fapi.binance.com/fapi/v1/klines?'+urllib.parse.urlencode(dict(symbol=symbol,interval=interval,limit=200)))
     now=int(datetime.datetime.now(datetime.timezone.utc).timestamp()*1000)
     rows=[r for r in rows if int(r[6])<now]
-    if len(rows)<100 or now-int(rows[-1][6])>90000:return None
+    if len(rows)<100 or now-int(rows[-1][6])>(5*60*1000 if interval=='5m' else 15*60*1000):return None
     close=[float(r[4]) for r in rows];a=ema(close,9);b=ema(close,21);t=ema(close,50);momentum=rsi(close)
     up=a[-2]<=b[-2] and a[-1]>b[-1] and close[-1]>t[-1] and momentum>50
     down=a[-2]>=b[-2] and a[-1]<b[-1] and close[-1]<t[-1] and momentum<50
@@ -34,11 +34,16 @@ def send(s):
     req=urllib.request.Request('https://api.telegram.org/bot'+os.environ['BOT_TOKEN']+'/sendMessage',data=payload,headers={'Content-Type':'application/json'})
     with urllib.request.urlopen(req,timeout=20) as r:return json.load(r)['ok']
 def main():
+    failures=[]
     for symbol in ('BTCUSDT','ETHUSDT'):
         for interval in ('5m','15m'):
             try:
                 s=candidate(symbol,interval)
                 if s:
                     print('Sending',symbol,interval,s['close_time']);send(s)
-            except Exception as exc:print('Error',symbol,interval,type(exc).__name__)
+            except Exception as exc:
+                failures.append((symbol,interval,type(exc).__name__,str(exc)[:160]))
+                print('Error',symbol,interval,type(exc).__name__,str(exc)[:160])
+    if failures:
+        raise RuntimeError('Signal scan failures: '+repr(failures))
 if __name__=='__main__':main()
