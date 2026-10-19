@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/alek-signals.yml'
+      - 'alek-signal/bot.py'
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
