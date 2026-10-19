@@ -1,4 +1,4 @@
-import os, json, urllib.request, urllib.parse, datetime, math
+import os, json, urllib.request, urllib.parse, datetime, math, pathlib
 def get(url):
     with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'ALEKSignal/1.0'}),timeout=15) as r: return json.load(r)
 def ema(a,n):
@@ -48,6 +48,9 @@ def main():
         if not data.get('ok'):raise RuntimeError('Telegram rejected test message')
         print('Telegram test message confirmed',flush=True)
         return
+    state_path=pathlib.Path('alek-signal/signal-state.json')
+    try: state=json.loads(state_path.read_text()) if state_path.exists() else {}
+    except (ValueError,OSError): state={}
     failures=[]
     signals=0
     for symbol in ('BTCUSDT','ETHUSDT'):
@@ -55,8 +58,15 @@ def main():
             try:
                 s=candidate(symbol,interval)
                 if s:
+                    key=symbol+':'+interval
+                    if int(state.get(key,0))>=s['close_time']:
+                        print('Duplicate signal skipped',key,s['close_time'],flush=True)
+                        continue
                     print('Sending',symbol,interval,s['close_time'],flush=True)
                     if not send(s): raise RuntimeError('Telegram did not confirm send')
+                    state[key]=s['close_time']
+                    state_path.parent.mkdir(parents=True,exist_ok=True)
+                    state_path.write_text(json.dumps(state,sort_keys=True))
                     signals+=1
                 else:
                     print('No qualified signal',symbol,interval,flush=True)
