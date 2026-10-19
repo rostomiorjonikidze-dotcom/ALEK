@@ -21,7 +21,7 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-24.04
-    timeout-minutes: 4
+    timeout-minutes: 7
     steps:
       - uses: actions/checkout@v4
       - name: Restore sent-signal state
@@ -38,7 +38,7 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-          TELEGRAM_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.telegram_test == true }}
+          TELEGRAM_TEST: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.telegram_test == true) }}
       - name: Save sent-signal state
         if: always()
         uses: actions/cache/save@v4
