@@ -2,33 +2,40 @@ import os, json, urllib.request, urllib.parse, datetime, math, pathlib
 def get(url):
     with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'ALEKSignal/1.0'}),timeout=15) as r: return json.load(r)
 def market_klines(symbol,interval,limit=200):
-    # Public SPOT candles used as a cross-platform reference, not futures execution prices.
+    # Perpetual futures ONLY. No spot fallback, even when every futures provider fails.
     minutes=int(interval.rstrip('m'))
-    base=symbol.replace('USDT','')
     errors=[]
-    for provider in ('coinbase','kraken'):
+    for provider in ('okx','bitget','gate'):
         try:
-            if provider=='coinbase':
-                product=base+'-USD'
-                url='https://api.exchange.coinbase.com/products/'+product+'/candles?'+urllib.parse.urlencode(dict(granularity=minutes*60))
-                raw=get(url)
-                if not isinstance(raw,list):raise ValueError('Unexpected Coinbase response')
-                rows=[[int(r[0])*1000,r[3],r[2],r[1],r[4],r[5],int(r[0])*1000+minutes*60000-1] for r in raw]
-            else:
-                pair=('XBT' if base=='BTC' else base)+'USD'
-                url='https://api.kraken.com/0/public/OHLC?'+urllib.parse.urlencode(dict(pair=pair,interval=minutes))
+            if provider=='okx':
+                inst=symbol.replace('USDT','-USDT-SWAP')
+                url='https://www.okx.com/api/v5/market/candles?'+urllib.parse.urlencode(dict(instId=inst,bar=interval,limit=min(limit,300)))
                 payload=get(url)
-                if payload.get('error'):raise ValueError(str(payload['error']))
-                data=next(v for k,v in payload['result'].items() if k!='last')
-                rows=[[int(r[0])*1000,r[1],r[2],r[3],r[4],r[6],int(r[0])*1000+minutes*60000-1] for r in data]
+                if payload.get('code')!='0':raise ValueError(str(payload.get('msg')))
+                raw=payload['data']
+                rows=[[int(r[0]),r[1],r[2],r[3],r[4],r[5],int(r[0])+minutes*60000-1] for r in raw if len(r)>=9 and str(r[8])=='1']
+            elif provider=='bitget':
+                url='https://api.bitget.com/api/v2/mix/market/candles?'+urllib.parse.urlencode(dict(symbol=symbol,productType='USDT-FUTURES',granularity=interval,limit=min(limit,200)))
+                payload=get(url)
+                if payload.get('code')!='00000':raise ValueError(str(payload.get('msg')))
+                rows=[[int(r[0]),r[1],r[2],r[3],r[4],r[5],int(r[0])+minutes*60000-1] for r in payload['data']]
+            else:
+                contract=symbol.replace('USDT','_USDT')
+                url='https://api.gateio.ws/api/v4/futures/usdt/candlesticks?'+urllib.parse.urlencode(dict(contract=contract,interval=interval,limit=min(limit,200)))
+                raw=get(url)
+                if not isinstance(raw,list):raise ValueError('Unexpected Gate futures response')
+                rows=[[int(r['t'])*1000,r['o'],r['h'],r['l'],r['c'],r.get('v','0'),int(r['t'])*1000+minutes*60000-1] for r in raw]
+            now=int(datetime.datetime.now(datetime.timezone.utc).timestamp()*1000)
+            rows=[r for r in rows if int(r[6])<now]
             rows.sort(key=lambda r:int(r[0]))
             rows=[r for r in rows if all(math.isfinite(float(r[k])) for k in (1,2,3,4))]
-            if len(rows)<min(limit,100):raise ValueError('Insufficient OHLC candles')
-            if any(int(rows[i][0])>=int(rows[i+1][0]) for i in range(len(rows)-1)):raise ValueError('Nonmonotonic timestamps')
-            return rows[-limit:],provider
+            if len(rows)<min(limit,100):raise ValueError('Insufficient closed perpetual futures candles')
+            if any(int(rows[i][0])>=int(rows[i+1][0]) for i in range(len(rows)-1)):raise ValueError('Nonmonotonic candle timestamps')
+            if now-int(rows[-1][6])>minutes*60000*3:raise ValueError('Stale futures candles')
+            return rows[-limit:],provider+' USDT perpetual'
         except Exception as exc:
-            errors.append(provider+': '+type(exc).__name__+' '+str(exc)[:100])
-    raise RuntimeError('All public spot OHLC sources unavailable: '+'; '.join(errors))
+            errors.append(provider+': '+type(exc).__name__+' '+str(exc)[:110])
+    raise RuntimeError('All perpetual futures data providers failed; no spot fallback: '+'; '.join(errors))
 
 def ema(a,n):
     x=a[0];out=[]
@@ -93,7 +100,7 @@ def send(s):
     title='🟢 LONG' if s['direction']=='LONG' else '🔴 SHORT'
     timestamp=datetime.datetime.fromtimestamp(s['close_time']/1000,datetime.timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
     direction='⬆️ მოსალოდნელი მიმართულება: ზემოთ' if s['direction']=='LONG' else '⬇️ მოსალოდნელი მიმართულება: ქვემოთ'
-    msg=(f"💎 ALEK SIGNAL VIP | Spot reference\n\n{title} | {s['symbol']} | {s['interval']}\n{direction}\n\n📍 ENTRY: {s['entry']:,.2f}\n🎯 TP1: {s['tp1']:,.2f}\n🎯 TP2: {s['tp2']:,.2f}\n🛑 STOP LOSS: {s['sl']:,.2f}\n⏰ სანთლის დახურვა: {timestamp}\n📡 წყარო: {s['source']} USD spot (USDT ფიუჩერსზე ფასი შეიძლება განსხვავდებოდეს)\n\n⚠️ ექსპერიმენტული სიგნალი. Entry არის სანთლის დახურვის ფასი და არა გარანტირებული შესვლის ფასი. მოგება გარანტირებული არ არის.")
+    msg=(f"💎 ALEK SIGNAL VIP | USDT Perpetual Futures\n\n{title} | {s['symbol']} | {s['interval']}\n{direction}\n\n📍 ENTRY: {s['entry']:,.2f}\n🎯 TP1: {s['tp1']:,.2f}\n🎯 TP2: {s['tp2']:,.2f}\n🛑 STOP LOSS: {s['sl']:,.2f}\n⏰ სანთლის დახურვა: {timestamp}\n📡 ფიუჩერსების წყარო: {s['source']} (ბირჟებს შორის ფასი შეიძლება განსხვავდებოდეს)\n\n⚠️ ექსპერიმენტული სიგნალი. Entry არის სანთლის დახურვის ფასი და არა გარანტირებული შესვლის ფასი. მოგება გარანტირებული არ არის.")
     return send_chart(s,msg)
 
 def main():
@@ -105,13 +112,13 @@ def main():
         rows,source=market_klines('BTCUSDT','5m',80)
         now=int(datetime.datetime.now(datetime.timezone.utc).timestamp()*1000)
         closed=[r for r in rows if int(r[6])<now]
-        if len(closed)<45:raise RuntimeError('Not enough live spot candles')
+        if len(closed)<45:raise RuntimeError('Not enough live futures candles')
         latest=closed[-1]
         stamp=datetime.datetime.fromtimestamp(int(latest[6])/1000,datetime.timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
         sample=dict(symbol='BTCUSDT',interval='5m',direction='MARKET',close_time=int(latest[6]),candles=rows,source=source)
-        test_msg=f'📊 ALEK SIGNAL VIP — რეალური USD Spot გრაფიკის ტესტი\nBTC/USD | 5m | {source}\nბოლო დახურული სანთელი: {float(latest[4]):,.2f} USD\nდრო: {stamp}\n\n⚠️ ეს არის რეალური ბაზრის მონაცემების ტექნიკური ტესტი, არა LONG/SHORT სავაჭრო სიგნალი.'
+        test_msg=f'📊 ALEK SIGNAL VIP — რეალური USDT Perpetual Futures გრაფიკის ტესტი\nBTCUSDT perpetual | 5m | {source}\nბოლო დახურული სანთელი: {float(latest[4]):,.2f} USDT\nდრო: {stamp}\n\n⚠️ ეს არის რეალური ბაზრის მონაცემების ტექნიკური ტესტი, არა LONG/SHORT სავაჭრო სიგნალი.'
         if not send_chart(sample,test_msg,test=True):raise RuntimeError('Telegram rejected real-market chart')
-        print('Real spot chart test confirmed',flush=True)
+        print('Real perpetual futures chart test confirmed',flush=True)
     state_path=pathlib.Path('alek-signal/signal-state.json')
     try: state=json.loads(state_path.read_text()) if state_path.exists() else {}
     except (ValueError,OSError): state={}
