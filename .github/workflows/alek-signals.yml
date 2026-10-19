@@ -10,38 +10,40 @@ on:
   workflow_dispatch:
     inputs:
       telegram_test:
-        description: 'Send Telegram connectivity test (not a trading signal)'
+        description: 'Send one live BTC futures chart connectivity test'
         type: boolean
         default: false
 permissions:
   contents: read
-concurrency:
-  group: alek-signals-state
-  cancel-in-progress: false
 jobs:
   scan:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - asset: BTCUSDT
+            delay: 0
+          - asset: XAUUSD
+            delay: 60
+          - asset: ETHUSDT
+            delay: 120
+          - asset: SOLUSDT
+            delay: 180
+          - asset: WTI
+            delay: 240
     runs-on: ubuntu-24.04
-    timeout-minutes: 7
+    timeout-minutes: 9
     steps:
       - uses: actions/checkout@v4
-      - name: Restore sent-signal state
-        uses: actions/cache/restore@v4
-        with:
-          path: alek-signal/signal-state.json
-          key: alek-signal-state-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            alek-signal-state-
+      - name: Offset this market within the five-minute cycle
+        run: sleep ${{ matrix.delay }}
       - name: Install chart dependency
+        if: matrix.asset != 'XAUUSD' && matrix.asset != 'WTI'
         run: python3 -m pip install --disable-pip-version-check matplotlib==3.10.7
-      - name: Check Telegram connection or scan markets
+      - name: Scan independent futures market
         run: python3 alek-signal/bot.py
         env:
+          SIGNAL_ASSET: ${{ matrix.asset }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-          TELEGRAM_TEST: ${{ (github.event_name == 'push' && contains(github.event.head_commit.message, '[telegram-test]')) || (github.event_name == 'workflow_dispatch' && inputs.telegram_test == true) }}
-      - name: Save sent-signal state
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: alek-signal/signal-state.json
-          key: alek-signal-state-${{ github.run_id }}-${{ github.run_attempt }}
+          TELEGRAM_TEST: ${{ matrix.asset == 'BTCUSDT' && github.event_name == 'workflow_dispatch' && inputs.telegram_test == true }}
