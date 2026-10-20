@@ -57,7 +57,7 @@ def candidate(symbol,interval):
     if len(rows)<100 or now-int(rows[-1][6])>(10*60*1000 if interval=='5m' else 30*60*1000):return None
     close=[float(r[4]) for r in rows];a=ema(close,9);b=ema(close,21);t=ema(close,50);momentum=rsi(close)
     up=(a[-1]>b[-1] and close[-1]>t[-1] and momentum>=50 and (a[-2]<=b[-2] or (close[-2]<=a[-2] and close[-1]>a[-1]) or (close[-1]>close[-2] and close[-2]>close[-3] and close[-3]<=a[-3])))
-    down=(a[-1]<b[-1] and close[-1]<t[-1] and momentum<=48 and (a[-2]>=b[-2] or (close[-2]>=a[-2] and close[-1]<a[-1])))
+    down=(a[-1]<b[-1] and close[-1]<t[-1] and momentum<=50 and (a[-2]>=b[-2] or (close[-2]>=a[-2] and close[-1]<a[-1]) or (close[-1]<close[-2] and close[-2]<close[-3] and close[-3]>=a[-3])))
     if not(up or down):return None
     tr=[]
     for i,r in enumerate(rows):
