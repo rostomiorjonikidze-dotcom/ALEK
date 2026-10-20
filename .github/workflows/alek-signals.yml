@@ -18,14 +18,10 @@ jobs:
         include:
           - asset: BTCUSDT
             delay: 0
-          - asset: XAUUSD
-            delay: 60
           - asset: ETHUSDT
-            delay: 120
+            delay: 60
           - asset: SOLUSDT
-            delay: 180
-          - asset: WTI
-            delay: 240
+            delay: 120
     concurrency:
       group: signal-history-${{ matrix.asset }}
       cancel-in-progress: false
@@ -36,8 +32,7 @@ jobs:
       - name: Offset this market within the five-minute cycle
         run: sleep ${{ matrix.delay }}
       - name: Install chart dependency
-        if: matrix.asset != 'XAUUSD' && matrix.asset != 'WTI'
-        run: python3 -m pip install --disable-pip-version-check matplotlib==3.10.7
+                run: python3 -m pip install --disable-pip-version-check matplotlib==3.10.7
       - name: Restore sent-signal history
         uses: actions/cache/restore@v4
         with:
