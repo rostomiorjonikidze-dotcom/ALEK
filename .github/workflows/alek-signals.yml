@@ -40,6 +40,13 @@ jobs:
       - name: Install chart dependency
         if: matrix.asset != 'XAUUSD' && matrix.asset != 'WTI'
         run: python3 -m pip install --disable-pip-version-check matplotlib==3.10.7
+      - name: Restore sent-signal history
+        uses: actions/cache/restore@v4
+        with:
+          path: alek-signal/signal-state.json
+          key: signal-history-${{ matrix.asset }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            signal-history-${{ matrix.asset }}-
       - name: Scan independent futures market
         run: python3 alek-signal/bot.py
         env:
@@ -47,3 +54,9 @@ jobs:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
           TELEGRAM_TEST: ${{ matrix.asset == 'BTCUSDT' && github.event_name == 'workflow_dispatch' && inputs.telegram_test == true }}
+      - name: Save sent-signal history
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: alek-signal/signal-state.json
+          key: signal-history-${{ matrix.asset }}-${{ github.run_id }}-${{ github.run_attempt }}
