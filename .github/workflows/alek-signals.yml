@@ -8,11 +8,6 @@ on:
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
-    inputs:
-      telegram_test:
-        description: 'Send one live BTC futures chart connectivity test'
-        type: boolean
-        default: false
 permissions:
   contents: read
 jobs:
@@ -56,7 +51,7 @@ jobs:
           SIGNAL_ASSET: ${{ matrix.asset }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-          TELEGRAM_TEST: ${{ matrix.asset == 'BTCUSDT' && github.event_name == 'workflow_dispatch' && inputs.telegram_test == true }}
+          TELEGRAM_TEST: 'false'
       - name: Save sent-signal history
         if: always()
         uses: actions/cache/save@v4
