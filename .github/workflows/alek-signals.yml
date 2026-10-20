@@ -31,6 +31,9 @@ jobs:
             delay: 180
           - asset: WTI
             delay: 240
+    concurrency:
+      group: signal-history-${{ matrix.asset }}
+      cancel-in-progress: false
     runs-on: ubuntu-24.04
     timeout-minutes: 9
     steps:
