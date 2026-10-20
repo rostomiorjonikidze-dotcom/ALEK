@@ -7,7 +7,7 @@ on:
       - 'alek-signal/bot.py'
   schedule:
     - cron: '*/5 * * * *'
-  workflow_dispatch:
+  workflow_dispatch: {}
 permissions:
   contents: read
 jobs:
@@ -32,7 +32,7 @@ jobs:
       - name: Offset this market within the five-minute cycle
         run: sleep ${{ matrix.delay }}
       - name: Install chart dependency
-                run: python3 -m pip install --disable-pip-version-check matplotlib==3.10.7
+        run: python3 -m pip install --disable-pip-version-check matplotlib==3.10.7
       - name: Restore sent-signal history
         uses: actions/cache/restore@v4
         with:
