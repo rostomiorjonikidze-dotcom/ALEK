@@ -31,6 +31,7 @@ final class DiagnosticService: ObservableObject {
     @Published private(set) var lastActionMessage = ""
     @Published private(set) var latestRaw = ""
     @Published private(set) var adapterStatus = AdapterStatus()
+    @Published private(set) var connectionLog: [String] = []
 
     private var commandQueue: [ELMRequest] = []
     private var inFlight: ELMRequest?
@@ -73,6 +74,8 @@ final class DiagnosticService: ObservableObject {
         handleDisconnect()
         busy = true
         connectionStatus = "ELM327 მზადდება…"
+        note("BLE ready; starting ELM initialization")
+        note(ble.channelInfo)
         // Do not infer vehicle connectivity from the Bluetooth link alone.
         request("ATZ", timeout: 7) { [weak self] _ in
             self?.request("ATE0") { [weak self] _ in
@@ -150,6 +153,27 @@ final class DiagnosticService: ObservableObject {
         }
     }
 
+    private func note(_ text: String) {
+        let timestamp = Date().formatted(date: .omitted, time: .standard)
+        connectionLog.append("[\(timestamp)] \(text)")
+        if connectionLog.count > 250 {
+            connectionLog.removeFirst(connectionLog.count - 250)
+        }
+    }
+
+    /// Exported only after a user taps Share. May contain VIN and ECU data.
+    func exportConnectionLog() throws -> URL {
+        let file = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ALEK_ELM327_Diagnostic_Log_\(Int(Date().timeIntervalSince1970)).txt")
+        let prefix = "ALEK DIAGNOSTIC V8 — ELM327 BLE\n"
+            + "Connection: \(connectionStatus)\n"
+            + "UART: \(ble.channelInfo)\n"
+            + "These records may include VIN/vehicle information.\n\n"
+        try (prefix + connectionLog.joined(separator: "\n") + "\n")
+            .write(to: file, atomically: true, encoding: .utf8)
+        return file
+    }
+
     func request(_ command: String, timeout: Double = 5,
                          completion: @escaping (String) -> Void) {
         commandQueue.append(ELMRequest(command: command,
@@ -161,6 +185,7 @@ final class DiagnosticService: ObservableObject {
     private func processNext() {
         guard inFlight == nil, ble.isReady, !commandQueue.isEmpty else { return }
         let job = commandQueue.removeFirst()
+        note("TX \(job.command)")
         responseBuffer = ""
         inFlight = job
         guard ble.write(job.command) else {
@@ -172,7 +197,7 @@ final class DiagnosticService: ObservableObject {
         let work = DispatchWorkItem { [weak self] in
             guard let self, let current = self.inFlight,
                   current.command == job.command else { return }
-            self.finishRequest()
+            self.finishRequest(timedOut: true)
         }
         timeoutWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + job.timeoutSeconds, execute: work)
@@ -185,7 +210,7 @@ final class DiagnosticService: ObservableObject {
         finishRequest()
     }
 
-    private func finishRequest() {
+    private func finishRequest(timedOut: Bool = false) {
         guard let job = inFlight else { return }
         timeoutWork?.cancel()
         timeoutWork = nil
@@ -193,6 +218,9 @@ final class DiagnosticService: ObservableObject {
         let result = responseBuffer.components(separatedBy: ">").first ?? responseBuffer
         responseBuffer = ""
         latestRaw = result
+        let safeResponse = String(result.prefix(1800)).replacingOccurrences(of: "\r", with: " ")
+            .replacingOccurrences(of: "\n", with: " ")
+        note(timedOut ? "TIMEOUT \(job.command): \(safeResponse)" : "RX \(job.command): \(safeResponse)")
         job.completion(result)
         processNext()
     }
