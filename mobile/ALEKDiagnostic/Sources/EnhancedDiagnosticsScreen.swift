@@ -23,7 +23,7 @@ struct EnhancedDiagnosticsScreen: View {
                         HStack {
                             Text("შემოწმებული ECU")
                             Spacer()
-                            Text("\(diagnostic.enhancedResults.count) / 8")
+                            Text("\(diagnostic.enhancedResults.count) / \(diagnostic.enhancedTargetCount)")
                         }.font(.caption).foregroundStyle(AlekTheme.muted)
                         PrimaryAction(text: diagnostic.enhancedScanning ? "კითხვის პროცესშია…" : "Enhanced DTC სკანირება",
                                       icon: "cpu",
@@ -55,6 +55,9 @@ struct EnhancedDiagnosticsScreen: View {
 
                     ForEach(diagnostic.enhancedResults) { module in
                         AlekCard(title: "ECU \(module.requestID) → \(module.responseID)") {
+                            if let name = diagnostic.oemModuleName(responseID: module.responseID) {
+                                Text(name).font(.subheadline).fontWeight(.semibold)
+                            }
                             Text(module.state).font(.caption).foregroundStyle(AlekTheme.muted)
                             if module.faults.isEmpty {
                                 Text(module.state.hasPrefix("UDS დადებითი")

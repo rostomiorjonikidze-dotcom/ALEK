@@ -42,6 +42,19 @@ final class OEMCatalogTests: XCTestCase {
         XCTAssertThrowsError(try OEMCatalog.decode(Data(incomplete.utf8)))
     }
 
+    func testDocumentedModuleRouting() throws {
+        let full = dataset.replacingOccurrences(
+            of: "\\"entries\\":", with: "\\"modules\\":[{\\"make\\":\\"TestMake\\",\\"model\\":\\"TestModel\\",\\"year\\":\\"2020\\",\\"engine\\":null,\\"name\\":\\"ABS ECU\\",\\"requestID\\":\\"740\\",\\"responseID\\":\\"748\\",\\"sourceReference\\":\\"test-only\\"}],\\"entries\\":"
+        )
+        let package = try OEMCatalog.decode(Data(full.utf8))
+        let car = VehicleProfile(id: UUID(), make: "TestMake", model: "TestModel",
+                                 year: "2020", engine: "", manualVIN: "")
+        XCTAssertEqual(OEMCatalog.modules(for: car, package: package).first?.responseID, "748")
+        let other = VehicleProfile(id: UUID(), make: "Unrelated", model: "TestModel",
+                                   year: "2020", engine: "", manualVIN: "")
+        XCTAssertTrue(OEMCatalog.modules(for: other, package: package).isEmpty)
+    }
+
     func testNoCatalogueIsNotAValidOEMMatch() {
         let f = EnhancedFault(requestID: "7E0", responseID: "7E8",
                               rawDTC: "030100", status: 0, statusAvailabilityMask: 255)

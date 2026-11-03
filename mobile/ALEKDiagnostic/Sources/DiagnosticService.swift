@@ -36,6 +36,8 @@ final class DiagnosticService: ObservableObject {
     @Published private(set) var enhancedStatus = "სკანირება არ დაწყებულა"
     @Published private(set) var enhancedScanning = false
     private var enhancedCancelled = false
+    private var enhancedTargets: [(tx: String, rx: String)] = []
+    var enhancedTargetCount: Int { enhancedTargets.isEmpty ? 8 : enhancedTargets.count }
     @Published private(set) var history: [ScanRecord] = []
     @Published private(set) var lastActionMessage = ""
     @Published private(set) var latestRaw = ""
@@ -196,6 +198,11 @@ final class DiagnosticService: ObservableObject {
         try data.write(to: path, options: .atomic)
         oemCatalog = catalog
         oemCatalogMessage = "ჩატვირთულია: \(catalog.datasetName) • \(catalog.entries.count) ჩანაწერი"
+    }
+
+    func oemModuleName(responseID: String) -> String? {
+        OEMCatalog.modules(for: selectedVehicle, package: oemCatalog)
+            .first(where: { $0.responseID.uppercased() == responseID.uppercased() })?.name
     }
 
     func exactOEMMeaning(for fault: EnhancedFault) -> OEMDTCEntry? {
@@ -364,7 +371,15 @@ final class DiagnosticService: ObservableObject {
         enhancedCancelled = false
         enhancedScanning = true
         enhancedResults = []
-        enhancedStatus = "UDS სკანირებისთვის ELM327 მზადდება…"
+        let supplied = OEMCatalog.modules(for: selectedVehicle, package: oemCatalog)
+        enhancedTargets = supplied.isEmpty
+            ? UDSDTC.requestIDs.compactMap { tx in
+                UDSDTC.responseID(for: tx).map { (tx: tx, rx: $0) }
+            }
+            : supplied.map { (tx: $0.requestID.uppercased(), rx: $0.responseID.uppercased()) }
+        enhancedStatus = supplied.isEmpty
+            ? "8 სტანდარტული CAN მისამართის შემოწმება…"
+            : "(supplied.count) დოკუმენტირებული ECU მოდულის შემოწმება…"
         request("ATH1", timeout: 5) { [weak self] answer in
             guard let self else { return }
             guard UDSDTC.isATOK(answer) else {
@@ -394,16 +409,14 @@ final class DiagnosticService: ObservableObject {
             finishEnhancedScan("სკანირება შეწყვეტილია.")
             return
         }
-        guard index < UDSDTC.requestIDs.count else {
-            finishEnhancedScan("Enhanced ECU სკანირება დასრულებულია. უპასუხა \(enhancedResults.count) მისამართმა.")
+        guard index < enhancedTargets.count else {
+            finishEnhancedScan("Enhanced ECU სკანირება დასრულებულია. შემოწმებულია \(enhancedResults.count) მისამართი.")
             return
         }
-        let tx = UDSDTC.requestIDs[index]
-        guard let rx = UDSDTC.responseID(for: tx) else {
-            finishEnhancedScan("არასწორი CAN მისამართი.")
-            return
-        }
-        enhancedStatus = "კითხულობს ECU \(tx) / \(rx) — \(index + 1)/8"
+        let target = enhancedTargets[index]
+        let tx = target.tx
+        let rx = target.rx
+        enhancedStatus = "კითხულობს ECU \(tx) / \(rx) — \(index + 1)/\(enhancedTargets.count)"
         request("ATSH" + tx, timeout: 5) { [weak self] headerResponse in
             guard let self else { return }
             guard UDSDTC.isATOK(headerResponse) else {
@@ -423,7 +436,7 @@ final class DiagnosticService: ObservableObject {
                 }
                 self.request("1902FF", timeout: 9) { [weak self] response in
                     guard let self else { return }
-                    switch UDSDTC.parse(response, requestID: tx) {
+                    switch UDSDTC.parse(_response: response, requestID: tx, responseID: rx) {
                     case .success(let faults, let available):
                         let description = String(format: "UDS დადებითი პასუხი • სტატუსის მხარდაჭერა 0x%02X", available)
                         self.enhancedResults.append(EnhancedECUResult(

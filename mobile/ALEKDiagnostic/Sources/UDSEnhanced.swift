@@ -78,6 +78,12 @@ enum UDSDTC {
 
     static func parse(_ response: String, requestID: String) -> UDSReadResult {
         guard let responseID = responseID(for: requestID) else { return .invalid }
+        return parse(_response: response, requestID: requestID, responseID: responseID)
+    }
+
+    static func parse(_response response: String, requestID: String,
+                      responseID: String) -> UDSReadResult {
+        guard !requestID.isEmpty, !responseID.isEmpty else { return .invalid }
         let bytes = ELMResponse.bytes(response)
         guard !bytes.isEmpty else { return .invalid }
 
