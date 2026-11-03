@@ -182,7 +182,8 @@ final class BLETransport: NSObject, ObservableObject, CBCentralManagerDelegate, 
         var candidates: [(CBCharacteristic, CBCharacteristic, Int)] = []
         for tx in writeCandidates {
             for rx in notifyCandidates {
-                guard tx.service.uuid.uuidString == rx.service.uuid.uuidString else { continue }
+                guard let txService = tx.service, let rxService = rx.service,
+                      txService.uuid == rxService.uuid else { continue }
                 let score: Int = preference(tx, forWrite: true) + preference(rx, forWrite: false)
                 candidates.append((tx, rx, score))
             }
