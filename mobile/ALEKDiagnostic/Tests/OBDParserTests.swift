@@ -85,7 +85,7 @@ final class OBDParserTests: XCTestCase {
         let text = DTCGuide.description(for: "P0401")
         XCTAssertTrue(text.title.contains("EGR"))
         let manufacturer = DTCGuide.description(for: "P1238")
-        XCTAssertTrue(manufacturer.checks.contains("მწარმოებლის"))
+        XCTAssertTrue(manufacturer.title.contains("მწარმოებლის"))
     }
 
     func testTelemetryCSVExport() throws {
