@@ -33,6 +33,25 @@ final class OBDParserTests: XCTestCase {
         XCTAssertNil(OBDParser.value(forPID: "0C", in: "NO DATA\r>"))
     }
 
+    func testReadinessMILAndFaultCount() {
+        let state = ReadinessState.decode("41 01 82 07 A5 80\r>")
+        XCTAssertEqual(state?.milOn, true)
+        XCTAssertEqual(state?.reportedFaultCount, 2)
+        XCTAssertEqual(state?.rawHex, "07 A5 80")
+    }
+
+    func testReadinessMissingData() {
+        XCTAssertNil(ReadinessState.decode("NO DATA\r>"))
+    }
+
+    func testFreezeFrameRPM() {
+        XCTAssertEqual(OBDParser.freezeValue(forPID: "0C", in: "42 0C 00 0F A0\r>"), 1000)
+    }
+
+    func testFreezeFrameEmpty() {
+        XCTAssertNil(OBDParser.freezeValue(forPID: "0C", in: "NO DATA\r>"))
+    }
+
     func testVIN() {
         let raw = "49 02 01 31 48 47 43 4D 38 32 36 33 33 41 30 30 34 33 35 32\r>"
         XCTAssertEqual(OBDParser.vin(raw), "1HGCM82633A004352")
