@@ -23,6 +23,9 @@ final class DiagnosticService: ObservableObject {
     @Published private(set) var vin: String?
     @Published private(set) var faults: [FaultCode] = []
     @Published private(set) var sensors: [String: Double] = [:]
+    @Published var readiness: ReadinessState?
+    @Published var freezeFrame: [String: Double] = [:]
+    @Published var liveSamples: [LiveSample] = []
     @Published private(set) var history: [ScanRecord] = []
     @Published private(set) var lastActionMessage = ""
     @Published private(set) var latestRaw = ""
@@ -89,7 +92,7 @@ final class DiagnosticService: ObservableObject {
         }
     }
 
-    private func request(_ command: String, timeout: Double = 5,
+    func request(_ command: String, timeout: Double = 5,
                          completion: @escaping (String) -> Void) {
         commandQueue.append(ELMRequest(command: command,
                                        timeoutSeconds: timeout,
@@ -165,6 +168,7 @@ final class DiagnosticService: ObservableObject {
                         ? "შეცდომა არ დაბრუნებულა — დარწმუნდი, რომ ECU პასუხობს"
                         : "ნაპოვნია \(self.faults.count) კოდი"
                     self.addHistory()
+                    self.refreshReadiness()
                 }
             }
         }
@@ -213,6 +217,10 @@ final class DiagnosticService: ObservableObject {
             guard let self else { return }
             if let value = OBDParser.value(forPID: definition.pid, in: response) {
                 self.sensors[definition.pid] = value
+                self.liveSamples.append(LiveSample(timestamp: Date(), pid: definition.pid, value: value))
+                if self.liveSamples.count > 1400 {
+                    self.liveSamples.removeFirst(self.liveSamples.count - 1400)
+                }
             }
             // Unsupported PIDs deliberately stay absent (shown as —).
             guard self.liveRunning else { return }
