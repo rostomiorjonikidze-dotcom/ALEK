@@ -81,6 +81,24 @@ final class OBDParserTests: XCTestCase {
                        "AUTO, ISO 15765-4 CAN (11 bit ID, 500 kbaud)")
     }
 
+    func testOfflineGenericDTCGuide() {
+        let text = DTCGuide.description(for: "P0401")
+        XCTAssertTrue(text.title.contains("EGR"))
+        let manufacturer = DTCGuide.description(for: "P1238")
+        XCTAssertTrue(manufacturer.checks.contains("მწარმოებლის"))
+    }
+
+    func testTelemetryCSVExport() throws {
+        let sample = LiveSample(timestamp: Date(timeIntervalSince1970: 10),
+                                pid: "0C", value: 1000)
+        let result = try TelemetryCSV.create(samples: [sample])
+        defer { try? FileManager.default.removeItem(at: result) }
+        let content = try String(contentsOf: result, encoding: .utf8)
+        XCTAssertTrue(content.contains("timestamp_utc,pid,description,value,unit"))
+        XCTAssertTrue(content.contains(",0C,"))
+        XCTAssertTrue(content.contains(",1000.0,RPM"))
+    }
+
     func testVIN() {
         let raw = "49 02 01 31 48 47 43 4D 38 32 36 33 33 41 30 30 34 33 35 32\r>"
         XCTAssertEqual(OBDParser.vin(raw), "1HGCM82633A004352")
