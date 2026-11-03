@@ -26,6 +26,7 @@ final class DiagnosticService: ObservableObject {
     @Published var readiness: ReadinessState?
     @Published var freezeFrame: [String: Double] = [:]
     @Published var liveSamples: [LiveSample] = []
+    @Published private(set) var supportedPIDs: Set<String> = []
     @Published private(set) var history: [ScanRecord] = []
     @Published private(set) var lastActionMessage = ""
     @Published private(set) var latestRaw = ""
@@ -58,6 +59,7 @@ final class DiagnosticService: ObservableObject {
         busy = false
         liveRunning = false
         sensors = [:]
+        supportedPIDs = []
         connectionStatus = "კავშირი გაწყვეტილია — დაუკავშირდი ხელახლა"
     }
 
@@ -82,7 +84,12 @@ final class DiagnosticService: ObservableObject {
                                     self.connectionStatus = valid
                                         ? "ECU დაკავშირებულია — OBD-II მზადაა"
                                         : "Bluetooth მუშაობს, მაგრამ ECU-მ არ უპასუხა"
-                                    if valid { self.readVIN() }
+                                    if valid {
+                                        self.supportedPIDs = OBDParser.supportedPIDs(response, blockPID: "00")
+                                        self.fetchNextSupportedPIDBlock(after: "00")
+                                        self.readVIN()
+                                        self.refreshReadiness()
+                                    }
                                 }
                             }
                         }
@@ -137,6 +144,23 @@ final class DiagnosticService: ObservableObject {
         latestRaw = result
         job.completion(result)
         processNext()
+    }
+
+    private func fetchNextSupportedPIDBlock(after block: String) {
+        let next: String
+        switch block {
+        case "00": next = "20"
+        case "20": next = "40"
+        case "40": next = "60"
+        case "60": next = "80"
+        default: return
+        }
+        guard supportedPIDs.contains(next) else { return }
+        request("01" + next, timeout: 7) { [weak self] response in
+            guard let self else { return }
+            self.supportedPIDs.formUnion(OBDParser.supportedPIDs(response, blockPID: next))
+            self.fetchNextSupportedPIDBlock(after: next)
+        }
     }
 
     func readVIN() {
@@ -211,7 +235,11 @@ final class DiagnosticService: ObservableObject {
 
     private func pollNext() {
         guard liveRunning, ecuConnected else { return }
-        let definition = OBDParser.sensors[liveIndex % OBDParser.sensors.count]
+        let available = OBDParser.sensors.filter {
+            supportedPIDs.isEmpty || supportedPIDs.contains($0.pid)
+        }
+        guard !available.isEmpty else { liveRunning = false; return }
+        let definition = available[liveIndex % available.count]
         liveIndex += 1
         request("01" + definition.pid, timeout: 5) { [weak self] response in
             guard let self else { return }
