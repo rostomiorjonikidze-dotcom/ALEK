@@ -22,7 +22,18 @@ enum OBDParser {
         .init(pid: "10", label: "ჰაერის ნაკადი (MAF)", unit: "g/s"),
         .init(pid: "0B", label: "შემშვები წნევა (MAP)", unit: "kPa"),
         .init(pid: "04", label: "ძრავის დატვირთვა", unit: "%"),
-        .init(pid: "42", label: "ECU ძაბვა", unit: "V")
+        .init(pid: "42", label: "ECU ძაბვა", unit: "V"),
+        .init(pid: "11", label: "დროსელის მდგომარეობა", unit: "%"),
+        .init(pid: "06", label: "STFT Bank 1", unit: "%"),
+        .init(pid: "07", label: "LTFT Bank 1", unit: "%"),
+        .init(pid: "0E", label: "ანთების კუთხე", unit: "°"),
+        .init(pid: "1F", label: "ძრავის მუშაობის დრო", unit: "s"),
+        .init(pid: "2F", label: "საწვავის დონე", unit: "%"),
+        .init(pid: "31", label: "განულების შემდეგ მანძილი", unit: "km"),
+        .init(pid: "33", label: "ატმოსფერული წნევა", unit: "kPa"),
+        .init(pid: "46", label: "გარემოს ტემპერატურა", unit: "°C"),
+        .init(pid: "5C", label: "ზეთის ტემპერატურა", unit: "°C"),
+        .init(pid: "5E", label: "საწვავის ხარჯი", unit: "L/h")
     ]
 
     static func hexBytes(_ response: String) -> [UInt8] {
@@ -56,6 +67,23 @@ enum OBDParser {
         return bytes
     }
 
+    static func supportedPIDs(_ response: String, blockPID: String) -> Set<String> {
+        guard let block = UInt8(blockPID, radix: 16) else { return [] }
+        let bytes = hexBytes(response)
+        guard let i = bytes.indices.first(where: {
+            bytes[$0] == 0x41 && $0 + 5 < bytes.count && bytes[$0 + 1] == block
+        }) else { return [] }
+        var result = Set<String>()
+        for n in 0..<32 {
+            let currentByte = bytes[i + 2 + n / 8]
+            let bit: UInt8 = 1 << (7 - (n % 8))
+            if currentByte & bit != 0 {
+                result.insert(String(format: "%02X", Int(block) + n + 1))
+            }
+        }
+        return result
+    }
+
     static func value(forPID pid: String, in response: String) -> Double? {
         guard let code = UInt8(pid, radix: 16) else { return nil }
         let data = hexBytes(response)
@@ -69,12 +97,15 @@ enum OBDParser {
 
         switch pid.uppercased() {
         case "0C": return start + 1 < data.count ? (256 * a + b) / 4 : nil
-        case "0D": return a
-        case "05", "0F": return a - 40
+        case "0D", "0B", "33", "1F": return pid == "1F" ? (start + 1 < data.count ? 256 * a + b : nil) : a
+        case "05", "0F", "46", "5C": return a - 40
         case "10": return start + 1 < data.count ? (256 * a + b) / 100 : nil
-        case "0B": return a
-        case "04": return a * 100 / 255
+        case "04", "11", "2F": return a * 100 / 255
+        case "06", "07": return (a - 128) * 100 / 128
+        case "0E": return a / 2 - 64
+        case "31": return start + 1 < data.count ? 256 * a + b : nil
         case "42": return start + 1 < data.count ? (256 * a + b) / 1000 : nil
+        case "5E": return start + 1 < data.count ? (256 * a + b) / 20 : nil
         default: return nil
         }
     }
