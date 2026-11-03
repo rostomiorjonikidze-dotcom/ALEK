@@ -16,6 +16,8 @@ Native iPhone diagnostic app for ELM327 **Bluetooth Low Energy** adapters. Desig
 - Mode 04 code-clearing with explicit user confirmation (never silently).
 - Mode 01 supported-PID detection and 19 standard live telemetry values (only if the ECU returns them).
 - Mode 02 limited freeze-frame values; mode 01 PID 01 I/M readiness.
+- Read-only Mode 06 monitor scan: supported MIDs, raw values and CAN format TID/CID/test/min/max where available, without unverified scaling or fabricated PASS/FAIL.
+- 23 live OBD-II sensor types, including Bank 2 fuel trims, fuel pressure and distance driven with MIL on.
 - Mode 09 PID 02 VIN retrieval when supported.
 - Offline Georgian generic DTC explanations and suggested checks for common codes; no claim of OEM-specific certainty.
 - Locally saved scan history; real-data graphs; PDF diagnostic report; CSV telemetry export.
