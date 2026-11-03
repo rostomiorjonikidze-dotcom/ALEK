@@ -31,6 +31,8 @@ struct DiagnosticTabs: View {
                 .tabItem { Label("შეცდომები", systemImage: "exclamationmark.triangle.fill") }
             LiveScreen(diagnostic: diagnostic)
                 .tabItem { Label("Live Data", systemImage: "waveform.path.ecg") }
+            ReportScreen(diagnostic: diagnostic)
+                .tabItem { Label("ანგარიში", systemImage: "doc.text") }
             HistoryScreen(diagnostic: diagnostic)
                 .tabItem { Label("ისტორია", systemImage: "clock.arrow.circlepath") }
         }
