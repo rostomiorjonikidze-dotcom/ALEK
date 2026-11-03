@@ -13,6 +13,7 @@ final class BLETransport: NSObject, ObservableObject, CBCentralManagerDelegate, 
     @Published private(set) var status = "Bluetooth მზადდება…"
     @Published private(set) var isReady = false
     @Published private(set) var isScanning = false
+    @Published private(set) var channelInfo = "BLE UART არხი ჯერ არ არის არჩეული"
 
     var onText: ((String) -> Void)?
     var onReady: (() -> Void)?
@@ -62,6 +63,7 @@ final class BLETransport: NSObject, ObservableObject, CBCentralManagerDelegate, 
         selected = peripheral
         writable = nil
         notifying = nil
+        channelInfo = "BLE UART არხი ჯერ არ არის არჩეული"
         foundCharacteristics = []
         isReady = false
         status = "დაკავშირება: \(device.name)"
@@ -194,6 +196,8 @@ final class BLETransport: NSObject, ObservableObject, CBCentralManagerDelegate, 
         }
         writable = best.0
         notifying = best.1
+        let serviceName = best.0.service?.uuid.uuidString ?? "უცნობი"
+        channelInfo = "Service: \(serviceName) • TX: \(best.0.uuid.uuidString) • RX: \(best.1.uuid.uuidString)"
         status = "BLE არხები მოიძებნა — შეტყობინებების ჩართვა"
         peripheral.setNotifyValue(true, for: best.1)
     }
