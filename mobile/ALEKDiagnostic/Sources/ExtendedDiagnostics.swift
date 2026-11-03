@@ -122,7 +122,10 @@ enum DiagnosticPDF {
             if diagnostic.faults.isEmpty {
                 line("No codes stored in current app session; this does not certify a fault-free car.")
             } else {
-                for fault in diagnostic.faults { line("\(fault.code) — \(fault.category)") }
+                for fault in diagnostic.faults {
+                    line("\(fault.code) — \(fault.category)")
+                    line(DTCGuide.description(for: fault.code).title, size: 10)
+                }
             }
             y += 12
             line("LIVE OBD DATA (last received)", size: 15, bold: true)
