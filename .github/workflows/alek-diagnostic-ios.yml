@@ -28,6 +28,15 @@ jobs:
             -sdk iphonesimulator \
             -destination "generic/platform=iOS Simulator" \
             CODE_SIGNING_ALLOWED=NO build
+      - name: Build native iPhone device application (unsigned)
+        working-directory: mobile/ALEKDiagnostic
+        run: |
+          xcodebuild -project ALEKDiagnosticMobile.xcodeproj \
+            -scheme ALEKDiagnosticMobile \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            CODE_SIGNING_ALLOWED=NO build
       - name: Run parser unit tests
         working-directory: mobile/ALEKDiagnostic
         run: |
