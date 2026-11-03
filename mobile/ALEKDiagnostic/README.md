@@ -10,6 +10,8 @@ Native iPhone diagnostic app for ELM327 **Bluetooth Low Energy** adapters. Desig
 - Real OBD-II engine DTC reads: stored 03, pending 07, permanent 0A.
 - Enhanced read-only UDS 0x19/0x02 DTC scan, for confirmed 11-bit CAN using physically addressed 7E0..7E7 requests, ATCRA receive filters, raw 24-bit DTC and 8-bit status.
 - Enhanced codes are reported with exact raw ECU values. They are NOT automatically given unverified manufacturer-specific textual definitions; incomplete/negative responses remain visible.
+- Offline OEM-specific JSON catalog import with strict matching on make, model, ECU response header and all 3 DTC bytes (including subtype). Every record requires a declared source; licensed/OEM provenance must be verified by the user before importing.
+- OEM JSON schema: {"datasetName":"Your licensed catalogue","version":"1.0","license":"licensed","entries":[{"make":"Make","model":"Model","year":"2026","engine":"Engine","ecuResponseID":"7E8","rawDTC":"030100","titleKA":"Text","explanationKA":"Text","sourceReference":"licensed document ID"}]}. This is a schema description, not verified manufacturer fault data.
 - Mode 04 code-clearing with explicit user confirmation (never silently).
 - Mode 01 supported-PID detection and 19 standard live telemetry values (only if the ECU returns them).
 - Mode 02 limited freeze-frame values; mode 01 PID 01 I/M readiness.

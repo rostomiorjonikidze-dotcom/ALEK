@@ -1,7 +1,10 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct EnhancedDiagnosticsScreen: View {
     @ObservedObject var diagnostic: DiagnosticService
+    @State private var importingCatalog = false
+    @State private var importError: String?
 
     var body: some View {
         NavigationStack {
@@ -33,6 +36,16 @@ struct EnhancedDiagnosticsScreen: View {
                         }
                     }
 
+                    AlekCard(title: "ზუსტი OEM განმარტებების კატალოგი") {
+                        Text(diagnostic.oemCatalogMessage)
+                            .font(.footnote).foregroundStyle(AlekTheme.muted)
+                        Text("მხოლოდ მარკის, მოდელის, ECU-ის მისამართისა და მთელი 24-ბიტიანი კოდის ზუსტი დამთხვევა. მწარმოებლის განმარტება წყაროს გარეშე არ გამოიგონება.")
+                            .font(.caption).foregroundStyle(AlekTheme.muted)
+                        PrimaryAction(text: "OEM JSON მონაცემების იმპორტი", icon: "square.and.arrow.down") {
+                            importingCatalog = true
+                        }
+                    }
+
                     if diagnostic.enhancedResults.isEmpty {
                         AlekCard(title: "ECU პასუხები") {
                             Text("სკანირების შემდეგ გამოჩნდება მხოლოდ რეალურად მიღებული პასუხები. დაუდასტურებელი მოდულები წარმატებულად არ ითვლება.")
@@ -44,7 +57,9 @@ struct EnhancedDiagnosticsScreen: View {
                         AlekCard(title: "ECU \(module.requestID) → \(module.responseID)") {
                             Text(module.state).font(.caption).foregroundStyle(AlekTheme.muted)
                             if module.faults.isEmpty {
-                                Text("დადასტურებული შეცდომები არ დაბრუნებულა ამ UDS მოთხოვნაზე.")
+                                Text(module.state.hasPrefix("UDS დადებითი")
+                                     ? "ECU-მ დაადასტურა ცარიელი შედეგი ამ UDS მოთხოვნაზე."
+                                     : "ამ ECU-ს შეცდომები ვერ დადასტურდა.")
                                     .font(.footnote).foregroundStyle(AlekTheme.muted)
                             }
                             ForEach(module.faults) { fault in
@@ -65,8 +80,16 @@ struct EnhancedDiagnosticsScreen: View {
                                         Label(word, systemImage: "circle.fill")
                                             .font(.caption).foregroundStyle(AlekTheme.muted)
                                     }
-                                    Text("OEM განმარტება: არ არის დადასტურებული. ზუსტი ECU კოდი და სტატუსი შენახულია უცვლელად.")
-                                        .font(.caption2).foregroundStyle(.orange)
+                                    if let entry = diagnostic.exactOEMMeaning(for: fault) {
+                                        Text(entry.titleKA).font(.subheadline).fontWeight(.semibold)
+                                        Text(entry.explanationKA)
+                                            .font(.caption).foregroundStyle(AlekTheme.muted)
+                                        Text("OEM მონაცემთა წყარო: \(entry.sourceReference)")
+                                            .font(.caption2).foregroundStyle(.green)
+                                    } else {
+                                        Text("OEM განმარტება: ამ მანქანისა და ECU-ს ზუსტი განმარტება კატალოგში არ არის. ნედლი კოდი და სტატუსი შენარჩუნებულია.")
+                                            .font(.caption2).foregroundStyle(.orange)
+                                    }
                                 }
                                 .padding(.vertical, 6)
                                 Divider().overlay(.white.opacity(0.08))
@@ -79,6 +102,22 @@ struct EnhancedDiagnosticsScreen: View {
             }
             .background(AlekTheme.background.ignoresSafeArea())
             .navigationBarHidden(true)
+            .fileImporter(isPresented: $importingCatalog, allowedContentTypes: [.json]) { result in
+                do {
+                    let url = try result.get()
+                    let access = url.startAccessingSecurityScopedResource()
+                    defer { if access { url.stopAccessingSecurityScopedResource() } }
+                    try diagnostic.importOEMCatalog(Data(contentsOf: url))
+                } catch {
+                    importError = error.localizedDescription
+                }
+            }
+            .alert("OEM ფაილის შეცდომა", isPresented: Binding(
+                get: { importError != nil },
+                set: { if !$0 { importError = nil } }
+            )) {
+                Button("კარგი", role: .cancel) { importError = nil }
+            } message: { Text(importError ?? "") }
         }
     }
 }

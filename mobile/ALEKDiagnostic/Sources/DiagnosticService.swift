@@ -31,6 +31,8 @@ final class DiagnosticService: ObservableObject {
     @Published private(set) var vehicleInfo: [String: String] = [:]
     @Published private(set) var vehicleInfoStatus = ""
     @Published private(set) var enhancedResults: [EnhancedECUResult] = []
+    @Published private(set) var oemCatalog: OEMDTCPackage?
+    @Published private(set) var oemCatalogMessage = "OEM კატალოგი არ არის ჩატვირთული"
     @Published private(set) var enhancedStatus = "სკანირება არ დაწყებულა"
     @Published private(set) var enhancedScanning = false
     private var enhancedCancelled = false
@@ -57,6 +59,11 @@ final class DiagnosticService: ObservableObject {
         if let data = UserDefaults.standard.data(forKey: historyKey),
            let saved = try? JSONDecoder().decode([ScanRecord].self, from: data) {
             history = saved
+        }
+        if let existing = try? Data(contentsOf: oemCatalogURL()),
+           let catalog = try? OEMCatalog.decode(existing) {
+            oemCatalog = catalog
+            oemCatalogMessage = "ჩატვირთულია: (catalog.datasetName) • (catalog.entries.count) ჩანაწერი"
         }
         if let stored = UserDefaults.standard.data(forKey: garageKey),
            let decoded = try? JSONDecoder().decode([VehicleProfile].self, from: stored) {
@@ -174,6 +181,25 @@ final class DiagnosticService: ObservableObject {
             info.protocolCode = AdapterTextParser.protocolCode(response)
             self.adapterStatus = info
         }
+    }
+
+    private func oemCatalogURL() -> URL {
+        FileManager.default.urls(for: .applicationSupportDirectory,
+                                 in: .userDomainMask)[0].appendingPathComponent("ALEK_OEM_Catalog.json")
+    }
+
+    func importOEMCatalog(_ data: Data) throws {
+        let catalog = try OEMCatalog.decode(data)
+        let path = oemCatalogURL()
+        try FileManager.default.createDirectory(at: path.deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
+        try data.write(to: path, options: .atomic)
+        oemCatalog = catalog
+        oemCatalogMessage = "ჩატვირთულია: \(catalog.datasetName) • \(catalog.entries.count) ჩანაწერი"
+    }
+
+    func exactOEMMeaning(for fault: EnhancedFault) -> OEMDTCEntry? {
+        OEMCatalog.find(fault, vehicle: selectedVehicle, package: oemCatalog)
     }
 
     func saveVehicle(_ profile: VehicleProfile) {
