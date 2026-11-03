@@ -114,16 +114,22 @@ enum OBDParser {
         let data = hexBytes(response)
         let marker = mode &+ 0x40
         var found: [FaultCode] = []
-        for i in data.indices where data[i] == marker {
+        var cursor = 0
+        while cursor < data.count {
+            guard let i = data[cursor...].firstIndex(of: marker) else { break }
             var offset = i + 1
-            while offset + 1 < data.count {
+            var decodedPairs = 0
+            while offset + 1 < data.count && decodedPairs < 64 {
                 let a = data[offset], b = data[offset + 1]
-                if a == 0 && b == 0 { break }
+                if a == 0 && b == 0 {
+                    offset += 2
+                    break
+                }
                 found.append(.init(code: decodeDTC(a, b), category: category))
                 offset += 2
-                // A standard response is limited; prevents crossing into another frame.
-                if offset - i > 7 { break }
+                decodedPairs += 1
             }
+            cursor = max(offset, i + 1)
         }
         return Array(Set(found)).sorted { $0.code < $1.code }
     }
