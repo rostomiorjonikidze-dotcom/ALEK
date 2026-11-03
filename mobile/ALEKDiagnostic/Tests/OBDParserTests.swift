@@ -99,6 +99,19 @@ final class OBDParserTests: XCTestCase {
         XCTAssertTrue(content.contains(",1000.0,RPM"))
     }
 
+    func testMultipleDTCsAcrossELMFrames() {
+        let message = "0: 43 01 33 04 01\r1: 02 03 04 20 00 00\r>"
+        let codes = OBDParser.faults(message, mode: 0x03, category: "შენახული")
+        XCTAssertEqual(Set(codes.map(\.code)),
+                       Set(["P0133", "P0401", "P0203", "P0420"]))
+    }
+
+    func testMultipleECURepliesDoNotDoubleCount() {
+        let message = "43 01 33 00 00\r43 04 01 00 00\r>"
+        let codes = OBDParser.faults(message, mode: 0x03, category: "შენახული")
+        XCTAssertEqual(Set(codes.map(\.code)), Set(["P0133", "P0401"]))
+    }
+
     func testVIN() {
         let raw = "49 02 01 31 48 47 43 4D 38 32 36 33 33 41 30 30 34 33 35 32\r>"
         XCTAssertEqual(OBDParser.vin(raw), "1HGCM82633A004352")
