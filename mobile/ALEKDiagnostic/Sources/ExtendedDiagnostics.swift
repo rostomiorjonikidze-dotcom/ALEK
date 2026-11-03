@@ -175,6 +175,15 @@ enum DiagnosticPDF {
                 }
             }
             y += 12
+            line("ENHANCED CAN / UDS DTC (RAW)", size: 15, bold: true)
+            for ecu in diagnostic.enhancedResults {
+                line("ECU (ecu.requestID) -> (ecu.responseID): (ecu.state)", size: 10)
+                for fault in ecu.faults {
+                    line("RAW DTC (fault.rawDTC), status 0x(String(format: "%02X", fault.status)), status availability 0x(String(format: "%02X", fault.statusAvailabilityMask))", size: 10)
+                }
+            }
+            line("OEM interpretations of raw UDS DTCs are not verified. Do not substitute generic P-code labels for manufacturer-specific definitions.", size: 9)
+            y += 12
             line("LIVE OBD DATA (last received)", size: 15, bold: true)
             for definition in OBDParser.sensors {
                 let v = diagnostic.formattedValue(for: definition)

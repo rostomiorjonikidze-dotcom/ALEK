@@ -29,6 +29,8 @@ struct DiagnosticTabs: View {
                 .tabItem { Label("მთავარი", systemImage: "square.grid.2x2.fill") }
             FaultScreen(diagnostic: diagnostic)
                 .tabItem { Label("შეცდომები", systemImage: "exclamationmark.triangle.fill") }
+            EnhancedDiagnosticsScreen(diagnostic: diagnostic)
+                .tabItem { Label("Enhanced", systemImage: "cpu.fill") }
             LiveScreen(diagnostic: diagnostic)
                 .tabItem { Label("Live Data", systemImage: "waveform.path.ecg") }
             ReportScreen(diagnostic: diagnostic)

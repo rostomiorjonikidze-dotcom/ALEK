@@ -30,6 +30,10 @@ final class DiagnosticService: ObservableObject {
     @Published private(set) var supportedPIDs: Set<String> = []
     @Published private(set) var vehicleInfo: [String: String] = [:]
     @Published private(set) var vehicleInfoStatus = ""
+    @Published private(set) var enhancedResults: [EnhancedECUResult] = []
+    @Published private(set) var enhancedStatus = "სკანირება არ დაწყებულა"
+    @Published private(set) var enhancedScanning = false
+    private var enhancedCancelled = false
     @Published private(set) var history: [ScanRecord] = []
     @Published private(set) var lastActionMessage = ""
     @Published private(set) var latestRaw = ""
@@ -83,6 +87,8 @@ final class DiagnosticService: ObservableObject {
         freezeFrame = [:]
         vehicleInfo = [:]
         vehicleInfoStatus = ""
+        enhancedScanning = false
+        enhancedCancelled = true
         adapterStatus = AdapterStatus()
         connectionStatus = "კავშირი გაწყვეტილია — დაუკავშირდი ხელახლა"
     }
@@ -317,6 +323,118 @@ final class DiagnosticService: ObservableObject {
             }
         }
         next(0)
+    }
+
+    /// Read-only UDS 0x19/0x02, only for confirmed 11-bit CAN. No unsafe services.
+    func scanEnhancedCAN() {
+        guard ecuConnected, ble.isReady, !busy else { return }
+        guard UDSDTC.supportedCAN11Bit(protocolCode: adapterStatus.protocolCode,
+                                        protocolName: adapterStatus.protocolName) else {
+            enhancedStatus = "მხოლოდ დადასტურებულ 11-bit CAN პროტოკოლზეა ხელმისაწვდომი. ამ ადაპტერის მიმდინარე პროტოკოლი არ არის დადასტურებული."
+            return
+        }
+        stopLive()
+        busy = true
+        enhancedCancelled = false
+        enhancedScanning = true
+        enhancedResults = []
+        enhancedStatus = "UDS სკანირებისთვის ELM327 მზადდება…"
+        request("ATH1", timeout: 5) { [weak self] answer in
+            guard let self else { return }
+            guard UDSDTC.isATOK(answer) else {
+                self.finishEnhancedScan("ATH1 ვერ ჩაირთო — მარკის/ECU-ს ზუსტ პასუხს ვერ დავადასტურებთ.")
+                return
+            }
+            self.request("ATCAF1", timeout: 5) { [weak self] reply in
+                guard let self else { return }
+                guard UDSDTC.isATOK(reply) else {
+                    self.finishEnhancedScan("ELM-ის ISO-TP ფორმატირება მიუწვდომელია.")
+                    return
+                }
+                self.scanEnhancedModule(index: 0)
+            }
+        }
+    }
+
+    func cancelEnhancedCAN() {
+        guard enhancedScanning else { return }
+        enhancedCancelled = true
+        enhancedStatus = "სკანირების შეწყვეტა მოთხოვნილია…"
+    }
+
+    private func scanEnhancedModule(index: Int) {
+        guard enhancedScanning else { return }
+        guard !enhancedCancelled else {
+            finishEnhancedScan("სკანირება შეწყვეტილია.")
+            return
+        }
+        guard index < UDSDTC.requestIDs.count else {
+            finishEnhancedScan("Enhanced ECU სკანირება დასრულებულია. უპასუხა \(enhancedResults.count) მისამართმა.")
+            return
+        }
+        let tx = UDSDTC.requestIDs[index]
+        guard let rx = UDSDTC.responseID(for: tx) else {
+            finishEnhancedScan("არასწორი CAN მისამართი.")
+            return
+        }
+        enhancedStatus = "კითხულობს ECU \(tx) / \(rx) — \(index + 1)/8"
+        request("ATSH" + tx, timeout: 5) { [weak self] headerResponse in
+            guard let self else { return }
+            guard UDSDTC.isATOK(headerResponse) else {
+                self.enhancedResults.append(EnhancedECUResult(
+                    requestID: tx, responseID: rx, state: "ATSH მისამართი მიუღებელია",
+                    faults: [], rawResponse: headerResponse))
+                self.scanEnhancedModule(index: index + 1)
+                return
+            }
+            self.request("ATCRA" + rx, timeout: 5) { [weak self] filterResponse in
+                guard let self else { return }
+                guard UDSDTC.isATOK(filterResponse) else {
+                    // Without an accepted receive-address filter, results could
+                    // be wrongly attributed to another ECU. Stop safely.
+                    self.finishEnhancedScan("ადაპტერმა ATCRA ფილტრი არ მიიღო. ECU-ს ზუსტი იდენტიფიკაციის გარეშე სკანირება შეწყდა.")
+                    return
+                }
+                self.request("1902FF", timeout: 9) { [weak self] response in
+                    guard let self else { return }
+                    switch UDSDTC.parse(response, requestID: tx) {
+                    case .success(let faults, let available):
+                        let description = String(format: "UDS დადებითი პასუხი • სტატუსის მხარდაჭერა 0x%02X", available)
+                        self.enhancedResults.append(EnhancedECUResult(
+                            requestID: tx, responseID: rx, state: description,
+                            faults: faults, rawResponse: response))
+                    case .negative(let reason):
+                        self.enhancedResults.append(EnhancedECUResult(
+                            requestID: tx, responseID: rx,
+                            state: String(format: "UDS უარყოფითი პასუხი • NRC 0x%02X", reason),
+                            faults: [], rawResponse: response))
+                    case .invalid:
+                        self.enhancedResults.append(EnhancedECUResult(
+                            requestID: tx, responseID: rx,
+                            state: "UDS პასუხი არ მივიღეთ ან ვერ გაიშიფრა",
+                            faults: [], rawResponse: response))
+                    }
+                    self.scanEnhancedModule(index: index + 1)
+                }
+            }
+        }
+    }
+
+    private func finishEnhancedScan(_ message: String) {
+        enhancedScanning = false
+        enhancedStatus = message
+        if !ble.isReady {
+            busy = false
+            return
+        }
+        // Restore functional OBD addressing before any subsequent regular scans.
+        request("ATCRA", timeout: 5) { [weak self] _ in
+            self?.request("ATSH7DF", timeout: 5) { [weak self] _ in
+                self?.request("ATH0", timeout: 5) { [weak self] _ in
+                    self?.busy = false
+                }
+            }
+        }
     }
 
     func readVIN() {

@@ -8,6 +8,8 @@ Native iPhone diagnostic app for ELM327 **Bluetooth Low Energy** adapters. Desig
 - ELM initialization with serialized AT and OBD commands; protocol name/code, firmware and voltage responses.
 - Manual ECU reconnect without re-pairing Bluetooth.
 - Real OBD-II engine DTC reads: stored 03, pending 07, permanent 0A.
+- Enhanced read-only UDS 0x19/0x02 DTC scan, for confirmed 11-bit CAN using physically addressed 7E0..7E7 requests, ATCRA receive filters, raw 24-bit DTC and 8-bit status.
+- Enhanced codes are reported with exact raw ECU values. They are NOT automatically given unverified manufacturer-specific textual definitions; incomplete/negative responses remain visible.
 - Mode 04 code-clearing with explicit user confirmation (never silently).
 - Mode 01 supported-PID detection and 19 standard live telemetry values (only if the ECU returns them).
 - Mode 02 limited freeze-frame values; mode 01 PID 01 I/M readiness.
@@ -43,7 +45,9 @@ The GitHub Actions workflow generates the Xcode project, builds an unsigned iOS 
 ## Scope limitations
 
 - This source is a real iOS OBD-II app, not a picture or fabricated telemetry, but it is **not yet a hardware-verified production release**.
-- ABS, Airbag/SRS, transmission manufacturer-specific diagnostics, injector coding, forced DPF regen, ECU flash, special coding/actuations are **not implemented**. They cannot be promised for every model using a generic ELM327 clone.
+- A 7E0..7E7 CAN read can discover some powertrain ECUs but is NOT an ABS/SRS/BCM all-modules sweep; the underlying vehicle topology and protocols vary.
+- ABS, Airbag/SRS, transmission manufacturer-specific diagnostics, injector coding, forced DPF regen, ECU flash, special coding/actuations are **not implemented**.
+- This is a foundation for exact raw DTC/status and future licensed OEM definitions; it is not a claim to cover every brand or module with a generic ELM327 clone. They cannot be promised for every model using a generic ELM327 clone.
 - Manufacturer-specific data and test procedures may need licensed sources, validated protocols, and different hardware.
 - The user-provided Windows V8 ZIP (~503 MiB) could not be inspected/extracted in the available execution environment. Its Windows binaries and proprietary databases have **not** been migrated.
 - No signed IPA or TestFlight build exists. Personal iPhone installation needs signing through Xcode or an authorized Apple distribution workflow.

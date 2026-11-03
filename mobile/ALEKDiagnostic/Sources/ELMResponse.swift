@@ -56,13 +56,13 @@ enum ELMResponse {
 
             // A CAN header is sometimes followed by an explicit 1-byte DLC.
             if hadHeader && lineBytes.count > 2 && lineBytes[0] <= 8 &&
-               [0x41, 0x42, 0x43, 0x44, 0x47, 0x49, 0x4A].contains(lineBytes[1]) {
+               [0x41, 0x42, 0x43, 0x44, 0x47, 0x49, 0x4A, 0x59, 0x7F].contains(lineBytes[1]) {
                 lineBytes.removeFirst()
             }
 
             // ISO-TP first frame: 10 14 49 02 01 ..., payload length 0x14.
             if lineBytes.count >= 4, lineBytes[0] & 0xF0 == 0x10,
-               [0x41, 0x42, 0x43, 0x47, 0x49, 0x4A].contains(lineBytes[2]) {
+               [0x41, 0x42, 0x43, 0x47, 0x49, 0x4A, 0x59, 0x7F].contains(lineBytes[2]) {
                 let length = Int(lineBytes[0] & 0x0F) * 256 + Int(lineBytes[1])
                 let payload = Array(lineBytes.dropFirst(2).prefix(length))
                 output += payload
@@ -80,7 +80,7 @@ enum ELMResponse {
 
             // ISO-TP single frame: 04 41 0C 1A F8 [padding].
             if lineBytes.count >= 3, lineBytes[0] > 0, lineBytes[0] <= 7,
-               [0x41, 0x42, 0x43, 0x47, 0x49, 0x4A].contains(lineBytes[1]) {
+               [0x41, 0x42, 0x43, 0x47, 0x49, 0x4A, 0x59, 0x7F].contains(lineBytes[1]) {
                 let length = Int(lineBytes[0])
                 output += lineBytes.dropFirst().prefix(length)
                 continue
