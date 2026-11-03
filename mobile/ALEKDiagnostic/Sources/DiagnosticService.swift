@@ -28,6 +28,8 @@ final class DiagnosticService: ObservableObject {
     @Published var freezeFrame: [String: Double] = [:]
     @Published var liveSamples: [LiveSample] = []
     @Published private(set) var supportedPIDs: Set<String> = []
+    @Published private(set) var vehicleInfo: [String: String] = [:]
+    @Published private(set) var vehicleInfoStatus = ""
     @Published private(set) var history: [ScanRecord] = []
     @Published private(set) var lastActionMessage = ""
     @Published private(set) var latestRaw = ""
@@ -79,6 +81,8 @@ final class DiagnosticService: ObservableObject {
         faults = []
         readiness = nil
         freezeFrame = [:]
+        vehicleInfo = [:]
+        vehicleInfoStatus = ""
         adapterStatus = AdapterStatus()
         connectionStatus = "კავშირი გაწყვეტილია — დაუკავშირდი ხელახლა"
     }
@@ -284,6 +288,35 @@ final class DiagnosticService: ObservableObject {
             self.supportedPIDs.formUnion(OBDParser.supportedPIDs(response, blockPID: next))
             self.fetchNextSupportedPIDBlock(after: next)
         }
+    }
+
+    func readVehicleInfo() {
+        guard ecuConnected, !busy else { return }
+        stopLive()
+        busy = true
+        vehicleInfo = [:]
+        vehicleInfoStatus = "ECU იდენტიფიკატორების წაკითხვა…"
+        let items = ["04", "06", "0A"]
+        func next(_ index: Int) {
+            guard index < items.count else {
+                self.busy = false
+                self.vehicleInfoStatus = self.vehicleInfo.isEmpty
+                    ? "ამ ECU-მ Mode 09 იდენტიფიკატორები არ დააბრუნა."
+                    : "Mode 09 ინფორმაცია წაკითხულია."
+                return
+            }
+            let pid = items[index]
+            self.request("09" + pid, timeout: 9) { [weak self] response in
+                guard let self else { return }
+                if let text = VehicleInfoParser.asciiValue(response, pid: pid), pid != "06" {
+                    self.vehicleInfo[pid] = text
+                } else if let raw = VehicleInfoParser.hexPayload(response, pid: pid) {
+                    self.vehicleInfo[pid] = raw
+                }
+                next(index + 1)
+            }
+        }
+        next(0)
     }
 
     func readVIN() {

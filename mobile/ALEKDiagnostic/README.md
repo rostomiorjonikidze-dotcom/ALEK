@@ -16,6 +16,13 @@ Native iPhone diagnostic app for ELM327 **Bluetooth Low Energy** adapters. Desig
 - Locally saved scan history; real-data graphs; PDF diagnostic report; CSV telemetry export.
 - User-controlled technical log export with commands, responses, timeouts, and BLE characteristic IDs.
 
+## Additional standardized diagnostics
+
+- Detailed I/M Readiness monitors: petrol/diesel-specific supported/complete state.
+- Mode 09 raw ECU identification data: Calibration IDs, CVN and ECU name when supported.
+- Diagnostic reports include monitor status and ECU identifiers when read from the vehicle.
+- Full BLE / ELM communication still needs a real iPhone and a real adapter for physical validation.
+
 ## Installation from source (macOS + Xcode)
 
 **Requirements:** A real iPhone running iOS 17+, recent Xcode, an Apple ID for on-device signing, and an ELM327 BLE adapter. An iPhone simulator cannot communicate with a real BLE adapter.

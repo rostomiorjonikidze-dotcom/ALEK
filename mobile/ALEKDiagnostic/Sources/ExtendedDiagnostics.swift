@@ -8,6 +8,13 @@ struct LiveSample: Identifiable {
     let value: Double
 }
 
+struct ReadinessMonitor: Identifiable {
+    let name: String
+    let supported: Bool
+    let complete: Bool
+    var id: String { name }
+}
+
 struct ReadinessState {
     let milOn: Bool
     let reportedFaultCount: Int
@@ -25,6 +32,42 @@ struct ReadinessState {
     }
 
     var rawHex: String { monitors.map { String(format: "%02X", $0) }.joined(separator: " ") }
+
+    var isDiesel: Bool {
+        monitors.count == 3 && (monitors[0] & 0x08) != 0
+    }
+
+    var motorType: String { isDiesel ? "Diesel / Compression" : "Petrol / Spark" }
+
+    var details: [ReadinessMonitor] {
+        guard monitors.count == 3 else { return [] }
+        let b = monitors[0], c = monitors[1], d = monitors[2]
+        var results = [
+            ReadinessMonitor(name: "Misfire", supported: (b & 0x01) != 0,
+                             complete: (b & 0x10) == 0),
+            ReadinessMonitor(name: "Fuel System", supported: (b & 0x02) != 0,
+                             complete: (b & 0x20) == 0),
+            ReadinessMonitor(name: "Comprehensive Components", supported: (b & 0x04) != 0,
+                             complete: (b & 0x40) == 0)
+        ]
+        let labels = isDiesel
+            ? ["NMHC catalyst", "NOx / SCR", "Boost pressure",
+               "Exhaust gas sensor", "Particulate filter", "EGR / VVT", "Reserved", "Reserved"]
+            : ["Catalyst", "Heated catalyst", "EVAP", "Secondary air",
+               "A/C refrigerant", "Oxygen sensor", "Oxygen heater", "EGR / VVT"]
+        for bit in 0..<8 {
+            if isDiesel && bit >= 6 { continue }
+            let mask: UInt8 = 1 << bit
+            results.append(ReadinessMonitor(name: labels[bit],
+                                            supported: (c & mask) != 0,
+                                            complete: (d & mask) == 0))
+        }
+        return results.filter { $0.supported }
+    }
+
+    var allSupportedComplete: Bool {
+        !details.isEmpty && details.allSatisfy { $0.complete }
+    }
 }
 
 extension OBDParser {
@@ -142,8 +185,20 @@ enum DiagnosticPDF {
             if let r = diagnostic.readiness {
                 line("MIL: \(r.milOn ? "ON" : "OFF"), ECU code count: \(r.reportedFaultCount)")
                 line("Monitor bytes (B C D): \(r.rawHex)")
+                line("Ignition type: \(r.motorType)")
+                for monitor in r.details {
+                    line("\(monitor.name): \(monitor.complete ? "COMPLETE" : "NOT COMPLETE")", size: 10)
+                }
             } else {
                 line("Not read")
+            }
+            y += 12
+            line("VEHICLE ECU INFORMATION", size: 15, bold: true)
+            for pid in ["04", "06", "0A"] {
+                if let raw = diagnostic.vehicleInfo[pid] {
+                    let label = ["04": "Calibration IDs", "06": "CVN", "0A": "ECU Name"][pid] ?? pid
+                    line("\(label): \(raw)", size: 10)
+                }
             }
             y += 12
             line("FREEZE FRAME", size: 15, bold: true)

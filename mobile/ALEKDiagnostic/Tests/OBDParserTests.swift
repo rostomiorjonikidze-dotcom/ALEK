@@ -112,6 +112,31 @@ final class OBDParserTests: XCTestCase {
         XCTAssertEqual(Set(codes.map(\.code)), Set(["P0133", "P0401"]))
     }
 
+    func testReadinessPetrolMonitors() throws {
+        let r = try XCTUnwrap(ReadinessState.decode("41 01 80 07 85 04\r>"))
+        XCTAssertFalse(r.isDiesel)
+        XCTAssertEqual(r.details.first(where: { $0.name == "Catalyst" })?.complete, true)
+        XCTAssertEqual(r.details.first(where: { $0.name == "EVAP" })?.complete, false)
+        XCTAssertEqual(r.details.first(where: { $0.name == "Misfire" })?.supported, true)
+    }
+
+    func testReadinessDieselFilter() throws {
+        let r = try XCTUnwrap(ReadinessState.decode("41 01 00 0C 10 10\r>"))
+        XCTAssertTrue(r.isDiesel)
+        XCTAssertEqual(r.details.first(where: { $0.name == "Particulate filter" })?.complete, false)
+        XCTAssertFalse(r.allSupportedComplete)
+    }
+
+    func testVehicleInformationRawPayload() {
+        XCTAssertEqual(VehicleInfoParser.hexPayload("49 06 01 12 34 AB CD\r>", pid: "06"),
+                       "12 34 AB CD")
+        XCTAssertNil(VehicleInfoParser.hexPayload("NO DATA\r>", pid: "06"))
+    }
+
+    func testVehicleInformationAscii() {
+        XCTAssertEqual(VehicleInfoParser.asciiValue("49 0A 01 45 43 4D\r>", pid: "0A"), "ECM")
+    }
+
     func testVIN() {
         let raw = "49 02 01 31 48 47 43 4D 38 32 36 33 33 41 30 30 34 33 35 32\r>"
         XCTAssertEqual(OBDParser.vin(raw), "1HGCM82633A004352")

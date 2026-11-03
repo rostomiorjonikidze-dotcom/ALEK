@@ -28,8 +28,21 @@ struct ReportScreen: View {
                             }
                             Text("ECU-ში დაფიქსირებული კოდები: \(state.reportedFaultCount)")
                                 .font(.subheadline)
-                            Text("მონიტორების ნედლი სტატუსი: \(state.rawHex)")
+                            Text("ძრავის ტიპი: \(state.motorType)")
                                 .font(.footnote).foregroundStyle(AlekTheme.muted)
+                            ForEach(state.details) { monitor in
+                                HStack {
+                                    Image(systemName: monitor.complete
+                                          ? "checkmark.circle.fill" : "clock.badge.exclamationmark")
+                                        .foregroundStyle(monitor.complete ? .green : .orange)
+                                    Text(monitor.name)
+                                    Spacer()
+                                    Text(monitor.complete ? "მზადაა" : "არ დასრულებულა")
+                                        .font(.caption).foregroundStyle(AlekTheme.muted)
+                                }.font(.subheadline)
+                            }
+                            Text("B C D: \(state.rawHex)")
+                                .font(.caption2).foregroundStyle(AlekTheme.muted)
                         } else {
                             Text("Readiness ჯერ არ არის წაკითხული")
                                 .foregroundStyle(AlekTheme.muted)
@@ -37,6 +50,27 @@ struct ReportScreen: View {
                         PrimaryAction(text: "Readiness შემოწმება", icon: "checkmark.shield",
                                       disabled: !diagnostic.ecuConnected) {
                             diagnostic.refreshReadiness()
+                        }
+                    }
+
+                    AlekCard(title: "ECU / Mode 09 იდენტიფიკაცია") {
+                        Text("კალიბრაციის ID, CVN და ECU სახელი — მხოლოდ თუ ECU პასუხობს.")
+                            .font(.footnote).foregroundStyle(AlekTheme.muted)
+                        ForEach(["04", "06", "0A"], id: \.self) { pid in
+                            if let value = diagnostic.vehicleInfo[pid] {
+                                let title = ["04": "Calibration ID", "06": "CVN", "0A": "ECU Name"][pid] ?? pid
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(title).font(.caption).foregroundStyle(AlekTheme.muted)
+                                    Text(value).font(.system(.footnote, design: .monospaced))
+                                        .textSelection(.enabled)
+                                }
+                            }
+                        }
+                        Text(diagnostic.vehicleInfoStatus)
+                            .font(.caption).foregroundStyle(AlekTheme.muted)
+                        PrimaryAction(text: "ECU ინფორმაციის წაკითხვა", icon: "cpu",
+                                      disabled: !diagnostic.ecuConnected || diagnostic.busy) {
+                            diagnostic.readVehicleInfo()
                         }
                     }
 
