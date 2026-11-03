@@ -66,6 +66,21 @@ final class OBDParserTests: XCTestCase {
         XCTAssertEqual(OBDParser.value(forPID: "5E", in: "41 5E 00 28\r>"), 2)
     }
 
+    func testAdapterFirmwareFromRealResponse() {
+        XCTAssertEqual(AdapterTextParser.firmware("ATI\rELM327 v1.5\r>"), "ELM327 v1.5")
+    }
+
+    func testAdapterVoltageOnlyNumeric() {
+        XCTAssertEqual(AdapterTextParser.voltage("ATRV\r12.6V\r>"), 12.6)
+        XCTAssertNil(AdapterTextParser.voltage("NO DATA\r>"))
+    }
+
+    func testAdapterProtocolCode() {
+        XCTAssertEqual(AdapterTextParser.protocolCode("ATDPN\rA6\r>"), "A6")
+        XCTAssertEqual(AdapterTextParser.protocolName("ATDP\rAUTO, ISO 15765-4 CAN (11 bit ID, 500 kbaud)\r>"),
+                       "AUTO, ISO 15765-4 CAN (11 bit ID, 500 kbaud)")
+    }
+
     func testVIN() {
         let raw = "49 02 01 31 48 47 43 4D 38 32 36 33 33 41 30 30 34 33 35 32\r>"
         XCTAssertEqual(OBDParser.vin(raw), "1HGCM82633A004352")
