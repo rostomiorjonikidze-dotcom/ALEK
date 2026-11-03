@@ -212,6 +212,12 @@ enum DiagnosticPDF {
                 }
             }
             y += 12
+            line("MODE 06 MONITORING (RAW)", size: 15, bold: true)
+            for monitor in diagnostic.mode06Results {
+                line("MID \(monitor.mid): \(monitor.rawHex)", size: 10)
+            }
+            line("Mode 06 raw values need verified calibration for diagnostic PASS/FAIL interpretation.", size: 9)
+            y += 12
             line("FREEZE FRAME", size: 15, bold: true)
             for definition in OBDParser.sensors {
                 if let v = diagnostic.freezeFrame[definition.pid] {
