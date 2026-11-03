@@ -258,6 +258,7 @@ struct LiveScreen: View {
                                         in: RoundedRectangle(cornerRadius: 16))
                         }
                     }
+                    LiveChart(diagnostic: diagnostic)
                     Text("ტირეთი (—) აღნიშნულია სენსორი, რომლის მონაცემიც ECU-ს ჯერ არ დაუბრუნებია. ეს მნიშვნელობები არ არის სიმულირებული.")
                         .font(.caption).foregroundStyle(AlekTheme.muted)
                 }
