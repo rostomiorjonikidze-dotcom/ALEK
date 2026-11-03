@@ -34,6 +34,8 @@ final class DiagnosticService: ObservableObject {
     @Published private(set) var oemCatalog: OEMDTCPackage?
     @Published private(set) var oemCatalogMessage = "OEM კატალოგი არ არის ჩატვირთული"
     @Published private(set) var enhancedStatus = "სკანირება არ დაწყებულა"
+    @Published private(set) var mode06Results: [Mode06Reading] = []
+    @Published private(set) var mode06Status = "Mode 06 ჯერ არ არის წაკითხული"
     @Published private(set) var enhancedScanning = false
     private var enhancedCancelled = false
     private var enhancedTargets: [(tx: String, rx: String)] = []
@@ -94,6 +96,8 @@ final class DiagnosticService: ObservableObject {
         faults = []
         readiness = nil
         freezeFrame = [:]
+        mode06Results = []
+        mode06Status = "Mode 06 ჯერ არ არის წაკითხული"
         vehicleInfo = [:]
         vehicleInfoStatus = ""
         enhancedScanning = false
@@ -474,6 +478,59 @@ final class DiagnosticService: ObservableObject {
                 }
             }
         }
+    }
+
+    /// Read-only Mode 06 ECU monitors from the supported MID bitmap.
+    func scanMode06() {
+        guard ecuConnected, !busy else { return }
+        stopLive()
+        busy = true
+        mode06Results = []
+        mode06Status = "Mode 06 მონიტორების ძებნა…"
+        var supported = Set<String>()
+
+        func readBitmap(_ block: String) {
+            request("06" + block, timeout: 8) { [weak self] response in
+                guard let self else { return }
+                let found = Mode06Parser.supported(response, block: block)
+                supported.formUnion(found)
+                let next = (UInt8(block, radix: 16).map { Int($0) + 32 } ?? 256)
+                let nextHex = String(format: "%02X", next)
+                if next <= 0xE0 && found.contains(nextHex) {
+                    readBitmap(nextHex)
+                } else {
+                    self.readMode06MIDs(Array(supported).sorted())
+                }
+            }
+        }
+        readBitmap("00")
+    }
+
+    private func readMode06MIDs(_ mids: [String]) {
+        let blocks: Set<String> = ["20", "40", "60", "80", "A0", "C0", "E0"]
+        let queue = Array(mids.filter { !blocks.contains($0) }.prefix(64))
+        guard !queue.isEmpty else {
+            busy = false
+            mode06Status = "ECU-მ Mode 06 მონიტორების სია არ დააბრუნა."
+            return
+        }
+        func next(_ index: Int) {
+            guard index < queue.count else {
+                self.busy = false
+                self.mode06Status = "Mode 06 დასრულდა: \(self.mode06Results.count) რეალური MID პასუხი."
+                return
+            }
+            let mid = queue[index]
+            self.mode06Status = "Mode 06 MID \(mid): \(index + 1) / \(queue.count)"
+            self.request("06" + mid, timeout: 7) { [weak self] response in
+                guard let self else { return }
+                if let reading = Mode06Parser.read(response, mid: mid) {
+                    self.mode06Results.append(reading)
+                }
+                next(index + 1)
+            }
+        }
+        next(0)
     }
 
     func readVIN() {
