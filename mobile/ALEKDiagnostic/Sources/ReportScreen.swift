@@ -94,6 +94,34 @@ struct ReportScreen: View {
                         }
                     }
 
+                    AlekCard(title: "Mode 06 • ECU მონიტორები") {
+                        Text("შეამოწმე OBD-ის მონიტორების ნედლი შედეგები. სპეციფიკურ ტესტებს შესაძლოა მწარმოებლის სკალირება სჭირდებოდეს.")
+                            .font(.footnote).foregroundStyle(AlekTheme.muted)
+                        Text(diagnostic.mode06Status)
+                            .font(.caption).foregroundStyle(AlekTheme.muted)
+                        PrimaryAction(text: "Mode 06-ის წაკითხვა", icon: "waveform.path.ecg",
+                                      disabled: !diagnostic.ecuConnected || diagnostic.busy) {
+                            diagnostic.scanMode06()
+                        }
+                        ForEach(diagnostic.mode06Results) { result in
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("MID \(result.mid)").font(.headline)
+                                Text(result.rawHex)
+                                    .font(.system(.caption2, design: .monospaced))
+                                    .textSelection(.enabled)
+                                    .foregroundStyle(AlekTheme.muted)
+                                ForEach(result.tests) { test in
+                                    Text(test.display)
+                                        .font(.system(.caption2, design: .monospaced))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                            Divider().overlay(.white.opacity(0.08))
+                        }
+                        Text("გაურკვეველი სკალირების შემთხვევაში PASS/FAIL არ გამოითვლება.")
+                            .font(.caption2).foregroundStyle(.orange)
+                    }
+
                     AlekCard(title: "პროფესიონალური PDF ანგარიში") {
                         Text("ქმნის ანგარიშს ECU კოდების, ბოლო მიღებული სენსორების, VIN-ისა და ტესტების შედეგებით.")
                             .font(.footnote).foregroundStyle(AlekTheme.muted)
