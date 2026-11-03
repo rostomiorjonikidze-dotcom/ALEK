@@ -115,7 +115,11 @@ enum DiagnosticPDF {
             line("Vehicle diagnostics report / Rapport de diagnostic", size: 13)
             y += 10
             line("Date: \(reportDate.formatted(date: .complete, time: .shortened))")
-            line("VIN: \(diagnostic.vin ?? "Not provided")")
+            line("Vehicle profile: \(diagnostic.selectedVehicle?.title ?? "Not selected")")
+            line("VIN read from ECU: \(diagnostic.vin ?? "Not provided")")
+            if let profile = diagnostic.selectedVehicle, !profile.manualVIN.isEmpty {
+                line("VIN manually entered: \(profile.manualVIN)")
+            }
             line("Connection: \(diagnostic.ecuConnected ? "ELM327 ECU online" : "offline / recorded data")")
             y += 12
             line("ENGINE DTC CODES", size: 15, bold: true)

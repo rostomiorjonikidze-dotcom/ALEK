@@ -33,6 +33,8 @@ struct DiagnosticTabs: View {
                 .tabItem { Label("Live Data", systemImage: "waveform.path.ecg") }
             ReportScreen(diagnostic: diagnostic)
                 .tabItem { Label("ანგარიში", systemImage: "doc.text") }
+            GarageScreen(diagnostic: diagnostic)
+                .tabItem { Label("ავტოფარეხი", systemImage: "car.side.fill") }
             HistoryScreen(diagnostic: diagnostic)
                 .tabItem { Label("ისტორია", systemImage: "clock.arrow.circlepath") }
         }

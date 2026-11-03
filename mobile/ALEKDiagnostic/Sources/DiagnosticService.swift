@@ -6,6 +6,7 @@ struct ScanRecord: Identifiable, Codable {
     let date: Date
     let vin: String?
     let codes: [FaultCode]
+    var vehicleName: String?
 }
 
 private struct ELMRequest {
@@ -32,6 +33,11 @@ final class DiagnosticService: ObservableObject {
     @Published private(set) var latestRaw = ""
     @Published private(set) var adapterStatus = AdapterStatus()
     @Published private(set) var connectionLog: [String] = []
+    @Published private(set) var profiles: [VehicleProfile] = []
+    @Published private(set) var selectedVehicleID: UUID?
+    var selectedVehicle: VehicleProfile? { profiles.first { $0.id == selectedVehicleID } }
+    private let garageKey = "alek_diagnostic_vehicle_profiles_v1"
+    private let selectionKey = "alek_diagnostic_vehicle_selected_v1"
 
     private var commandQueue: [ELMRequest] = []
     private var inFlight: ELMRequest?
@@ -46,6 +52,13 @@ final class DiagnosticService: ObservableObject {
            let saved = try? JSONDecoder().decode([ScanRecord].self, from: data) {
             history = saved
         }
+        if let stored = UserDefaults.standard.data(forKey: garageKey),
+           let decoded = try? JSONDecoder().decode([VehicleProfile].self, from: stored) {
+            profiles = decoded
+        }
+        if let selected = UserDefaults.standard.string(forKey: selectionKey),
+           let id = UUID(uuidString: selected),
+           profiles.contains(where: { $0.id == id }) { selectedVehicleID = id }
         ble.onReady = { [weak self] in self?.initializeELM() }
         ble.onText = { [weak self] chunk in self?.receive(chunk) }
         ble.onDisconnect = { [weak self] in self?.handleDisconnect() }
@@ -150,6 +163,37 @@ final class DiagnosticService: ObservableObject {
             var info = self.adapterStatus
             info.protocolCode = AdapterTextParser.protocolCode(response)
             self.adapterStatus = info
+        }
+    }
+
+    func saveVehicle(_ profile: VehicleProfile) {
+        if let index = profiles.firstIndex(where: { $0.id == profile.id }) {
+            profiles[index] = profile
+        } else {
+            profiles.append(profile)
+        }
+        selectVehicle(profile.id)
+        saveGarage()
+    }
+
+    func selectVehicle(_ id: UUID) {
+        guard profiles.contains(where: { $0.id == id }) else { return }
+        selectedVehicleID = id
+        UserDefaults.standard.set(id.uuidString, forKey: selectionKey)
+    }
+
+    func removeVehicle(_ id: UUID) {
+        profiles.removeAll { $0.id == id }
+        if selectedVehicleID == id {
+            selectedVehicleID = nil
+            UserDefaults.standard.removeObject(forKey: selectionKey)
+        }
+        saveGarage()
+    }
+
+    private func saveGarage() {
+        if let data = try? JSONEncoder().encode(profiles) {
+            UserDefaults.standard.set(data, forKey: garageKey)
         }
     }
 
@@ -265,8 +309,17 @@ final class DiagnosticService: ObservableObject {
                 self.request("0A", timeout: 9) { [weak self] permanent in
                     guard let self else { return }
                     let c = OBDParser.faults(permanent, mode: 0x0A, category: "მუდმივი")
-                    self.faults = Array(Set(a + b + c)).sorted { $0.code < $1.code }
+                    let replies = [stored, pending, permanent]
+                    let valid = replies.contains { $0.uppercased().contains("NO DATA") } ||
+                        ELMResponse.hasPositiveResponse(stored, mode: 0x03) ||
+                        ELMResponse.hasPositiveResponse(pending, mode: 0x07) ||
+                        ELMResponse.hasPositiveResponse(permanent, mode: 0x0A)
                     self.busy = false
+                    guard valid else {
+                        self.lastActionMessage = "ECU-მ შეცდომების მოთხოვნას დამაჯერებელი პასუხი არ დაუბრუნა."
+                        return
+                    }
+                    self.faults = Array(Set(a + b + c)).sorted { $0.code < $1.code }
                     self.lastActionMessage = self.faults.isEmpty
                         ? "შეცდომა არ დაბრუნებულა — დარწმუნდი, რომ ECU პასუხობს"
                         : "ნაპოვნია \(self.faults.count) კოდი"
@@ -278,7 +331,8 @@ final class DiagnosticService: ObservableObject {
     }
 
     private func addHistory() {
-        let record = ScanRecord(id: UUID(), date: Date(), vin: vin, codes: faults)
+        let record = ScanRecord(id: UUID(), date: Date(), vin: vin, codes: faults,
+                                vehicleName: selectedVehicle?.title)
         history.insert(record, at: 0)
         history = Array(history.prefix(100))
         if let data = try? JSONEncoder().encode(history) {
@@ -314,9 +368,7 @@ final class DiagnosticService: ObservableObject {
 
     private func pollNext() {
         guard liveRunning, ecuConnected else { return }
-        let available = OBDParser.sensors.filter {
-            supportedPIDs.isEmpty || supportedPIDs.contains($0.pid)
-        }
+        let available = OBDParser.sensors.filter { supportedPIDs.contains($0.pid) }
         guard !available.isEmpty else { liveRunning = false; return }
         let definition = available[liveIndex % available.count]
         liveIndex += 1

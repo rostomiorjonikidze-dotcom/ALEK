@@ -37,8 +37,12 @@ struct HomeScreen: View {
                             Text(diagnostic.connectionStatus)
                                 .font(.subheadline).foregroundStyle(.white)
                         }
+                        if let profile = diagnostic.selectedVehicle {
+                            LabeledContent("მანქანა (პროფილი)", value: profile.title)
+                                .font(.caption).foregroundStyle(AlekTheme.muted)
+                        }
                         if let vin = diagnostic.vin {
-                            LabeledContent("VIN", value: vin)
+                            LabeledContent("VIN (ECU)", value: vin)
                                 .font(.caption).foregroundStyle(AlekTheme.muted)
                         }
                     }
@@ -362,6 +366,9 @@ struct HistoryScreen: View {
                     ForEach(diagnostic.history) { record in
                         AlekCard(title: record.date.formatted(date: .abbreviated,
                                                                time: .shortened)) {
+                            if let vehicleName = record.vehicleName {
+                                Text(vehicleName).font(.subheadline)
+                            }
                             if let vin = record.vin {
                                 Text(vin).font(.caption).foregroundStyle(AlekTheme.muted)
                             }
