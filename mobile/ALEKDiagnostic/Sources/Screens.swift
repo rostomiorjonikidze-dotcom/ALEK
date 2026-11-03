@@ -223,6 +223,9 @@ struct FaultScreen: View {
 
 struct LiveScreen: View {
     @ObservedObject var diagnostic: DiagnosticService
+    @State private var csvURL: URL?
+    @State private var showCSVShare = false
+    @State private var csvError: String?
 
     var body: some View {
         NavigationStack {
@@ -259,6 +262,17 @@ struct LiveScreen: View {
                         }
                     }
                     LiveChart(diagnostic: diagnostic)
+                    AlekCard(title: "მონაცემების ექსპორტი") {
+                        Text("შენახული რეალური გაზომვების CSV — სახელოსნოში ან Excel-ში გასახსნელად.")
+                            .font(.footnote).foregroundStyle(AlekTheme.muted)
+                        PrimaryAction(text: "CSV ფაილის გაზიარება", icon: "square.and.arrow.up",
+                                      disabled: diagnostic.liveSamples.isEmpty) {
+                            do {
+                                csvURL = try TelemetryCSV.create(samples: diagnostic.liveSamples)
+                                showCSVShare = true
+                            } catch { csvError = error.localizedDescription }
+                        }
+                    }
                     Text("ტირეთი (—) აღნიშნულია სენსორი, რომლის მონაცემიც ECU-ს ჯერ არ დაუბრუნებია. ეს მნიშვნელობები არ არის სიმულირებული.")
                         .font(.caption).foregroundStyle(AlekTheme.muted)
                 }
@@ -268,6 +282,15 @@ struct LiveScreen: View {
             .navigationBarHidden(true)
             .onAppear { diagnostic.startLive() }
             .onDisappear { diagnostic.stopLive() }
+            .sheet(isPresented: $showCSVShare) {
+                if let csvURL { ShareActivity(items: [csvURL]) }
+            }
+            .alert("CSV შეცდომა", isPresented: Binding(
+                get: { csvError != nil },
+                set: { if !$0 { csvError = nil } }
+            )) {
+                Button("კარგი", role: .cancel) { csvError = nil }
+            } message: { Text(csvError ?? "") }
         }
     }
 }
