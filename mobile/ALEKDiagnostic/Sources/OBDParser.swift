@@ -42,7 +42,7 @@ enum OBDParser {
             for token in line.split(whereSeparator: { $0.isWhitespace || $0 == ">" }) {
                 let word = String(token)
                 // Ignore 11-bit and 29-bit CAN header tokens, which contain IDs.
-                if word.count == 3 || word.count == 8 { continue }
+                if word.count == 3 { continue }
                 guard word.count >= 2, word.count.isMultiple(of: 2),
                       word.allSatisfy({ $0.isHexDigit }) else { continue }
                 var index = word.startIndex
