@@ -52,6 +52,20 @@ final class OBDParserTests: XCTestCase {
         XCTAssertNil(OBDParser.freezeValue(forPID: "0C", in: "NO DATA\r>"))
     }
 
+    func testSupportedPIDBitmask() {
+        // Bit 1 and bit 12 in the 0100 bitmap: PID 01 and PID 0C.
+        let found = OBDParser.supportedPIDs("41 00 80 10 00 00\r>", blockPID: "00")
+        XCTAssertTrue(found.contains("01"))
+        XCTAssertTrue(found.contains("0C"))
+        XCTAssertFalse(found.contains("05"))
+    }
+
+    func testAdditionalStandardPIDs() {
+        XCTAssertEqual(OBDParser.value(forPID: "11", in: "41 11 FF\r>"), 100)
+        XCTAssertEqual(OBDParser.value(forPID: "31", in: "41 31 00 64\r>"), 100)
+        XCTAssertEqual(OBDParser.value(forPID: "5E", in: "41 5E 00 28\r>"), 2)
+    }
+
     func testVIN() {
         let raw = "49 02 01 31 48 47 43 4D 38 32 36 33 33 41 30 30 34 33 35 32\r>"
         XCTAssertEqual(OBDParser.vin(raw), "1HGCM82633A004352")
