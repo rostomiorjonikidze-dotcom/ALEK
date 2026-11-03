@@ -26,8 +26,12 @@ enum OBDParser {
         .init(pid: "11", label: "დროსელის მდგომარეობა", unit: "%"),
         .init(pid: "06", label: "STFT Bank 1", unit: "%"),
         .init(pid: "07", label: "LTFT Bank 1", unit: "%"),
+        .init(pid: "08", label: "STFT Bank 2", unit: "%"),
+        .init(pid: "09", label: "LTFT Bank 2", unit: "%"),
+        .init(pid: "0A", label: "საწვავის წნევა", unit: "kPa"),
         .init(pid: "0E", label: "ანთების კუთხე", unit: "°"),
         .init(pid: "1F", label: "ძრავის მუშაობის დრო", unit: "s"),
+        .init(pid: "21", label: "მანძილი Check Engine-ით", unit: "km"),
         .init(pid: "2F", label: "საწვავის დონე", unit: "%"),
         .init(pid: "31", label: "განულების შემდეგ მანძილი", unit: "km"),
         .init(pid: "33", label: "ატმოსფერული წნევა", unit: "kPa"),
@@ -74,9 +78,10 @@ enum OBDParser {
         case "05", "0F", "46", "5C": return a - 40
         case "10": return start + 1 < data.count ? (256 * a + b) / 100 : nil
         case "04", "11", "2F": return a * 100 / 255
-        case "06", "07": return (a - 128) * 100 / 128
+        case "06", "07", "08", "09": return (a - 128) * 100 / 128
+        case "0A": return a * 3
         case "0E": return a / 2 - 64
-        case "31": return start + 1 < data.count ? 256 * a + b : nil
+        case "21", "31": return start + 1 < data.count ? 256 * a + b : nil
         case "42": return start + 1 < data.count ? (256 * a + b) / 1000 : nil
         case "5E": return start + 1 < data.count ? (256 * a + b) / 20 : nil
         default: return nil
