@@ -15,6 +15,15 @@ jobs:
       - name: Generate Xcode project
         working-directory: mobile/ALEKDiagnostic
         run: xcodegen generate
+      - name: Package complete Xcode project
+        run: |
+          zip -qr ALEK-DIAGNOSTIC-MOBILE-XCODE.zip mobile/ALEKDiagnostic
+      - name: Upload Xcode project ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: ALEK-DIAGNOSTIC-MOBILE-XCODE
+          path: ALEK-DIAGNOSTIC-MOBILE-XCODE.zip
+          retention-days: 30
       - name: Build unsigned iPhone Simulator app
         working-directory: mobile/ALEKDiagnostic
         run: |
