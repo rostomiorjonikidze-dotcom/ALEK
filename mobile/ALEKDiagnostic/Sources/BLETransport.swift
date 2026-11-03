@@ -181,8 +181,9 @@ final class BLETransport: NSObject, ObservableObject, CBCentralManagerDelegate, 
         // unrelated phone/device characteristics across BLE services.
         var candidates: [(CBCharacteristic, CBCharacteristic, Int)] = []
         for tx in writeCandidates {
-            for rx in notifyCandidates where tx.service.uuid == rx.service.uuid {
-                let score = preference(tx, forWrite: true) + preference(rx, forWrite: false)
+            for rx in notifyCandidates {
+                guard tx.service.uuid.uuidString == rx.service.uuid.uuidString else { continue }
+                let score: Int = preference(tx, forWrite: true) + preference(rx, forWrite: false)
                 candidates.append((tx, rx, score))
             }
         }
