@@ -30,6 +30,7 @@ final class DiagnosticService: ObservableObject {
     @Published private(set) var history: [ScanRecord] = []
     @Published private(set) var lastActionMessage = ""
     @Published private(set) var latestRaw = ""
+    @Published private(set) var adapterStatus = AdapterStatus()
 
     private var commandQueue: [ELMRequest] = []
     private var inFlight: ELMRequest?
@@ -60,11 +61,17 @@ final class DiagnosticService: ObservableObject {
         liveRunning = false
         sensors = [:]
         supportedPIDs = []
+        vin = nil
+        faults = []
+        readiness = nil
+        freezeFrame = [:]
+        adapterStatus = AdapterStatus()
         connectionStatus = "კავშირი გაწყვეტილია — დაუკავშირდი ხელახლა"
     }
 
     private func initializeELM() {
         handleDisconnect()
+        busy = true
         connectionStatus = "ELM327 მზადდება…"
         // Do not infer vehicle connectivity from the Bluetooth link alone.
         request("ATZ", timeout: 7) { [weak self] _ in
@@ -75,27 +82,71 @@ final class DiagnosticService: ObservableObject {
                             self?.request("ATSP0") { [weak self] _ in
                                 self?.request("0100", timeout: 12) { [weak self] response in
                                     guard let self else { return }
-                                    let bytes = OBDParser.hexBytes(response)
-                                    let valid = bytes.indices.contains {
-                                        bytes[$0] == 0x41 && $0 + 1 < bytes.count &&
-                                        bytes[$0 + 1] == 0x00
-                                    }
-                                    self.ecuConnected = valid
-                                    self.connectionStatus = valid
-                                        ? "ECU დაკავშირებულია — OBD-II მზადაა"
-                                        : "Bluetooth მუშაობს, მაგრამ ECU-მ არ უპასუხა"
-                                    if valid {
-                                        self.supportedPIDs = OBDParser.supportedPIDs(response, blockPID: "00")
-                                        self.fetchNextSupportedPIDBlock(after: "00")
-                                        self.readVIN()
-                                        self.refreshReadiness()
-                                    }
+                                    self.applyECUHandshake(response)
+                                    self.refreshAdapterInfo()
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+    /// Rechecks real ECU connection without requiring disconnecting the BLE adapter.
+    func retryECU() {
+        guard ble.isReady, !busy else { return }
+        busy = true
+        connectionStatus = "ECU-თან კავშირის ხელახალი შემოწმება…"
+        request("0100", timeout: 12) { [weak self] response in
+            self?.applyECUHandshake(response)
+            self?.refreshAdapterInfo()
+        }
+    }
+
+    private func applyECUHandshake(_ response: String) {
+        let bytes = OBDParser.hexBytes(response)
+        let valid = bytes.indices.contains {
+            bytes[$0] == 0x41 && $0 + 1 < bytes.count && bytes[$0 + 1] == 0x00
+        }
+        ecuConnected = valid
+        busy = false
+        connectionStatus = valid
+            ? "ECU დაკავშირებულია — OBD-II მზადაა"
+            : "Bluetooth მუშაობს, მაგრამ ECU-მ არ უპასუხა. შეამოწმე ანთება."
+        if valid {
+            supportedPIDs = OBDParser.supportedPIDs(response, blockPID: "00")
+            fetchNextSupportedPIDBlock(after: "00")
+            readVIN()
+            refreshReadiness()
+        }
+    }
+
+    func refreshAdapterInfo() {
+        guard ble.isReady else { return }
+        request("ATI") { [weak self] response in
+            guard let self else { return }
+            var info = self.adapterStatus
+            info.version = AdapterTextParser.firmware(response)
+            self.adapterStatus = info
+        }
+        request("ATRV") { [weak self] response in
+            guard let self else { return }
+            var info = self.adapterStatus
+            info.voltage = AdapterTextParser.voltage(response)
+            self.adapterStatus = info
+        }
+        request("ATDP") { [weak self] response in
+            guard let self else { return }
+            var info = self.adapterStatus
+            info.protocolName = AdapterTextParser.protocolName(response)
+            self.adapterStatus = info
+        }
+        request("ATDPN") { [weak self] response in
+            guard let self else { return }
+            var info = self.adapterStatus
+            info.protocolCode = AdapterTextParser.protocolCode(response)
+            self.adapterStatus = info
         }
     }
 
