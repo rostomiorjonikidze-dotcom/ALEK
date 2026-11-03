@@ -214,8 +214,12 @@ struct FaultScreen: View {
                                     Spacer()
                                     Text("OBD-II").font(.caption).foregroundStyle(AlekTheme.muted)
                                 }
-                                Text("კოდი მიღებულია ECU-დან. მიზეზი გადაამოწმე ავტომობილის შესაბამის ტექნიკურ დოკუმენტაციაში.")
+                                Text(DTCGuide.description(for: fault.code).title)
+                                    .font(.subheadline).fontWeight(.medium)
+                                Text(DTCGuide.description(for: fault.code).checks)
                                     .font(.footnote).foregroundStyle(AlekTheme.muted)
+                                Text("დიაგნოზი სავარაუდოა — შეამოწმე ECU-ის დოკუმენტაციით.")
+                                    .font(.caption2).foregroundStyle(AlekTheme.muted)
                             }
                         }
                     }
