@@ -43,10 +43,15 @@ final class OEMCatalogTests: XCTestCase {
     }
 
     func testDocumentedModuleRouting() throws {
-        let full = dataset.replacingOccurrences(
-            of: "\\"entries\\":", with: "\\"modules\\":[{\\"make\\":\\"TestMake\\",\\"model\\":\\"TestModel\\",\\"year\\":\\"2020\\",\\"engine\\":null,\\"name\\":\\"ABS ECU\\",\\"requestID\\":\\"740\\",\\"responseID\\":\\"748\\",\\"sourceReference\\":\\"test-only\\"}],\\"entries\\":"
-        )
-        let package = try OEMCatalog.decode(Data(full.utf8))
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(
+            with: Data(dataset.utf8)) as? [String: Any])
+        object["modules"] = [[
+            "make": "TestMake", "model": "TestModel", "year": "2020",
+            "name": "ABS ECU", "requestID": "740", "responseID": "748",
+            "sourceReference": "test-only"
+        ]]
+        let json = try JSONSerialization.data(withJSONObject: object)
+        let package = try OEMCatalog.decode(json)
         let car = VehicleProfile(id: UUID(), make: "TestMake", model: "TestModel",
                                  year: "2020", engine: "", manualVIN: "")
         XCTAssertEqual(OEMCatalog.modules(for: car, package: package).first?.responseID, "748")
