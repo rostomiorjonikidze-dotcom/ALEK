@@ -27,3 +27,19 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+
+  ALEKDiagnosticMobileTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Tests
+    dependencies:
+      - target: ALEKDiagnosticMobile
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: best.alek.diagnosticmobile.tests
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/ALEKDiagnosticMobile.app/ALEKDiagnosticMobile"
+        BUNDLE_LOADER: "$(TEST_HOST)"
