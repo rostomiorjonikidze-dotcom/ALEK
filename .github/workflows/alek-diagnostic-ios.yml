@@ -1,0 +1,26 @@
+name: ALEK Diagnostic iOS build
+on:
+  push:
+    branches:
+      - feature/alek-diagnostic-elm327-ios
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: mobile/ALEKDiagnostic
+        run: xcodegen generate
+      - name: Build unsigned iPhone Simulator app
+        working-directory: mobile/ALEKDiagnostic
+        run: |
+          xcodebuild -project ALEKDiagnosticMobile.xcodeproj \
+            -scheme ALEKDiagnosticMobile \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO build
