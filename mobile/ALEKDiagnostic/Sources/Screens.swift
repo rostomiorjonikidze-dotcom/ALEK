@@ -42,6 +42,29 @@ struct HomeScreen: View {
 
                     AdapterPanel(ble: diagnostic.ble)
 
+                    if diagnostic.ble.isReady {
+                        AlekCard(title: "ELM327-ის რეალური მონაცემები") {
+                            LabeledContent("ადაპტერი", value: diagnostic.adapterStatus.version ?? "—")
+                            LabeledContent("OBD პროტოკოლი", value: diagnostic.adapterStatus.protocolName ?? "—")
+                            LabeledContent("პროტოკოლის კოდი", value: diagnostic.adapterStatus.protocolCode ?? "—")
+                            LabeledContent("ძაბვა", value: diagnostic.adapterStatus.voltage.map {
+                                String(format: "%.1f V", $0)
+                            } ?? "—")
+                            LabeledContent("ხელმისაწვდომი PID", value: "\(diagnostic.supportedPIDs.count)")
+                            PrimaryAction(text: "ადაპტერის მონაცემების განახლება",
+                                          icon: "arrow.clockwise") {
+                                diagnostic.refreshAdapterInfo()
+                            }
+                            if !diagnostic.ecuConnected {
+                                PrimaryAction(text: "ECU კავშირის ხელახალი შემოწმება",
+                                              icon: "waveform.path.ecg",
+                                              disabled: diagnostic.busy) {
+                                    diagnostic.retryECU()
+                                }
+                            }
+                        }
+                    }
+
                     AlekCard(title: "სწრაფი დიაგნოსტიკა") {
                         PrimaryAction(text: diagnostic.busy ? "მიმდინარეობს…" : "ძრავის სკანირება",
                                       icon: "stethoscope",
