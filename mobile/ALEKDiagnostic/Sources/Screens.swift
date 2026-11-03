@@ -18,6 +18,9 @@ private struct ScreenHeading: View {
 
 struct HomeScreen: View {
     @ObservedObject var diagnostic: DiagnosticService
+    @State private var logURL: URL?
+    @State private var showLogExport = false
+    @State private var logError: String?
 
     var body: some View {
         NavigationStack {
@@ -51,9 +54,19 @@ struct HomeScreen: View {
                                 String(format: "%.1f V", $0)
                             } ?? "—")
                             LabeledContent("ხელმისაწვდომი PID", value: "\(diagnostic.supportedPIDs.count)")
+                            Text(diagnostic.ble.channelInfo)
+                                .font(.caption2).foregroundStyle(AlekTheme.muted)
+                                .textSelection(.enabled)
                             PrimaryAction(text: "ადაპტერის მონაცემების განახლება",
                                           icon: "arrow.clockwise") {
                                 diagnostic.refreshAdapterInfo()
+                            }
+                            PrimaryAction(text: "BLE/ELM ტექნიკური ლოგის გაზიარება",
+                                          icon: "square.and.arrow.up") {
+                                do {
+                                    logURL = try diagnostic.exportConnectionLog()
+                                    showLogExport = true
+                                } catch { logError = error.localizedDescription }
                             }
                             if !diagnostic.ecuConnected {
                                 PrimaryAction(text: "ECU კავშირის ხელახალი შემოწმება",
@@ -99,6 +112,15 @@ struct HomeScreen: View {
             }
             .background(AlekTheme.background.ignoresSafeArea())
             .navigationBarHidden(true)
+            .sheet(isPresented: $showLogExport) {
+                if let logURL { ShareActivity(items: [logURL]) }
+            }
+            .alert("ლოგის ექსპორტის შეცდომა", isPresented: Binding(
+                get: { logError != nil },
+                set: { if !$0 { logError = nil } }
+            )) {
+                Button("კარგი", role: .cancel) { logError = nil }
+            } message: { Text(logError ?? "") }
         }
     }
 }
