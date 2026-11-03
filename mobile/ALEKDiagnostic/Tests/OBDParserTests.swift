@@ -137,6 +137,13 @@ final class OBDParserTests: XCTestCase {
         XCTAssertEqual(VehicleInfoParser.asciiValue("49 0A 01 45 43 4D\r>", pid: "0A"), "ECM")
     }
 
+    func testExtraSensorPIDs() {
+        XCTAssertEqual(OBDParser.value(forPID: "08", in: "41 08 80\r>"), 0)
+        XCTAssertEqual(OBDParser.value(forPID: "09", in: "41 09 C0\r>"), 50)
+        XCTAssertEqual(OBDParser.value(forPID: "0A", in: "41 0A 32\r>"), 150)
+        XCTAssertEqual(OBDParser.value(forPID: "21", in: "41 21 00 64\r>"), 100)
+    }
+
     func testVIN() {
         let raw = "49 02 01 31 48 47 43 4D 38 32 36 33 33 41 30 30 34 33 35 32\r>"
         XCTAssertEqual(OBDParser.vin(raw), "1HGCM82633A004352")
