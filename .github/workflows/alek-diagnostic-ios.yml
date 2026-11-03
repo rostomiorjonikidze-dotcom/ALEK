@@ -24,3 +24,15 @@ jobs:
             -sdk iphonesimulator \
             -destination "generic/platform=iOS Simulator" \
             CODE_SIGNING_ALLOWED=NO build
+      - name: Run parser unit tests
+        working-directory: mobile/ALEKDiagnostic
+        run: |
+          SIM_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); devices=[x for v in d["devices"].values() for x in v if "iPhone" in x.get("name","") and x.get("isAvailable",False)]; print(devices[0]["udid"] if devices else "")')
+          if [ -z "$SIM_ID" ]; then
+            echo "No available iPhone simulator"; exit 1
+          fi
+          xcodebuild -project ALEKDiagnosticMobile.xcodeproj \
+            -scheme ALEKDiagnosticMobile \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$SIM_ID" \
+            CODE_SIGNING_ALLOWED=NO test
